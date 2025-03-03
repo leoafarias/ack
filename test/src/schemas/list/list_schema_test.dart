@@ -89,7 +89,7 @@ void main() {
 
         final result = schema.validate([1, 2]);
         expect(result.isFail, isTrue);
-        expect(result, hasOneConstraintError('list_min_items'));
+        expect(result, hasOneConstraintError('min_items'));
       });
     });
 
@@ -110,7 +110,7 @@ void main() {
         expect(schema.validate([1, 2, 3]).isOk, isTrue);
 
         final result = schema.validate([1, 2, 3, 4]);
-        expect(result, hasOneConstraintError('list_max_items'));
+        expect(result, hasOneConstraintError('max_items'));
       });
     });
   });

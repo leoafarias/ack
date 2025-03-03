@@ -74,7 +74,7 @@ void main() {
 
         final result = schema.validate(6);
         expect(result.isFail, isTrue);
-        expect(result, hasOneConstraintError('num_max_value'));
+        expect(result, hasOneConstraintError('max_value'));
       });
     });
 
@@ -113,7 +113,7 @@ void main() {
         expect(result.isOk, isTrue);
 
         final result2 = schema.validate(6);
-        expect(result2, hasOneConstraintError('num_range'));
+        expect(result2, hasOneConstraintError('range'));
       });
     });
   });
@@ -187,7 +187,7 @@ void main() {
         expect(schema.validate(4).isOk, isTrue);
 
         final result = schema.validate(6);
-        expect(result, hasOneConstraintError('num_max_value'));
+        expect(result, hasOneConstraintError('max_value'));
       });
     });
 
@@ -226,7 +226,7 @@ void main() {
         expect(result.isOk, isTrue);
 
         final result2 = schema.validate(6);
-        expect(result2, hasOneConstraintError('num_range'));
+        expect(result2, hasOneConstraintError('range'));
       });
     });
   });

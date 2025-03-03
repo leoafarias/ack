@@ -14,7 +14,7 @@ void main() {
           required: ['age']);
       final result = schema.validate({'age': 25, 'name': 'John'});
       expect(result.isFail, isTrue);
-      expect(result, hasOneConstraintError('object_property_unallowed'));
+      expect(result, hasOneConstraintError('property_unallowed'));
     });
 
     test('Fails on missing required property', () {
@@ -27,7 +27,7 @@ void main() {
           required: ['age']);
       final result = schema.validate({'name': 'John'});
       expect(result.isFail, isTrue);
-      expect(result, hasOneConstraintError('object_property_required'));
+      expect(result, hasOneConstraintError('property_required'));
     });
 
     test('Fails on property schema error', () {
@@ -39,7 +39,7 @@ void main() {
           additionalProperties: true,
           required: ['age']);
       final result = schema.validate({'age': 'not an int'});
-      expect(result, hasOneSchemaError(PathSchemaError.key));
+      expect(result, hasOneSchemaError(ItemSchemaError.key));
 
       final failResult = result as Fail;
       final nestedSchemaError = failResult.pathSchemaError.first;

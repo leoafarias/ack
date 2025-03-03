@@ -286,6 +286,7 @@ print(openApiSchema);
 */
 ```
 #### Working with Limited LLM OpenAPI Support
+
 > [!TIP]
 > When using LLMs with limited OpenAPI support, ACK lets you add schema instructions directly into prompts while keeping JSON response validation. Some LLM providers let you ensure the response is valid JSON even without a schema. This might work better for you.
 

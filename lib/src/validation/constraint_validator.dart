@@ -3,11 +3,11 @@ import 'package:meta/meta.dart';
 import '../helpers.dart';
 import 'schema_error.dart';
 
-abstract class ConstraintValidator<T> {
-  const ConstraintValidator();
+abstract class ConstraintValidator<T extends Object> {
+  final String name;
 
-  String get name;
-  String get description;
+  final String description;
+  const ConstraintValidator({required this.name, required this.description});
 
   bool isValid(T value);
 
@@ -23,18 +23,16 @@ abstract class ConstraintValidator<T> {
 
   @protected
   ConstraintError buildError({
-    required String message,
+    required String template,
     required Map<String, Object?> context,
   }) {
-    return ConstraintError(name: name, message: message, context: context);
+    return ConstraintError(name: name, message: template, context: context);
   }
 
   @override
   String toString() => toJson();
 }
 
-abstract class OpenApiConstraintValidator<T> extends ConstraintValidator<T> {
-  const OpenApiConstraintValidator();
-
+mixin OpenAPiSpecOutput<T extends Object> on ConstraintValidator<T> {
   Map<String, Object?> toSchema();
 }

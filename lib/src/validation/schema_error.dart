@@ -5,6 +5,7 @@ import '../schemas/schema.dart';
 sealed class SchemaError {
   final String type;
   final Map<String, Object?> context;
+
   final String _message;
 
   const SchemaError({
@@ -38,13 +39,13 @@ sealed class SchemaError {
     return UnknownExceptionSchemaError(error: error, stackTrace: stackTrace);
   }
 
-  static PathSchemaError _pathSchema({
+  static ItemSchemaError _itemSchema({
     required String path,
     required String message,
     required List<SchemaError> errors,
     required Schema schema,
   }) {
-    return PathSchemaError(
+    return ItemSchemaError(
       path: path,
       schema: schema,
       message: message,
@@ -52,7 +53,7 @@ sealed class SchemaError {
     );
   }
 
-  static List<SchemaError> pathSchemas({
+  static List<SchemaError> itemSchemas({
     required String path,
     required String message,
     required List<SchemaError> errors,
@@ -61,11 +62,11 @@ sealed class SchemaError {
     List<SchemaError> schemaErrors = [];
 
     for (final error in errors) {
-      if (error is PathSchemaError) {
+      if (error is ItemSchemaError) {
         schemaErrors.add(error.withRootPath(path));
       } else {
         schemaErrors.add(
-          _pathSchema(
+          _itemSchema(
             path: path,
             message: message,
             errors: [error],
@@ -78,12 +79,20 @@ sealed class SchemaError {
     return schemaErrors;
   }
 
-  String get message => _message;
+  String get message => _renderErrorMessage(_message, context);
+
+  String renderMessage(VariableRender variableRender) {
+    return _renderErrorMessage(
+      _message,
+      context,
+      onVariableRender: variableRender,
+    );
+  }
 
   Map<String, Object?> toMap() {
     return {
       'type': type,
-      'message': _message,
+      'message': message,
       if (context.isNotEmpty) 'context': context,
     };
   }
@@ -144,12 +153,12 @@ final class UnknownExceptionSchemaError extends SchemaError {
         );
 }
 
-final class PathSchemaError extends SchemaError {
-  static const String key = 'path_schema_error';
+final class ItemSchemaError extends SchemaError {
+  static const String key = 'item';
   final Schema schema;
   final String path;
   final List<SchemaError> errors;
-  PathSchemaError({
+  ItemSchemaError({
     required this.path,
     required this.schema,
     required super.message,
@@ -162,8 +171,8 @@ final class PathSchemaError extends SchemaError {
           },
         );
 
-  PathSchemaError withRootPath(String rootKey) {
-    return PathSchemaError(
+  ItemSchemaError withRootPath(String rootKey) {
+    return ItemSchemaError(
       path: '$rootKey.$path',
       schema: schema,
       message: message,
@@ -174,9 +183,33 @@ final class PathSchemaError extends SchemaError {
 
 class ConstraintError extends SchemaError {
   final String name;
+
   const ConstraintError({
     required this.name,
     required super.message,
     required super.context,
-  }) : super(type: 'constraint_$name');
+  }) : super(type: 'constraint');
+
+  @override
+  Map<String, Object?> toMap() {
+    return {...super.toMap(), 'name': name};
+  }
+}
+
+typedef VariableRender = String Function(String key, Object value);
+
+String _renderErrorMessage(
+  String message,
+  Map<String, Object?> context, {
+  VariableRender? onVariableRender,
+}) {
+  return message.replaceAllMapped(RegExp(r'{{\s*(\w+)\s*}}'), (match) {
+    final key = match.group(1);
+    final value = context[key] ?? '';
+    if (onVariableRender != null) {
+      return onVariableRender(key!, value);
+    }
+
+    return value.toString();
+  });
 }

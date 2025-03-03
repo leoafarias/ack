@@ -1,24 +1,24 @@
 part of '../schema.dart';
 
-List<ObjectSchemaError> _validateRequiredProperties(
+List<ConstraintError> _validateRequiredProperties(
   MapValue value,
   Iterable<String> requiredKeys,
 ) {
   return requiredKeys
       .toSet()
       .difference(value.keys.toSet())
-      .map(ObjectSchemaError.requiredProperty)
+      .map(_requiredPropertyError)
       .toList();
 }
 
-List<ObjectSchemaError> _validateUnallowedProperties(
+List<ConstraintError> _validateUnallowedProperties(
   MapValue value,
   Iterable<String> allowedKeys,
 ) {
   return value.keys
       .toSet()
       .difference(allowedKeys.toSet())
-      .map(ObjectSchemaError.unallowedProperty)
+      .map(_unallowedPropertyError)
       .toList();
 }
 
@@ -54,12 +54,16 @@ extension ObjectSchemaValidatorsExt on ObjectSchema {
 ///
 /// Equivalent of calling `map.length >= min`
 /// {@endtemplate}
-class MinPropertiesObjectValidator
-    extends OpenApiConstraintValidator<MapValue> {
+class MinPropertiesObjectValidator extends ConstraintValidator<MapValue>
+    with OpenAPiSpecOutput<MapValue> {
   /// The minimum number of properties required
   final int min;
 
-  const MinPropertiesObjectValidator({required this.min});
+  const MinPropertiesObjectValidator({required this.min})
+      : super(
+          name: 'object_min_properties',
+          description: 'Object must have at least $min properties',
+        );
 
   @override
   bool isValid(MapValue value) => value.length >= min;
@@ -67,19 +71,13 @@ class MinPropertiesObjectValidator
   @override
   ConstraintError onError(MapValue value) {
     return buildError(
-      message: 'Object must have at least $min properties',
-      context: {'min': min, 'value': value},
+      template: 'Object must have at least $min properties',
+      context: {'value': value, 'min': min},
     );
   }
 
   @override
   Map<String, Object?> toSchema() => {'minProperties': min};
-
-  @override
-  String get name => 'object_min_properties';
-
-  @override
-  String get description => 'Object must have at least $min properties';
 }
 
 /// {@template object_max_properties_validator}
@@ -87,12 +85,16 @@ class MinPropertiesObjectValidator
 ///
 /// Equivalent of calling `map.length <= max`
 /// {@endtemplate}
-class MaxPropertiesObjectValidator
-    extends OpenApiConstraintValidator<MapValue> {
+class MaxPropertiesObjectValidator extends ConstraintValidator<MapValue>
+    with OpenAPiSpecOutput<MapValue> {
   /// The maximum number of properties allowed
   final int max;
 
-  const MaxPropertiesObjectValidator({required this.max});
+  const MaxPropertiesObjectValidator({required this.max})
+      : super(
+          name: 'object_max_properties',
+          description: 'Object must have at most $max properties',
+        );
 
   @override
   bool isValid(MapValue value) => value.length <= max;
@@ -100,41 +102,27 @@ class MaxPropertiesObjectValidator
   @override
   ConstraintError onError(MapValue value) {
     return buildError(
-      message: 'Object must have at most $max properties',
-      context: {'max': max, 'value': value},
+      template: 'Object must have at most $max properties',
+      context: {'value': value, 'max': max},
     );
   }
 
   @override
   Map<String, Object?> toSchema() => {'maxProperties': max};
-
-  @override
-  String get name => 'object_max_properties';
-
-  @override
-  String get description => 'Object must have at most $max properties';
 }
 
-final class ObjectSchemaError extends ConstraintError {
-  ObjectSchemaError({
-    required super.message,
-    required super.context,
-    required String name,
-  }) : super(name: 'object_$name');
+ConstraintError _unallowedPropertyError(String property) {
+  return ConstraintError(
+    name: 'property_unallowed',
+    message: 'Unallowed additional property: $property',
+    context: {'property': property},
+  );
+}
 
-  factory ObjectSchemaError.unallowedProperty(String property) {
-    return ObjectSchemaError(
-      message: 'Unallowed additional property: $property',
-      context: {'property': property},
-      name: 'property_unallowed',
-    );
-  }
-
-  factory ObjectSchemaError.requiredProperty(String property) {
-    return ObjectSchemaError(
-      message: 'Required property: $property',
-      context: {'property': property},
-      name: 'property_required',
-    );
-  }
+ConstraintError _requiredPropertyError(String property) {
+  return ConstraintError(
+    name: 'property_required',
+    message: 'Required property: $property',
+    context: {'property': property},
+  );
 }

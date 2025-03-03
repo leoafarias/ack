@@ -207,8 +207,7 @@ String _convertSchemaType(SchemaType type) {
 JSON _getMergedOpenApiConstraints<T extends Object>(
   List<ConstraintValidator<T>> constraints,
 ) {
-  final openApiConstraints =
-      constraints.whereType<OpenApiConstraintValidator<T>>();
+  final openApiConstraints = constraints.whereType<OpenAPiSpecOutput<T>>();
 
   return openApiConstraints.fold<JSON>({}, (previousValue, element) {
     try {

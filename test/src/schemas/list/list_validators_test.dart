@@ -35,7 +35,7 @@ void main() {
         final validator = UniqueItemsListValidator<int>();
         final nonUniqueList = [1, 2, 2, 3];
         final error = validator.onError(nonUniqueList);
-        expect(error.name, equals('list_unique_items'));
+        expect(error.name, equals('unique_items'));
         expect(error.message, contains('List items are not unique'));
         expect(error.context, containsPair('value', nonUniqueList));
         expect(error.context, contains('notUnique'));
@@ -52,7 +52,7 @@ void main() {
 
         final result = schema.validate([1, 2, 2, 3]);
         expect(result.isFail, isTrue);
-        expect(result, hasOneConstraintError('list_unique_items'));
+        expect(result, hasOneConstraintError('unique_items'));
       });
     });
 
@@ -82,7 +82,7 @@ void main() {
         final validator = MinItemsListValidator<int>(3);
         final list = [1, 2];
         final error = validator.onError(list);
-        expect(error.name, equals('list_min_items'));
+        expect(error.name, equals('min_items'));
         expect(error.message,
             contains('less than the minimum required length: 3'));
         expect(error.context, containsPair('value', list));
@@ -95,7 +95,7 @@ void main() {
 
         final result = schema.validate([1, 2]);
         expect(result.isFail, isTrue);
-        expect(result, hasOneConstraintError('list_min_items'));
+        expect(result, hasOneConstraintError('min_items'));
       });
     });
 
@@ -121,7 +121,7 @@ void main() {
         final validator = MaxItemsListValidator<int>(3);
         final list = [1, 2, 3, 4];
         final error = validator.onError(list);
-        expect(error.name, equals('list_max_items'));
+        expect(error.name, equals('max_items'));
         expect(error.message,
             contains('greater than the maximum required length: 3'));
         expect(error.context, containsPair('value', list));
@@ -133,7 +133,7 @@ void main() {
         expect(schema.validate([1, 2, 3]).isOk, isTrue);
 
         final result = schema.validate([1, 2, 3, 4]);
-        expect(result, hasOneConstraintError('list_max_items'));
+        expect(result, hasOneConstraintError('max_items'));
       });
     });
   });

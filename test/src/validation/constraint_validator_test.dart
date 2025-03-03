@@ -8,7 +8,7 @@ void main() {
       final map = validator.toMap();
 
       expect(map, {
-        'name': 'string_not_empty',
+        'name': 'not_empty',
         'description': 'String cannot be empty',
       });
     });
@@ -17,7 +17,7 @@ void main() {
       final validator = NotEmptyStringValidator();
       expect(
         validator.toString(),
-        contains('string_not_empty'),
+        contains('not_empty'),
       );
       expect(
         validator.toString(),

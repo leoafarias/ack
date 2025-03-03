@@ -34,8 +34,12 @@ extension ListSchemaValidatorsExt<T extends Object> on ListSchema<T> {
 /// Equivalent of calling `list.toSet().length == list.length`
 /// {@endtemplate}
 class UniqueItemsListValidator<T extends Object>
-    extends OpenApiConstraintValidator<List<T>> {
-  const UniqueItemsListValidator();
+    extends ConstraintValidator<List<T>> with OpenAPiSpecOutput<List<T>> {
+  const UniqueItemsListValidator()
+      : super(
+          name: 'unique_items',
+          description: 'List items must be unique',
+        );
 
   @override
   bool isValid(List<T> value) => value.duplicates.isEmpty;
@@ -45,16 +49,16 @@ class UniqueItemsListValidator<T extends Object>
     final nonUniqueValues = value.duplicates;
 
     return buildError(
-      message:
-          'List items are not unique ${nonUniqueValues.map((e) => e.toString()).join(', ')}',
-      context: {'value': value, 'notUnique': nonUniqueValues},
+      template:
+          'List should not contain duplicates: These items are repeated: {{ duplicates }}',
+      context: {'value': value, 'duplicates': nonUniqueValues},
     );
   }
 
   @override
   Map<String, Object?> toSchema() => {'uniqueItems': true};
   @override
-  String get name => 'list_unique_items';
+  String get name => 'unique_items';
 
   @override
   String get description => 'List items must be unique';
@@ -66,9 +70,13 @@ class UniqueItemsListValidator<T extends Object>
 /// Equivalent of calling `list.length >= min`
 /// {@endtemplate}
 class MinItemsListValidator<T extends Object>
-    extends OpenApiConstraintValidator<List<T>> {
+    extends ConstraintValidator<List<T>> with OpenAPiSpecOutput<List<T>> {
   final int min;
-  const MinItemsListValidator(this.min);
+  const MinItemsListValidator(this.min)
+      : super(
+          name: 'min_items',
+          description: 'List must have at least $min items',
+        );
 
   @override
   bool isValid(List<T> value) => value.length >= min;
@@ -76,19 +84,14 @@ class MinItemsListValidator<T extends Object>
   @override
   ConstraintError onError(List<T> value) {
     return buildError(
-      message: 'List length is less than the minimum required length: $min',
-      context: {'value': value, 'min': min},
+      template:
+          'List length {{ value_length }} is less than the minimum required length: {{ min }}',
+      context: {'value': value, 'value_length': value.length, 'min': min},
     );
   }
 
   @override
   Map<String, Object?> toSchema() => {'minItems': min};
-
-  @override
-  String get name => 'list_min_items';
-
-  @override
-  String get description => 'List must have at least $min items';
 }
 
 /// {@template max_items_list_validator}
@@ -96,9 +99,14 @@ class MinItemsListValidator<T extends Object>
 ///
 /// Equivalent of calling `list.length <= max`
 /// {@endtemplate}
-class MaxItemsListValidator<T> extends OpenApiConstraintValidator<List<T>> {
+class MaxItemsListValidator<T> extends ConstraintValidator<List<T>>
+    with OpenAPiSpecOutput<List<T>> {
   final int max;
-  const MaxItemsListValidator(this.max);
+  const MaxItemsListValidator(this.max)
+      : super(
+          name: 'max_items',
+          description: 'List must have at most $max items',
+        );
 
   @override
   bool isValid(List<T> value) => value.length <= max;
@@ -106,17 +114,12 @@ class MaxItemsListValidator<T> extends OpenApiConstraintValidator<List<T>> {
   @override
   ConstraintError onError(List<T> value) {
     return buildError(
-      message: 'List length is greater than the maximum required length: $max',
-      context: {'value': value, 'max': max},
+      template:
+          'List length {{ value_length }} is greater than the maximum required length: {{ max }}',
+      context: {'value': value, 'value_length': value.length, 'max': max},
     );
   }
 
   @override
   Map<String, Object?> toSchema() => {'maxItems': max};
-
-  @override
-  String get name => 'list_max_items';
-
-  @override
-  String get description => 'List must have at most $max items';
 }

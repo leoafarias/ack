@@ -142,7 +142,7 @@ void main() {
       expect(
         result,
         hasOneConstraintError(
-          'discriminated_missing_discriminator_key',
+          'missing_discriminator_key',
         ),
       );
     });
@@ -168,7 +168,7 @@ void main() {
       expect(
         result,
         hasOneConstraintError(
-          'discriminated_no_schema_for_discriminator_value',
+          'no_schema_for_discriminator_value',
         ),
       );
     });
@@ -196,7 +196,7 @@ void main() {
       expect(
         result,
         hasOneConstraintError(
-          'discriminated_key_must_be_required_in_schema',
+          'key_must_be_required_in_schema',
         ),
       );
     });
@@ -219,7 +219,7 @@ void main() {
 
       expect(
         (result as Fail).errors,
-        hasOneSchemaError(PathSchemaError.key),
+        hasOneSchemaError(ItemSchemaError.key),
       );
 
       final failResult = result as Fail;

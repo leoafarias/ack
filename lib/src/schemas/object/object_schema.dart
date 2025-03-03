@@ -52,9 +52,9 @@ final class ObjectSchema extends Schema<MapValue>
 
       propResult.onFail(
         (errors) => constraintErrors.addAll(
-          SchemaError.pathSchemas(
+          SchemaError.itemSchemas(
             path: key,
-            message: 'Property $key schema validation failed',
+            message: 'Validation failed for property ($key)',
             errors: errors,
             schema: schemaProp,
           ),

@@ -40,7 +40,7 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
 
       result.onFail((errors) {
         errors.addAll(
-          SchemaError.pathSchemas(
+          SchemaError.itemSchemas(
             path: '[$i]',
             message: 'Item in index [$i] schema validation failed',
             errors: errors,

@@ -13,9 +13,10 @@ void main() {
       final map = error.toMap();
 
       expect(map, {
-        'type': 'constraint_test_constraint',
+        'type': 'constraint',
         'message': 'Test constraint failed',
         'context': {'key': 'value'},
+        'name': 'test_constraint',
       });
     });
 
@@ -32,7 +33,7 @@ void main() {
       );
       expect(
         error.toString(),
-        contains('constraint_test_constraint'),
+        contains('test_constraint'),
       );
     });
   });

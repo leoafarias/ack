@@ -46,11 +46,16 @@ extension DoubleSchemaValidatorExt on DoubleSchema {
 /// - If false (default), values greater than or equal to min are valid
 /// - If true, only values strictly greater than min are valid
 /// {@endtemplate}
-class MinNumValidator<T extends num> extends OpenApiConstraintValidator<T> {
+class MinNumValidator<T extends num> extends ConstraintValidator<T>
+    with OpenAPiSpecOutput<T> {
   final T min;
   final bool exclusive;
   const MinNumValidator(this.min, {bool? exclusive})
-      : exclusive = exclusive ?? false;
+      : exclusive = exclusive ?? false,
+        super(
+          name: 'min_value',
+          description: 'Must be greater than or equal to $min',
+        );
 
   @override
   bool isValid(num value) => exclusive ? value > min : value >= min;
@@ -58,14 +63,10 @@ class MinNumValidator<T extends num> extends OpenApiConstraintValidator<T> {
   @override
   ConstraintError onError(num value) {
     return buildError(
-      message: 'Value $value is less than the minimum required value of $min. '
-          'Please provide a number greater than or equal to $min.',
-      context: {
-        'value': value,
-        'min': min,
-        'difference': min - value,
-        'suggestion': 'Try using a value at least ${min - value} higher',
-      },
+      template: exclusive
+          ? 'Value {{ value }} is not greater than the minimum required value of {{ min }}. Please provide a number greater than {{ min }}.'
+          : 'Value {{ value }} is less than the minimum required value of {{ min }}. Please provide a number greater than or equal to {{ min }}.',
+      context: {'value': value, 'min': min, 'exclusive': exclusive},
     );
   }
 
@@ -74,19 +75,17 @@ class MinNumValidator<T extends num> extends OpenApiConstraintValidator<T> {
         'minimum': min,
         if (exclusive) 'exclusiveMinimum': exclusive,
       };
-
-  @override
-  String get name => 'num_min_value';
-
-  @override
-  String get description => 'Must be greater than or equal to $min';
 }
 
 // Multiple of
-class MultipleOfNumValidator<T extends num>
-    extends OpenApiConstraintValidator<T> {
+class MultipleOfNumValidator<T extends num> extends ConstraintValidator<T>
+    with OpenAPiSpecOutput<T> {
   final T multiple;
-  const MultipleOfNumValidator(this.multiple);
+  const MultipleOfNumValidator(this.multiple)
+      : super(
+          name: 'multiple_of',
+          description: 'Must be a multiple of $multiple',
+        );
 
   @override
   bool isValid(num value) => value % multiple == 0;
@@ -94,7 +93,7 @@ class MultipleOfNumValidator<T extends num>
   @override
   ConstraintError onError(num value) {
     return buildError(
-      message: 'Value $value is not a multiple of $multiple',
+      template: 'Value {{ value }} is not a multiple of {{ multiple }}.',
       context: {
         'value': value,
         'multiple': multiple,
@@ -106,12 +105,6 @@ class MultipleOfNumValidator<T extends num>
 
   @override
   Map<String, Object?> toSchema() => {'multipleOf': multiple};
-
-  @override
-  String get name => 'num_multiple_of';
-
-  @override
-  String get description => 'Must be a multiple of $multiple';
 }
 
 /// {@template max_num_validator}
@@ -122,31 +115,29 @@ class MultipleOfNumValidator<T extends num>
 /// - If true (default), only values strictly less than max are valid
 /// - If false, values less than or equal to max are valid
 /// {@endtemplate}
-class MaxNumValidator<T extends num> extends OpenApiConstraintValidator<T> {
+class MaxNumValidator<T extends num> extends ConstraintValidator<T>
+    with OpenAPiSpecOutput<T> {
   final T max;
   final bool exclusive;
   const MaxNumValidator(this.max, {bool? exclusive})
-      : exclusive = exclusive ?? false;
+      : exclusive = exclusive ?? false,
+        super(
+          name: 'max_value',
+          description: 'Must be less than or equal to $max',
+        );
 
   @override
   bool isValid(num value) => exclusive ? value < max : value <= max;
 
   @override
   ConstraintError onError(num value) {
-    final message = exclusive
-        ? 'Value $value must be strictly less than $max'
-        : 'Value $value exceeds the maximum allowed value of $max';
+    final template = exclusive
+        ? 'Value {{ value }} must be strictly less than {{ max }}.'
+        : 'Value {{ value }} exceeds the maximum allowed value of {{ max }}.';
 
     return buildError(
-      message: message,
-      context: {
-        'value': value,
-        'max': max,
-        'exclusive': exclusive,
-        'excess': value - max,
-        'suggestion':
-            'Try using a value at least ${value - max + (exclusive ? 1 : 0)} lower',
-      },
+      template: template,
+      context: {'value': value, 'max': max, 'exclusive': exclusive},
     );
   }
 
@@ -155,12 +146,6 @@ class MaxNumValidator<T extends num> extends OpenApiConstraintValidator<T> {
         'maximum': max,
         if (exclusive) 'exclusiveMaximum': exclusive,
       };
-
-  @override
-  String get name => 'num_max_value';
-
-  @override
-  String get description => 'Must be less than or equal to $max';
 }
 
 /// {@template range_num_validator}
@@ -172,12 +157,17 @@ class MaxNumValidator<T extends num> extends OpenApiConstraintValidator<T> {
 /// - If true (default), only values strictly between min and max are valid
 /// - If false, values between min and max (inclusive) are valid
 /// {@endtemplate}
-class RangeNumValidator<T extends num> extends OpenApiConstraintValidator<T> {
+class RangeNumValidator<T extends num> extends ConstraintValidator<T>
+    with OpenAPiSpecOutput<T> {
   final T min;
   final T max;
   final bool exclusive;
   const RangeNumValidator(this.min, this.max, {bool? exclusive})
-      : exclusive = exclusive ?? false;
+      : exclusive = exclusive ?? false,
+        super(
+          name: 'range',
+          description: 'Must be between $min and $max (inclusive)',
+        );
 
   @override
   bool isValid(num value) =>
@@ -185,22 +175,12 @@ class RangeNumValidator<T extends num> extends OpenApiConstraintValidator<T> {
 
   @override
   ConstraintError onError(num value) {
-    final message = exclusive
-        ? 'Value $value must be strictly between $min and $max'
-        : 'Value $value exceeds the maximum allowed value of $max';
+    final template =
+        'Value {{ value }} must be between {{ min }} and {{ max }} ${exclusive ? '(exclusive)' : ''}';
 
     return buildError(
-      message: message,
-      context: {
-        'value': value,
-        'min': min,
-        'max': max,
-        'distance_from_min': value < min ? min - value : null,
-        'distance_from_max': value > max ? value - max : null,
-        'suggestion': value < min
-            ? 'Try increasing the value by at least ${min - value}'
-            : 'Try decreasing the value by at least ${value - max}',
-      },
+      template: template,
+      context: {'value': value, 'min': min, 'max': max},
     );
   }
 
@@ -211,10 +191,4 @@ class RangeNumValidator<T extends num> extends OpenApiConstraintValidator<T> {
         if (exclusive) 'exclusiveMinimum': exclusive,
         if (exclusive) 'exclusiveMaximum': exclusive,
       };
-
-  @override
-  String get name => 'num_range';
-
-  @override
-  String get description => 'Must be between $min and $max (inclusive)';
 }

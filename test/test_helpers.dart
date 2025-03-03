@@ -231,21 +231,19 @@ Matcher isSchemaError(String type) => IsSchemaError(type);
 Matcher isConstraintError(String name) => IsConstraintError(name);
 
 Matcher hasOneSchemaError(String type) => _hasSchemaErrors([type], count: 1);
-Matcher hasTwoSchemaErrors(List<String> types) =>
-    _hasSchemaErrors(types, count: 2);
-Matcher hasThreeSchemaErrors(List<String> types) =>
-    _hasSchemaErrors(types, count: 3);
+
+Matcher hasSchemaErrors(List<String> types, {required int count}) =>
+    _hasSchemaErrors(types, count: count);
 
 Matcher hasOneConstraintError(String name) => HasConstraintErrors([name], 1);
-Matcher hasTwoConstraintErrors(List<String> names) =>
-    HasConstraintErrors(names, 2);
-Matcher hasThreeConstraintErrors(List<String> names) =>
-    HasConstraintErrors(names, 3);
+
+Matcher hasConstraintErrors(List<String> names, {required int count}) =>
+    HasConstraintErrors(names, count);
 
 extension FailExt<T extends Object> on Fail<T> {
   List<SchemaError> get schemaErrors =>
       errors.whereType<SchemaError>().toList();
 
-  List<PathSchemaError> get pathSchemaError =>
-      errors.whereType<PathSchemaError>().toList();
+  List<ItemSchemaError> get pathSchemaError =>
+      errors.whereType<ItemSchemaError>().toList();
 }

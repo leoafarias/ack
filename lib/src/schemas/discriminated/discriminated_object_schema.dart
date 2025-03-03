@@ -21,12 +21,7 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
     final discriminatorValue = _getDiscriminatorValue(value);
 
     if (discriminatorValue == null) {
-      return [
-        DiscriminatedObjectSchemaError.missingDiscriminatorKeyInValue(
-          _discriminatorKey,
-          value,
-        ),
-      ];
+      return [_missingDiscriminatorKeyInValue(_discriminatorKey, value)];
     }
     final (errors, discriminatedSchema) = _validateDiscriminatedSchemas(
       schemas: _schemas,
@@ -43,7 +38,7 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
     final schemaErrors = <SchemaError>[];
     result.onFail((errors) {
       schemaErrors.addAll(
-        SchemaError.pathSchemas(
+        SchemaError.itemSchemas(
           path: discriminatorValue,
           message: 'Schema for $discriminatorValue validation failed',
           errors: errors,
@@ -116,8 +111,7 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
   }
 }
 
-(List<DiscriminatedObjectSchemaError>, ObjectSchema?)
-    _validateDiscriminatedSchemas({
+(List<ConstraintError>, ObjectSchema?) _validateDiscriminatedSchemas({
   required Map<String, ObjectSchema> schemas,
   required String discriminatorKey,
   required String discriminatorValue,
@@ -125,16 +119,11 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
   // Check if schema exists for the discriminator value
   if (!schemas.containsKey(discriminatorValue)) {
     return (
-      [
-        DiscriminatedObjectSchemaError.noSchemaForDiscriminatorValue(
-          discriminatorKey,
-          discriminatorValue,
-        ),
-      ],
+      [_noSchemaForDiscriminatorValue(discriminatorKey, discriminatorValue)],
       null,
     );
   }
-  final errors = <DiscriminatedObjectSchemaError>[];
+  final errors = <ConstraintError>[];
   // Validate the schema configuration
   for (final MapEntry(:key, value: schema) in schemas.entries) {
     final keyIsRequired = schema._required.contains(discriminatorKey);
@@ -142,15 +131,8 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
 
     errors.addAll([
       if (!propertyExists)
-        DiscriminatedObjectSchemaError.missingDiscriminatorKeyInSchema(
-          discriminatorKey,
-          key,
-        ),
-      if (!keyIsRequired)
-        DiscriminatedObjectSchemaError.keyMustBeRequiredInSchema(
-          discriminatorKey,
-          schema,
-        ),
+        _missingDiscriminatorKeyInSchema(discriminatorKey, key),
+      if (!keyIsRequired) _keyMustBeRequiredInSchema(discriminatorKey, schema),
     ]);
   }
 
