@@ -30,20 +30,17 @@ void main() {
         final validator = UniqueItemsListValidator<int>();
         expect(validator.isValid([1, 2, 1, 3]), isFalse);
       });
-
       test('UniqueItemsValidator returns correct error details', () {
         final validator = UniqueItemsListValidator<int>();
         final nonUniqueList = [1, 2, 2, 3];
         final error = validator.onError(nonUniqueList);
         expect(error.name, equals('unique_items'));
-        expect(error.message, contains('List items are not unique'));
+        expect(error.message, contains('List should not contain duplicates'));
         expect(error.context, containsPair('value', nonUniqueList));
-        expect(error.context, contains('notUnique'));
-        // Depending on the intended behavior of _notUnique,
-        // we expect the duplicate items to be identified.
-        final duplicates = error.context['notUnique'] as List<int>;
-        expect(duplicates, isNotEmpty,
-            reason: 'Expected non-empty list of duplicate items');
+        expect(error.context, contains('duplicates'));
+        final duplicates = error.context['duplicates'] as List<int>;
+        expect(duplicates, equals([2]),
+            reason: 'Expected list containing only duplicate items');
       });
 
       test('Schema validation works with uniqueItems', () {
