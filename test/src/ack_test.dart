@@ -183,4 +183,23 @@ void main() {
       });
     });
   });
+
+  group('Ack Additional Coverage', () {
+    test('Ack.enumValues covers lines for enum name mapping', () {
+      final schema = Ack.enumValues(_TestColors.values);
+
+      expect(schema.validate('red').isOk, isTrue, reason: 'Valid enum name');
+      expect(schema.validate('blue').isOk, isTrue);
+      expect(schema.validate('orange').isFail, isTrue, reason: 'Invalid enum');
+    });
+
+    test('Ack.enumString additional test to hit final lines', () {
+      final schema = Ack.enumString(['apple', 'banana']);
+
+      expect(schema.validate('banana').isOk, isTrue);
+      expect(schema.validate('pear').isFail, isTrue);
+    });
+  });
 }
+
+enum _TestColors { red, green, blue }

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 
 import '../helpers.dart';
@@ -86,15 +85,16 @@ $stopSequence
 
   Map<String, Object?> parseResponse(String response) {
     // Check if response is json before encoding
-    if (isJsonValue(response)) {
-      try {
-        return _schema.validateJson(jsonDecode(response)).getOrThrow();
-      } catch (_) {
-        log('Failed to parse response as JSON: $response');
-      }
-    }
 
     try {
+      if (isJsonValue(response)) {
+        try {
+          return _schema.validateJson(response).getOrThrow();
+        } catch (_) {
+          log('Failed to parse response as JSON: $response');
+          rethrow;
+        }
+      }
       // Get all the content after <_startDelimeter>
       final jsonString = response.substring(
         response.indexOf(startDelimeter) + startDelimeter.length,
