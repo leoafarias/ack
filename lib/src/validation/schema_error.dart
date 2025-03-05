@@ -1,83 +1,17 @@
 import 'package:ack/src/helpers.dart';
 
-import '../schemas/schema.dart';
+abstract class AckValidationError {
+  final String key;
 
-sealed class SchemaError {
-  final String type;
   final Map<String, Object?> context;
 
   final String _message;
 
-  const SchemaError({
-    required this.type,
-    required String message,
-    this.context = const {},
-  }) : _message = message;
-
-  static InvalidTypeSchemaError invalidType({
-    required Type valueType,
-    required Type expectedType,
-  }) {
-    return InvalidTypeSchemaError(
-      valueType: valueType,
-      expectedType: expectedType,
-    );
-  }
-
-  static InvalidJsonFormatSchemaError invalidJsonFormat(String json) {
-    return InvalidJsonFormatSchemaError(json: json);
-  }
-
-  static NonNullableValueSchemaError nonNullableValue() {
-    return NonNullableValueSchemaError();
-  }
-
-  static UnknownExceptionSchemaError unknownException({
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    return UnknownExceptionSchemaError(error: error, stackTrace: stackTrace);
-  }
-
-  static ItemSchemaError _itemSchema({
-    required String path,
-    required String message,
-    required List<SchemaError> errors,
-    required Schema schema,
-  }) {
-    return ItemSchemaError(
-      path: path,
-      schema: schema,
-      message: message,
-      errors: errors,
-    );
-  }
-
-  static List<SchemaError> itemSchemas({
-    required String path,
-    required String message,
-    required List<SchemaError> errors,
-    required Schema schema,
-  }) {
-    List<SchemaError> schemaErrors = [];
-
-    for (final error in errors) {
-      if (error is ItemSchemaError) {
-        schemaErrors.add(error.withRootPath(path));
-      } else {
-        schemaErrors.add(
-          _itemSchema(
-            path: path,
-            message: message,
-            errors: [error],
-            schema: schema,
-          ),
-        );
-      }
-    }
-
-    return schemaErrors;
-  }
+  const AckValidationError({
+    required this.key,
+    required this.context,
+    String? message,
+  }) : _message = message ?? '';
 
   String get message => _renderErrorMessage(_message, context);
 
@@ -91,7 +25,7 @@ sealed class SchemaError {
 
   Map<String, Object?> toMap() {
     return {
-      'type': type,
+      'key': key,
       'message': message,
       if (context.isNotEmpty) 'context': context,
     };
@@ -100,100 +34,140 @@ sealed class SchemaError {
   String toJson() => prettyJson(toMap());
 
   @override
-  String toString() => 'SchemaError: ${toJson()}';
+  String toString() => '$runtimeType: ${toJson()}';
 }
 
-final class InvalidTypeSchemaError extends SchemaError {
-  static const String key = 'invalid_type';
+sealed class SchemaError extends AckValidationError {
+  const SchemaError({
+    super.context = const {},
+    required super.key,
+    required super.message,
+  });
+}
 
-  final Type valueType;
-  final Type expectedType;
-  InvalidTypeSchemaError({
-    required this.valueType,
-    required this.expectedType,
-  }) : super(
-          type: key,
-          message: 'Invalid type of $valueType, expected $expectedType',
+final class SchemaConstraintsError extends SchemaError {
+  final List<ConstraintError> constraints;
+  SchemaConstraintsError({required this.constraints})
+      : super(
+          key: 'constraints',
+          message: 'Schema Constraints Validation failed',
+        );
+
+  factory SchemaConstraintsError.single(ConstraintError error) {
+    return SchemaConstraintsError.multiple([error]);
+  }
+
+  factory SchemaConstraintsError.multiple(List<ConstraintError> errors) {
+    return SchemaConstraintsError(constraints: errors);
+  }
+
+  @override
+  Map<String, Object?> toMap() {
+    return {
+      ...super.toMap(),
+      'constraints': constraints.map((e) => e.toMap()).toList(),
+    };
+  }
+}
+
+final class UnknownExceptionSchemaError extends SchemaError {
+  final Object? error;
+  final StackTrace? stackTrace;
+  UnknownExceptionSchemaError({this.error, this.stackTrace})
+      : super(
+          key: 'unknown_exception',
+          message: 'Unknown Exception when validating schema {{ error }}',
           context: {
-            'valueType': valueType.toString(),
-            'expectedType': expectedType.toString(),
+            'error': error?.toString(),
+            'stack_trace': stackTrace?.toString(),
           },
         );
 }
 
-/// Invalid json format
-///
-/// This error is thrown when the value is not a valid JSON string.
-final class InvalidJsonFormatSchemaError extends SchemaError {
-  static const String key = 'invalid_json_format';
+final class InvalidTypeConstraintError extends ConstraintError {
+  final Type valueType;
+  final Type expectedType;
+  InvalidTypeConstraintError({
+    required this.valueType,
+    required this.expectedType,
+  }) : super(
+          key: 'invalid_type',
+          message: 'Invalid type of $valueType, expected $expectedType',
+          context: {
+            'value_type': valueType.toString(),
+            'expected_type': expectedType.toString(),
+          },
+        );
+}
+
+final class InvalidJsonFormatContraintError extends SchemaError {
   final String json;
-  InvalidJsonFormatSchemaError({required this.json})
+  InvalidJsonFormatContraintError({required this.json})
       : super(
-          type: key,
+          key: 'invalid_json_format',
           message: 'Invalid JSON format: $json',
           context: {'json': json},
         );
 }
 
-final class NonNullableValueSchemaError extends SchemaError {
-  static const String key = 'non_nullable_value';
-  NonNullableValueSchemaError()
-      : super(type: key, message: 'Non nullable value is null');
-}
-
-final class UnknownExceptionSchemaError extends SchemaError {
-  static const String key = 'unknown_exception';
-  final Object? error;
-  final StackTrace? stackTrace;
-  UnknownExceptionSchemaError({this.error, this.stackTrace})
+final class NonNullableValueConstraintError extends ConstraintError {
+  NonNullableValueConstraintError()
       : super(
-          type: key,
-          message: 'Unknown Exception when validating schema ${error ?? ''}',
-          context: {'error': error, 'stackTrace': stackTrace},
+          key: 'non_nullable_value',
+          message: 'Non nullable value is null',
+          context: {},
         );
 }
 
-final class ItemSchemaError extends SchemaError {
-  static const String key = 'item';
-  final Schema schema;
-  final String path;
-  final List<SchemaError> errors;
-  ItemSchemaError({
-    required this.path,
-    required this.schema,
-    required super.message,
-    required this.errors,
+final class DiscriminatedSchemaError extends SchemaError {
+  final String discriminator;
+  final SchemaError error;
+  DiscriminatedSchemaError({
+    required this.discriminator,
+    required this.error,
   }) : super(
-          type: key,
+          key: 'discriminated_schema',
+          message: 'Discriminated Schema Validation failed',
+          context: {'discriminator': discriminator, 'error': error.toMap()},
+        );
+}
+
+final class ObjectSchemaPropertiesError extends SchemaError {
+  final Map<String, SchemaError> errors;
+  ObjectSchemaPropertiesError({required this.errors})
+      : super(
+          key: 'object_schema',
+          message: 'Object Schema Property Validation failed',
           context: {
-            'errors': errors.map((e) => e.toMap()).toList(),
-            'path': path,
+            'errors': {
+              for (final entry in errors.entries)
+                entry.key: entry.value.toMap(),
+            },
           },
         );
-
-  ItemSchemaError withRootPath(String rootKey) {
-    return ItemSchemaError(
-      path: '$rootKey.$path',
-      schema: schema,
-      message: message,
-      errors: errors,
-    );
-  }
 }
 
-class ConstraintError extends SchemaError {
-  final String name;
+final class ListSchemaItemsError extends SchemaError {
+  final Map<int, SchemaError> errors;
+  ListSchemaItemsError({required this.errors})
+      : super(
+          key: 'list_schema',
+          message: 'List Schema items Validation failed',
+          context: {
+            'errors': {
+              for (final entry in errors.entries)
+                entry.key: entry.value.toMap(),
+            },
+          },
+        );
+}
 
+final class ConstraintError extends AckValidationError {
   const ConstraintError({
-    required this.name,
+    required super.key,
     required super.message,
     required super.context,
-  }) : super(type: 'constraint');
-
-  @override
-  Map<String, Object?> toMap() {
-    return {...super.toMap(), 'name': name};
-  }
+  });
 }
 
 typedef VariableRender = String Function(String key, Object value);

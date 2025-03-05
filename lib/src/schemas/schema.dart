@@ -102,11 +102,15 @@ sealed class Schema<T extends Object> {
   ///
   /// Returns a list of [SchemaError] objects if any constraints are violated,
   /// otherwise returns an empty list.
-  List<SchemaError> _validateAsType(T value) {
-    return _constraints
+  SchemaError? _validateAsType(T value) {
+    final errors = _constraints
         .map((e) => e.validate(value))
-        .whereType<SchemaError>()
+        .whereType<ConstraintError>()
         .toList();
+
+    if (errors.isEmpty) return null;
+
+    return SchemaConstraintsError.multiple(errors);
   }
 
   Schema<T> call({
@@ -158,34 +162,25 @@ sealed class Schema<T extends Object> {
   ///   - Returns [Ok] with the parsed value if validation succeeds, or [Fail]
   ///     with a list of [SchemaError] objects if validation fails.
   @protected
-  SchemaResult<T> checkResult(Object? value) {
+  @visibleForTesting
+  SchemaError? validateSchema(Object? value) {
     if (value == null) {
-      if (_defaultValue != null) {
-        return Ok(_defaultValue);
-      }
-
-      return _nullable ? Ok(null) : Fail([SchemaError.nonNullableValue()]);
+      return _nullable
+          ? null
+          : SchemaConstraintsError.single(NonNullableValueConstraintError());
     }
 
     final typedValue = _tryParse(value);
     if (typedValue == null) {
-      return Fail(
-        [
-          SchemaError.invalidType(
-            valueType: value.runtimeType,
-            expectedType: T,
-          ),
-        ],
+      return SchemaConstraintsError.single(
+        InvalidTypeConstraintError(
+          valueType: value.runtimeType,
+          expectedType: T,
+        ),
       );
     }
 
-    final errors = _validateAsType(typedValue);
-
-    return errors.isEmpty
-        ? Ok(typedValue)
-        : _defaultValue != null
-            ? Ok(_defaultValue)
-            : Fail(errors);
+    return _validateAsType(typedValue);
   }
 
   /// Validates the [value] against this schema and returns a [SchemaResult].
@@ -198,10 +193,17 @@ sealed class Schema<T extends Object> {
   /// Use [validateOrThrow] if you prefer to throw an exception on validation failure.
   SchemaResult<T> validate(Object? value) {
     try {
-      return checkResult(value);
+      final error = validateSchema(value);
+      if (error == null) {
+        return SchemaResult.ok(
+          value == null ? _defaultValue : _tryParse(value),
+        );
+      }
+
+      return SchemaResult.fail(error);
     } catch (e, stackTrace) {
-      return Fail(
-        [SchemaError.unknownException(error: e, stackTrace: stackTrace)],
+      return SchemaResult.fail(
+        UnknownExceptionSchemaError(error: e, stackTrace: stackTrace),
       );
     }
   }
@@ -262,7 +264,7 @@ mixin SchemaFluentMethods<S extends Schema<T>, T extends Object> on Schema<T> {
   /// likely in `ack_base.dart`, to handle schema validation errors. Ensure `AckException`
   /// is properly documented to explain its structure and usage for conveying validation failure details.
   void validateOrThrow(Object value) {
-    return checkResult(value).match(
+    return validate(value).match(
       onOk: (data) => data,
       onFail: (errors) => throw AckException(errors),
     );
@@ -310,8 +312,8 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
   /// Supports parsing [num] to [int], [double], or [String].
   /// Returns the parsed value of type [T] or `null` if parsing is not supported.
   T? _tryParseNum(num value) {
-    if (T == int) return value.toInt() as T?;
-    if (T == double) return value.toDouble() as T?;
+    if (T == int) return int.tryParse(value.toString()) as T?;
+    if (T == double) return double.tryParse(value.toString()) as T?;
     if (T == String) return value.toString() as T?;
 
     return null;

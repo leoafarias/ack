@@ -2,12 +2,12 @@ import '../helpers.dart';
 import 'schema_error.dart';
 
 class AckException implements Exception {
-  final List<SchemaError> errors;
+  final SchemaError error;
 
-  const AckException(this.errors);
+  const AckException(this.error);
 
   Map<String, dynamic> toMap() {
-    return {'errors': errors.map((e) => e.toMap()).toList()};
+    return {'error': error.toMap()};
   }
 
   String toJson() => prettyJson(toMap());

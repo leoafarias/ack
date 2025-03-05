@@ -50,11 +50,15 @@ void main() {
         },
       );
       final result = discriminatedSchema.validate(null);
+
+      expect(result.isFail, isTrue);
+      final error = (result as Fail).error;
+      expect(error, isA<SchemaConstraintsError>());
+
+      final constraintsError = error as SchemaConstraintsError;
       expect(
-        result,
-        hasOneSchemaError(
-          'non_nullable_value',
-        ),
+        constraintsError.constraints.any((e) => e.key == 'non_nullable_value'),
+        isTrue,
       );
     });
 
@@ -93,11 +97,15 @@ void main() {
         },
       );
       final result = discriminatedSchema.validate('not a map');
+
+      expect(result.isFail, isTrue);
+      final error = (result as Fail).error;
+      expect(error, isA<SchemaConstraintsError>());
+
+      final constraintsError = error as SchemaConstraintsError;
       expect(
-        result,
-        hasOneSchemaError(
-          'invalid_type',
-        ),
+        constraintsError.constraints.any((e) => e.key == 'invalid_type'),
+        isTrue,
       );
     });
 
@@ -217,20 +225,28 @@ void main() {
       final result =
           discriminatedSchema.validate({'key': 'a', 'value': 'not an int'});
 
-      expect(
-        (result as Fail).errors,
-        hasOneSchemaError(ItemSchemaError.key),
-      );
+      final discriminatedError =
+          (result as Fail).error as DiscriminatedSchemaError;
 
-      final failResult = result as Fail;
-      final nestedSchemaError = failResult.pathSchemaError.first;
-      expect(nestedSchemaError.path, 'a.value');
+      expect(discriminatedError.discriminator, 'a');
 
+      // The inner error is an ObjectSchemaPropertiesError
+      expect(discriminatedError.error, isA<ObjectSchemaPropertiesError>());
+
+      final propertiesError =
+          discriminatedError.error as ObjectSchemaPropertiesError;
+
+      // Check that the 'value' property has an error
+      expect(propertiesError.errors.containsKey('value'), isTrue);
+
+      // Check that it's an invalid type error
+      final valueError = propertiesError.errors['value']!;
+      expect(valueError, isA<SchemaConstraintsError>());
+
+      final constraintsError = valueError as SchemaConstraintsError;
       expect(
-        nestedSchemaError.errors,
-        hasOneSchemaError(
-          'invalid_type',
-        ),
+        constraintsError.constraints,
+        contains(isA<InvalidTypeConstraintError>()),
       );
     });
   });

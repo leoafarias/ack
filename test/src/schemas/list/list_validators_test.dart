@@ -1,8 +1,6 @@
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
-import '../../../test_helpers.dart';
-
 void main() {
   group('List Validators', () {
     group('UniqueItemsValidator', () {
@@ -34,7 +32,7 @@ void main() {
         final validator = UniqueItemsListValidator<int>();
         final nonUniqueList = [1, 2, 2, 3];
         final error = validator.onError(nonUniqueList);
-        expect(error.name, equals('unique_items'));
+        expect(error.key, equals('unique_items'));
         expect(error.message, contains('List should not contain duplicates'));
         expect(error.context, containsPair('value', nonUniqueList));
         expect(error.context, contains('duplicates'));
@@ -49,7 +47,11 @@ void main() {
 
         final result = schema.validate([1, 2, 2, 3]);
         expect(result.isFail, isTrue);
-        expect(result, hasOneConstraintError('unique_items'));
+
+        final constraintsError =
+            (result as Fail).error as SchemaConstraintsError;
+        expect(constraintsError.constraints.any((e) => e.key == 'unique_items'),
+            isTrue);
       });
     });
 
@@ -79,7 +81,7 @@ void main() {
         final validator = MinItemsListValidator<int>(3);
         final list = [1, 2];
         final error = validator.onError(list);
-        expect(error.name, equals('min_items'));
+        expect(error.key, equals('min_items'));
         expect(error.message,
             contains('less than the minimum required length: 3'));
         expect(error.context, containsPair('value', list));
@@ -92,7 +94,11 @@ void main() {
 
         final result = schema.validate([1, 2]);
         expect(result.isFail, isTrue);
-        expect(result, hasOneConstraintError('min_items'));
+
+        final constraintsError =
+            (result as Fail).error as SchemaConstraintsError;
+        expect(constraintsError.constraints.any((e) => e.key == 'min_items'),
+            isTrue);
       });
     });
 
@@ -118,7 +124,7 @@ void main() {
         final validator = MaxItemsListValidator<int>(3);
         final list = [1, 2, 3, 4];
         final error = validator.onError(list);
-        expect(error.name, equals('max_items'));
+        expect(error.key, equals('max_items'));
         expect(error.message,
             contains('greater than the maximum required length: 3'));
         expect(error.context, containsPair('value', list));
@@ -130,7 +136,12 @@ void main() {
         expect(schema.validate([1, 2, 3]).isOk, isTrue);
 
         final result = schema.validate([1, 2, 3, 4]);
-        expect(result, hasOneConstraintError('max_items'));
+        expect(result.isFail, isTrue);
+
+        final constraintsError =
+            (result as Fail).error as SchemaConstraintsError;
+        expect(constraintsError.constraints.any((e) => e.key == 'max_items'),
+            isTrue);
       });
     });
   });

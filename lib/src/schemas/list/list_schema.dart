@@ -30,27 +30,24 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
   }
 
   @override
-  List<SchemaError> _validateAsType(List<V> value) {
-    final errors = [
-      ..._constraints.map((e) => e.validate(value)).whereType<SchemaError>(),
-    ];
+  SchemaError? _validateAsType(List<V> value) {
+    final error = super._validateAsType(value);
+
+    if (error != null) return error;
+
+    final constraintErrors = <int, SchemaError>{};
 
     for (var i = 0; i < value.length; i++) {
-      final result = _itemSchema.checkResult(value[i]);
+      final indexError = _itemSchema.validateSchema(value[i]);
 
-      result.onFail((errors) {
-        errors.addAll(
-          SchemaError.itemSchemas(
-            path: '[$i]',
-            message: 'Item in index [$i] schema validation failed',
-            errors: errors,
-            schema: _itemSchema,
-          ),
-        );
-      });
+      if (indexError == null) continue;
+
+      constraintErrors[i] = indexError;
     }
 
-    return errors;
+    if (constraintErrors.isEmpty) return null;
+
+    return ListSchemaItemsError(errors: constraintErrors);
   }
 
   Schema<V> getItemSchema() => _itemSchema;

@@ -1,8 +1,6 @@
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
-import '../../../test_helpers.dart';
-
 void main() {
   group('ListSchema', () {
     test('copyWith changes nullable property', () {
@@ -29,7 +27,16 @@ void main() {
         final schema = ListSchema<int>(IntegerSchema());
         final result = schema.validate(null);
         expect(result.isFail, isTrue);
-        expect(result, hasOneSchemaError('non_nullable_value'));
+
+        final error = (result as Fail).error;
+        expect(error, isA<SchemaConstraintsError>());
+
+        final constraintsError = error as SchemaConstraintsError;
+        expect(
+          constraintsError.constraints
+              .any((e) => e.key == 'non_nullable_value'),
+          isTrue,
+        );
       });
 
       test('Nullable schema passes on null', () {
@@ -42,7 +49,16 @@ void main() {
         final schema = ListSchema(IntegerSchema());
         final result = schema.validate('not a list');
 
-        expect(result, hasOneSchemaError('invalid_type'));
+        expect(result.isFail, isTrue);
+
+        final error = (result as Fail).error;
+        expect(error, isA<SchemaConstraintsError>());
+
+        final constraintsError = error as SchemaConstraintsError;
+        expect(
+          constraintsError.constraints.any((e) => e.key == 'invalid_type'),
+          isTrue,
+        );
       });
 
       test('Valid list passes with no constraints', () {
@@ -67,7 +83,17 @@ void main() {
         final schema = ListSchema(IntegerSchema()).uniqueItems();
         expect(schema.validate([1, 2, 3]).isOk, isTrue);
 
-        expect(schema.validate([1, 2, 2, 3]).isFail, isTrue);
+        final result = schema.validate([1, 2, 2, 3]);
+        expect(result.isFail, isTrue);
+
+        final error = (result as Fail).error;
+        expect(error, isA<SchemaConstraintsError>());
+
+        final constraintsError = error as SchemaConstraintsError;
+        expect(
+          constraintsError.constraints.any((e) => e.key == 'unique_items'),
+          isTrue,
+        );
       });
     });
 
@@ -89,7 +115,15 @@ void main() {
 
         final result = schema.validate([1, 2]);
         expect(result.isFail, isTrue);
-        expect(result, hasOneConstraintError('min_items'));
+
+        final error = (result as Fail).error;
+        expect(error, isA<SchemaConstraintsError>());
+
+        final constraintsError = error as SchemaConstraintsError;
+        expect(
+          constraintsError.constraints.any((e) => e.key == 'min_items'),
+          isTrue,
+        );
       });
     });
 
@@ -110,7 +144,16 @@ void main() {
         expect(schema.validate([1, 2, 3]).isOk, isTrue);
 
         final result = schema.validate([1, 2, 3, 4]);
-        expect(result, hasOneConstraintError('max_items'));
+        expect(result.isFail, isTrue);
+
+        final error = (result as Fail).error;
+        expect(error, isA<SchemaConstraintsError>());
+
+        final constraintsError = error as SchemaConstraintsError;
+        expect(
+          constraintsError.constraints.any((e) => e.key == 'max_items'),
+          isTrue,
+        );
       });
     });
   });

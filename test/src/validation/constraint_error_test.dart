@@ -5,7 +5,7 @@ void main() {
   group('ConstraintError', () {
     test('toMap() returns correct structure', () {
       final error = ConstraintError(
-        name: 'test_constraint',
+        key: 'test_constraint',
         message: 'Test constraint failed',
         context: {'key': 'value'},
       );
@@ -13,26 +13,27 @@ void main() {
       final map = error.toMap();
 
       expect(map, {
-        'type': 'constraint',
         'message': 'Test constraint failed',
         'context': {'key': 'value'},
-        'name': 'test_constraint',
+        'key': 'test_constraint',
       });
     });
 
     test('toString() returns formatted string', () {
       final error = ConstraintError(
-        name: 'test_constraint',
+        key: 'test_constraint',
         message: 'Test constraint failed',
         context: {},
       );
 
+      final errorString = error.toString();
+
       expect(
-        error.toString(),
-        contains('SchemaError:'),
+        errorString,
+        contains('ConstraintError:'),
       );
       expect(
-        error.toString(),
+        errorString,
         contains('test_constraint'),
       );
     });

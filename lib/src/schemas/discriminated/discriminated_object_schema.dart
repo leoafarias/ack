@@ -17,11 +17,13 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
         super(type: SchemaType.discriminatedObject);
 
   @override
-  List<SchemaError> _validateAsType(MapValue value) {
+  SchemaError? _validateAsType(MapValue value) {
     final discriminatorValue = _getDiscriminatorValue(value);
 
     if (discriminatorValue == null) {
-      return [_missingDiscriminatorKeyInValue(_discriminatorKey, value)];
+      return SchemaConstraintsError.single(
+        _missingDiscriminatorKeyInValue(_discriminatorKey, value),
+      );
     }
     final (errors, discriminatedSchema) = _validateDiscriminatedSchemas(
       schemas: _schemas,
@@ -30,24 +32,17 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
     );
 
     if (discriminatedSchema == null) {
-      return errors;
+      return SchemaConstraintsError.multiple(errors);
     }
 
-    final result = discriminatedSchema.checkResult(value);
+    final error = discriminatedSchema.validateSchema(value);
 
-    final schemaErrors = <SchemaError>[];
-    result.onFail((errors) {
-      schemaErrors.addAll(
-        SchemaError.itemSchemas(
-          path: discriminatorValue,
-          message: 'Schema for $discriminatorValue validation failed',
-          errors: errors,
-          schema: this,
-        ),
-      );
-    });
+    if (error == null) return null;
 
-    return schemaErrors;
+    return DiscriminatedSchemaError(
+      discriminator: discriminatorValue,
+      error: error,
+    );
   }
 
   /// Returns the discriminator value for the discriminated object schema.

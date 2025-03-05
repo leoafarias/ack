@@ -1,27 +1,5 @@
 part of '../schema.dart';
 
-List<ConstraintError> _validateRequiredProperties(
-  MapValue value,
-  Iterable<String> requiredKeys,
-) {
-  return requiredKeys
-      .toSet()
-      .difference(value.keys.toSet())
-      .map(_requiredPropertyError)
-      .toList();
-}
-
-List<ConstraintError> _validateUnallowedProperties(
-  MapValue value,
-  Iterable<String> allowedKeys,
-) {
-  return value.keys
-      .toSet()
-      .difference(allowedKeys.toSet())
-      .map(_unallowedPropertyError)
-      .toList();
-}
-
 /// Provides validation methods for [ObjectSchema].
 extension ObjectSchemaValidatorsExt on ObjectSchema {
   /// {@macro object_min_properties_validator}
@@ -111,18 +89,48 @@ class MaxPropertiesObjectValidator extends ConstraintValidator<MapValue>
   Map<String, Object?> toSchema() => {'maxProperties': max};
 }
 
-ConstraintError _unallowedPropertyError(String property) {
-  return ConstraintError(
-    name: 'property_unallowed',
-    message: 'Unallowed additional property: $property',
-    context: {'property': property},
-  );
+class UnallowedPropertyConstraintError extends ConstraintValidator<MapValue> {
+  final String key;
+
+  UnallowedPropertyConstraintError(this.key)
+      : super(
+          name: 'unallowed_property',
+          description: 'Unallowed additional property: $key',
+        );
+
+  @override
+  bool isValid(MapValue value) => !value.containsKey(key);
+
+  @override
+  ConstraintError onError(MapValue value) {
+    final propertyValue = value[key];
+
+    return buildError(
+      template:
+          'Unallowed additional property: {{ key }} with value {{ value }}',
+      context: {'key': key, 'value': propertyValue},
+    );
+  }
 }
 
-ConstraintError _requiredPropertyError(String property) {
-  return ConstraintError(
-    name: 'property_required',
-    message: 'Required property: $property',
-    context: {'property': property},
-  );
+class PropertyRequiredConstraintError extends ConstraintValidator<MapValue> {
+  final String key;
+  final List<String> requiredKeys;
+
+  PropertyRequiredConstraintError(this.key, this.requiredKeys)
+      : super(
+          name: 'property_is_required',
+          description: 'Property is required in object',
+        );
+
+  @override
+  bool isValid(MapValue value) => value.containsKey(key);
+
+  @override
+  ConstraintError onError(MapValue value) {
+    return buildError(
+      template: 'Property ({ key }) is required.',
+      context: {'key': key, 'required_keys': requiredKeys},
+    );
+  }
 }

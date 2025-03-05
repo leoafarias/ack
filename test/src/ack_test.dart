@@ -165,7 +165,7 @@ void main() {
 
       test('validates int type', () {
         expect(Ack.int.validate(42).isOk, isTrue);
-        expect(Ack.int.validate(42.5).isOk, isTrue);
+        expect(Ack.int.validate(42.5).isOk, isFalse);
 
         final strict = Ack.int.strict();
         expect(strict.validate(42).isOk, isTrue);

@@ -1,8 +1,6 @@
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
-import '../../../test_helpers.dart';
-
 void main() {
   group('ObjectSchema', () {
     test('copyWith changes additionalProperties and required', () {
@@ -24,7 +22,14 @@ void main() {
       });
       final result = schema.validate(null);
       expect(result.isFail, isTrue);
-      expect(result, hasOneSchemaError('non_nullable_value'));
+
+      final schemaError = (result as Fail).error;
+      expect(schemaError, isA<SchemaConstraintsError>());
+      final constraintsError = schemaError as SchemaConstraintsError;
+      expect(
+        constraintsError.constraints.any((e) => e.key == 'non_nullable_value'),
+        isTrue,
+      );
     });
 
     test('Nullable schema passes on null', () {
@@ -41,7 +46,14 @@ void main() {
       });
       final result = schema.validate('not a map');
       expect(result.isFail, isTrue);
-      expect(result, hasOneSchemaError('invalid_type'));
+
+      final schemaError = (result as Fail).error;
+      expect(schemaError, isA<SchemaConstraintsError>());
+      final constraintsError = schemaError as SchemaConstraintsError;
+      expect(
+        constraintsError.constraints.any((e) => e.key == 'invalid_type'),
+        isTrue,
+      );
     });
 
     test('Valid object passes with correct properties', () {
@@ -176,6 +188,14 @@ void main() {
 
       final invalidResult = mergedSchema.validate(invalidObject);
       expect(invalidResult.isFail, isTrue);
+
+      final objectError =
+          (invalidResult as Fail).error as ObjectSchemaPropertiesError;
+      expect(objectError.errors.containsKey('user'), isTrue);
+
+      final userError =
+          objectError.errors['user'] as ObjectSchemaPropertiesError;
+      expect(userError.errors.containsKey('name'), isTrue);
     });
   });
   group('Constructor validation', () {

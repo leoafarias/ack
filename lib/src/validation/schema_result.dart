@@ -10,13 +10,13 @@ class SchemaResult<T extends Object> {
   const SchemaResult();
 
   /// Returns a successful result that wraps the given [value].
-  static SchemaResult<T> ok<T extends Object>(T value) {
+  static SchemaResult<T> ok<T extends Object>(T? value) {
     return Ok(value);
   }
 
   /// Returns a failure result that wraps the specified list of [errors].
-  static SchemaResult<T> fail<T extends Object>(List<SchemaError> errors) {
-    return Fail(errors);
+  static SchemaResult<T> fail<T extends Object>(SchemaError error) {
+    return Fail(error);
   }
 
   /// Indicates whether this result is successful.
@@ -33,8 +33,10 @@ class SchemaResult<T extends Object> {
   ///
   /// If this result is successful, it returns an empty list.
   /// If this result is a failure, it returns the list of errors.
-  List<SchemaError> getErrors() =>
-      match(onOk: (_) => [], onFail: (errors) => errors);
+  SchemaError getErrors() => match(
+        onOk: (_) => throw StateError('Cannot get errors from Ok'),
+        onFail: (error) => error,
+      );
 
   /// Returns the contained value if this result is successful; otherwise, returns `null`.
   T? getOrNull() {
@@ -59,7 +61,7 @@ class SchemaResult<T extends Object> {
   T getOrThrow() {
     return match(
       onOk: (value) => value.getOrThrow(),
-      onFail: (errors) => throw AckException(errors),
+      onFail: (error) => throw AckException(error),
     );
   }
 
@@ -71,19 +73,19 @@ class SchemaResult<T extends Object> {
   /// Returns the result of the invoked callback.
   R match<R>({
     required R Function(Ok<T> value) onOk,
-    required R Function(List<SchemaError> errors) onFail,
+    required R Function(SchemaError error) onFail,
   }) {
     final self = this;
     if (self is Ok<T>) return onOk(self);
 
-    return onFail((self as Fail<T>).errors);
+    return onFail((self as Fail<T>).error);
   }
 
   /// Invokes [onFail] if this result represents a failure.
   ///
   /// If this instance is a [Fail], it calls [onFail] with its list of errors.
   /// Otherwise, it does nothing.
-  void onFail(void Function(List<SchemaError> errors) onFail) {
+  void onFail(void Function(SchemaError error) onFail) {
     match(onOk: (_) {}, onFail: onFail);
   }
 
@@ -130,8 +132,8 @@ final class Ok<T extends Object> extends SchemaResult<T> {
 class Fail<T extends Object> extends SchemaResult<T> {
   /// The list of errors associated with this failure.
 
-  final List<SchemaError> errors;
+  final SchemaError error;
 
-  /// Creates a failure result with the specified [errors].
-  const Fail(this.errors);
+  /// Creates a failure result with the specified [error].
+  const Fail(this.error);
 }

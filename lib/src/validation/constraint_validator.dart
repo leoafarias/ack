@@ -26,7 +26,7 @@ abstract class ConstraintValidator<T extends Object> {
     required String template,
     required Map<String, Object?> context,
   }) {
-    return ConstraintError(name: name, message: template, context: context);
+    return ConstraintError(key: name, message: template, context: context);
   }
 
   @override

@@ -36,33 +36,46 @@ final class ObjectSchema extends Schema<MapValue>
   }
 
   @override
-  List<SchemaError> _validateAsType(MapValue value) {
-    final constraintErrors = super._validateAsType(value);
+  SchemaError? _validateAsType(MapValue value) {
+    final error = super._validateAsType(value);
 
-    constraintErrors.addAll([
-      ..._validateRequiredProperties(value, _required),
-      if (!_additionalProperties)
-        ..._validateUnallowedProperties(value, _properties.keys),
-    ]);
+    if (error != null) return error;
+
+    final constraintErrors = <String, SchemaError>{};
 
     // Validate properties
     for (final key in _properties.keys) {
-      final schemaProp = _properties[key]!;
-      final propResult = schemaProp.checkResult(value[key]);
+      final requiredError =
+          PropertyRequiredConstraintError(key, _required).validate(value);
+      if (requiredError != null) {
+        constraintErrors[key] = SchemaConstraintsError.single(requiredError);
+        continue;
+      }
 
-      propResult.onFail(
-        (errors) => constraintErrors.addAll(
-          SchemaError.itemSchemas(
-            path: key,
-            message: 'Validation failed for property ($key)',
-            errors: errors,
-            schema: schemaProp,
-          ),
-        ),
-      );
+      final schemaProp = _properties[key]!;
+
+      final propError = schemaProp.validateSchema(value[key]);
+
+      if (propError == null) continue;
+
+      constraintErrors[key] = propError;
     }
 
-    return constraintErrors;
+    if (!_additionalProperties) {
+      final differentKeys =
+          value.keys.toSet().difference(_properties.keys.toSet());
+      for (final key in differentKeys) {
+        final unallowedError =
+            UnallowedPropertyConstraintError(key).validate(value);
+        if (unallowedError != null) {
+          constraintErrors[key] = SchemaConstraintsError.single(unallowedError);
+        }
+      }
+    }
+
+    if (constraintErrors.isEmpty) return null;
+
+    return ObjectSchemaPropertiesError(errors: constraintErrors);
   }
 
   /// Validate the [value] as a JSON string
@@ -75,7 +88,7 @@ final class ObjectSchema extends Schema<MapValue>
     try {
       return validate(jsonDecode(value) as Map<String, Object?>);
     } catch (e) {
-      return Fail([SchemaError.invalidJsonFormat(value)]);
+      return SchemaResult.fail(InvalidJsonFormatContraintError(json: value));
     }
   }
 

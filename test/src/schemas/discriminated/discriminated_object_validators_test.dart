@@ -102,18 +102,35 @@ void main() {
           discriminatedSchema.validate({'key': 'a', 'value': 'not an int'});
 
       expect(
-        (result as Fail).errors,
-        hasOneSchemaError(ItemSchemaError.key),
+        (result as Fail).error,
+        isA<DiscriminatedSchemaError>(),
       );
 
-      final nestedSchemaError = (result as Fail).pathSchemaError.first;
-      expect(nestedSchemaError.path, 'a.value');
+      final resultError = (result as Fail).error;
 
+      // Since error structure changed from a flat list to a hierarchical structure
+      expect(resultError, isA<DiscriminatedSchemaError>());
+
+      final discriminatedError = resultError as DiscriminatedSchemaError;
+      expect(discriminatedError.discriminator, 'a');
+
+      // The inner error is an ObjectSchemaPropertiesError
+      expect(discriminatedError.error, isA<ObjectSchemaPropertiesError>());
+
+      final propertiesError =
+          discriminatedError.error as ObjectSchemaPropertiesError;
+
+      // Check that the 'value' property has an error
+      expect(propertiesError.errors.containsKey('value'), isTrue);
+
+      // Check that it's an invalid type error
+      final valueError = propertiesError.errors['value']!;
+      expect(valueError, isA<SchemaConstraintsError>());
+
+      final constraintsError = valueError as SchemaConstraintsError;
       expect(
-        nestedSchemaError.errors,
-        hasOneSchemaError(
-          'invalid_type',
-        ),
+        constraintsError.constraints,
+        contains(isA<InvalidTypeConstraintError>()),
       );
     });
   });

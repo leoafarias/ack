@@ -2,19 +2,19 @@ import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
 class IsSchemaError extends Matcher {
-  final String type;
+  final String key;
 
-  IsSchemaError(this.type);
+  IsSchemaError(this.key);
 
   @override
   bool matches(item, Map matchState) {
-    return item is SchemaError && item.type == type;
+    return item is SchemaError && item.key == key;
   }
 
   @override
   Description describe(Description description) {
     return description.add(
-      'a SchemaError containing error type "$type"',
+      'a SchemaError containing error key "$key"',
     );
   }
 
@@ -30,25 +30,25 @@ class IsSchemaError extends Matcher {
     }
 
     return mismatchDescription.add(
-      'had error type "$item" instead of "$type"',
+      'had error key "$item" instead of "$key"',
     );
   }
 }
 
 class IsConstraintError extends Matcher {
-  final String name;
+  final String key;
 
-  IsConstraintError(this.name);
+  IsConstraintError(this.key);
 
   @override
   bool matches(item, Map matchState) {
-    return item is ConstraintError && item.name == name;
+    return item is ConstraintError && item.key == key;
   }
 
   @override
   Description describe(Description description) {
     return description.add(
-      'a ConstraintError containing error name "$name"',
+      'a ConstraintError containing error key "$key"',
     );
   }
 
@@ -63,7 +63,7 @@ class IsConstraintError extends Matcher {
       return mismatchDescription.add('was not a ConstraintError');
     }
     return mismatchDescription.add(
-      'Constrained name is "$item" instead of "$name"',
+      'Constrained key is "$item" instead of "$key"',
     );
   }
 }
@@ -79,25 +79,19 @@ class HasSchemaErrors extends Matcher {
   @override
   bool matches(item, Map matchState) {
     final isFail = item is Fail;
-    final isErrors = item is List<SchemaError>;
+    final isErrors = item is SchemaError;
     if (!isFail && !isErrors) {
-      matchState['reason'] = 'was not a Fail result or a List<SchemaError>';
+      matchState['reason'] = 'was not a Fail result or a SchemaError';
       return false;
     }
 
-    List<SchemaError> errors = [];
+    final schemaError = item is Fail ? item.error : item as SchemaError;
 
-    if (item is Fail) {
-      errors = item.errors;
-    } else if (item is List<SchemaError>) {
-      errors = item;
-    } else {
-      throw ArgumentError('Invalid argument type: ${item.runtimeType}');
-    }
+    final errors = getErrors(schemaError, []);
 
     if (errors.length != expectedCount) {
       matchState['reason'] =
-          'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.type).toList()}';
+          'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.key).toList()}';
       return false;
     }
 
@@ -107,9 +101,9 @@ class HasSchemaErrors extends Matcher {
     }
 
     for (final error in errors) {
-      if (!types.contains(error.type)) {
+      if (!types.contains(error.key)) {
         matchState['reason'] =
-            'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.type).toList()}';
+            'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.key).toList()}';
         return false;
       }
     }
@@ -135,6 +129,21 @@ class HasSchemaErrors extends Matcher {
   }
 }
 
+List<SchemaError> getErrors(
+    SchemaError error, List<SchemaError> aggregatedErrors) {
+  final extractedErrors = switch (error) {
+    SchemaConstraintsError constraintsError => [constraintsError],
+    ObjectSchemaPropertiesError propertiesError =>
+      propertiesError.errors.values.toList(),
+    ListSchemaItemsError itemsError => itemsError.errors.values.toList(),
+    DiscriminatedSchemaError discriminatedError => [discriminatedError.error],
+    UnknownExceptionSchemaError() => [error],
+    InvalidJsonFormatContraintError() => [error],
+  };
+
+  return [...aggregatedErrors, ...extractedErrors];
+}
+
 class HasConstraintErrors extends Matcher {
   final List<String> names;
   final int expectedCount;
@@ -148,18 +157,25 @@ class HasConstraintErrors extends Matcher {
       return false;
     }
 
-    final errors = item.errors.whereType<ConstraintError>();
+    final error = item.error;
+
+    if (error is! SchemaConstraintsError) {
+      matchState['reason'] = 'was not a SchemaConstraintsError';
+      return false;
+    }
+
+    final errors = error.constraints;
 
     if (errors.length != expectedCount) {
       matchState['reason'] =
-          'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.name).toList()}';
+          'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.key).toList()}';
       return false;
     }
 
     for (final error in errors) {
-      if (!names.contains(error.name)) {
+      if (!names.contains(error.key)) {
         matchState['reason'] =
-            'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.name).toList()}';
+            'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.key).toList()}';
         return false;
       }
     }
@@ -241,9 +257,13 @@ Matcher hasConstraintErrors(List<String> names, {required int count}) =>
     HasConstraintErrors(names, count);
 
 extension FailExt<T extends Object> on Fail<T> {
-  List<SchemaError> get schemaErrors =>
-      errors.whereType<SchemaError>().toList();
-
-  List<ItemSchemaError> get pathSchemaError =>
-      errors.whereType<ItemSchemaError>().toList();
+  List<ConstraintError> get constraintErrors {
+    if (error is! SchemaConstraintsError) {
+      throw ArgumentError('error is not a SchemaError');
+    }
+    return (error as SchemaConstraintsError)
+        .constraints
+        .whereType<ConstraintError>()
+        .toList();
+  }
 }
