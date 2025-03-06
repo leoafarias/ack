@@ -79,7 +79,6 @@ class Template {
       return _renderMapLoop(value, blockContent);
     }
 
-    // Not a list or map => nothing to iterate, or maybe warn
     return '';
   }
 
