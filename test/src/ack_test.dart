@@ -76,30 +76,36 @@ void main() {
           },
         );
 
+        final userValidation = schema.validate({
+          'key': 'user',
+          'name': 'John',
+        });
+
+        final adminValidation = schema.validate({
+          'key': 'admin',
+          'name': 'Admin',
+          'level': 1,
+        });
+
+        final unknownValidation = schema.validate({
+          'key': 'unknown',
+          'name': 'Test',
+        });
+
         expect(
-          schema.validate({
-            'key': 'user',
-            'name': 'John',
-          }).isOk,
+          userValidation.isOk,
           isTrue,
           reason: 'Should validate a valid user object',
         );
 
         expect(
-          schema.validate({
-            'key': 'admin',
-            'name': 'Admin',
-            'level': 1,
-          }).isOk,
+          adminValidation.isOk,
           isTrue,
           reason: 'Should validate a valid admin object',
         );
 
         expect(
-          schema.validate({
-            'key': 'unknown',
-            'name': 'Test',
-          }).isFail,
+          unknownValidation.isFail,
           isTrue,
           reason: 'Should fail for unknown discriminator value',
         );

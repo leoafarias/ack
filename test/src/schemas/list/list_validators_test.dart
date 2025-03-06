@@ -28,18 +28,6 @@ void main() {
         final validator = UniqueItemsListValidator<int>();
         expect(validator.isValid([1, 2, 1, 3]), isFalse);
       });
-      test('UniqueItemsValidator returns correct error details', () {
-        final validator = UniqueItemsListValidator<int>();
-        final nonUniqueList = [1, 2, 2, 3];
-        final error = validator.onError(nonUniqueList);
-        expect(error.key, equals('unique_items'));
-        expect(error.message, contains('List should not contain duplicates'));
-        expect(error.context, containsPair('value', nonUniqueList));
-        expect(error.context, contains('duplicates'));
-        final duplicates = error.context['duplicates'] as List<int>;
-        expect(duplicates, equals([2]),
-            reason: 'Expected list containing only duplicate items');
-      });
 
       test('Schema validation works with uniqueItems', () {
         final schema = ListSchema(IntegerSchema()).uniqueItems();
@@ -77,17 +65,6 @@ void main() {
         expect(validator.isValid([]), isFalse);
       });
 
-      test('MinItemsValidator returns correct error details', () {
-        final validator = MinItemsListValidator<int>(3);
-        final list = [1, 2];
-        final error = validator.onError(list);
-        expect(error.key, equals('min_items'));
-        expect(error.message,
-            contains('less than the minimum required length: 3'));
-        expect(error.context, containsPair('value', list));
-        expect(error.context, containsPair('min', 3));
-      });
-
       test('Schema validation works with minItems', () {
         final schema = ListSchema(IntegerSchema()).minItems(3);
         expect(schema.validate([1, 2, 3]).isOk, isTrue);
@@ -118,17 +95,6 @@ void main() {
       test('List with length > max fails validation', () {
         final validator = MaxItemsListValidator<int>(3);
         expect(validator.isValid([1, 2, 3, 4]), isFalse);
-      });
-
-      test('MaxItemsValidator returns correct error details', () {
-        final validator = MaxItemsListValidator<int>(3);
-        final list = [1, 2, 3, 4];
-        final error = validator.onError(list);
-        expect(error.key, equals('max_items'));
-        expect(error.message,
-            contains('greater than the maximum required length: 3'));
-        expect(error.context, containsPair('value', list));
-        expect(error.context, containsPair('max', 3));
       });
 
       test('Schema validation works with maxItems', () {

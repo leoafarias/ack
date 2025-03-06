@@ -16,8 +16,10 @@ void main() {
           'key': 'invalid_type',
           'message': 'Invalid type of String, expected int',
           'context': {
-            'value_type': 'String',
-            'expected_type': 'int',
+            'extra': {
+              'value_type': 'String',
+              'expected_type': 'int',
+            },
           },
         });
       });
@@ -60,46 +62,52 @@ void main() {
       });
     });
 
-    group('ObjectSchemaPropertiesError', () {
+    group('ObjectSchemaError', () {
       test('toMap() includes nested errors', () {
         final nestedError = NonNullableValueConstraintError();
-        final error = ObjectSchemaPropertiesError(
+        final error = ObjectSchemaError(
           errors: {'field': SchemaConstraintsError.single(nestedError)},
         );
 
-        final map = error.toMap();
-        expect(map['context'], {
+        final map = error.context.extra;
+        expect(map, {
           'errors': {
             'field': {
               'key': 'constraints',
               'message': 'Schema Constraints Validation failed',
               'constraints': [
-                nestedError.toMap(),
-              ],
-            },
-          },
+                {
+                  'key': 'non_nullable_value',
+                  'message': 'Non nullable value is null',
+                }
+              ]
+            }
+          }
         });
       });
     });
 
-    group('ListSchemaItemsError', () {
+    group('ListSchemaError', () {
       test('toMap() includes indexed errors', () {
         final itemError = NonNullableValueConstraintError();
-        final error = ListSchemaItemsError(
+        final error = ListSchemaError(
           errors: {0: SchemaConstraintsError.single(itemError)},
         );
 
-        final map = error.toMap();
-        expect(map['context'], {
+        final map = error.context.extra;
+        expect(map, {
           'errors': {
             0: {
               'key': 'constraints',
               'message': 'Schema Constraints Validation failed',
               'constraints': [
-                itemError.toMap(),
-              ],
-            },
-          },
+                {
+                  'key': 'non_nullable_value',
+                  'message': 'Non nullable value is null'
+                }
+              ]
+            }
+          }
         });
       });
     });

@@ -75,7 +75,7 @@ final class ObjectSchema extends Schema<MapValue>
 
     if (constraintErrors.isEmpty) return null;
 
-    return ObjectSchemaPropertiesError(errors: constraintErrors);
+    return ObjectSchemaError(errors: constraintErrors);
   }
 
   /// Validate the [value] as a JSON string
@@ -84,9 +84,12 @@ final class ObjectSchema extends Schema<MapValue>
   ///
   /// If the value is not a JSON string, it will be converted to a JSON string
   /// using [jsonEncode].
-  SchemaResult<MapValue> validateJson(String value) {
+  SchemaResult<MapValue> validateJson(String value, {String? debugName}) {
     try {
-      return validate(jsonDecode(value) as Map<String, Object?>);
+      return validate(
+        jsonDecode(value) as Map<String, Object?>,
+        debugName: debugName,
+      );
     } catch (e) {
       return SchemaResult.fail(InvalidJsonFormatContraintError(json: value));
     }

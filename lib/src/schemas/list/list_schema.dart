@@ -13,23 +13,6 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
         super(type: SchemaType.list);
 
   @override
-  List<V>? _tryParse(Object value) {
-    if (value is! List) return null;
-
-    List<V>? parsedList = <V>[];
-    for (final v in value) {
-      final parsed = _itemSchema._tryParse(v);
-      if (parsed == null) {
-        parsedList = null;
-        break;
-      }
-      parsedList!.add(parsed);
-    }
-
-    return parsedList;
-  }
-
-  @override
   SchemaError? _validateAsType(List<V> value) {
     final error = super._validateAsType(value);
 
@@ -47,10 +30,27 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
 
     if (constraintErrors.isEmpty) return null;
 
-    return ListSchemaItemsError(errors: constraintErrors);
+    return ListSchemaError(errors: constraintErrors);
   }
 
   Schema<V> getItemSchema() => _itemSchema;
+
+  @override
+  List<V>? tryParse(Object value) {
+    if (value is! List) return null;
+
+    List<V>? parsedList = <V>[];
+    for (final v in value) {
+      final parsed = _itemSchema.tryParse(v);
+      if (parsed == null) {
+        parsedList = null;
+        break;
+      }
+      parsedList!.add(parsed);
+    }
+
+    return parsedList;
+  }
 
   @override
   ListSchema<V> copyWith({

@@ -35,14 +35,10 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
       return SchemaConstraintsError.multiple(errors);
     }
 
-    final error = discriminatedSchema.validateSchema(value);
+    final result =
+        discriminatedSchema.validate(value, debugName: discriminatorValue);
 
-    if (error == null) return null;
-
-    return DiscriminatedSchemaError(
-      discriminator: discriminatorValue,
-      error: error,
-    );
+    return result.getErrorOrNull();
   }
 
   /// Returns the discriminator value for the discriminated object schema.

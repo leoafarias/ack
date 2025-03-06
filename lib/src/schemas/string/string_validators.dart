@@ -66,10 +66,7 @@ class DateTimeStringValidator extends ConstraintValidator<String>
   @override
   ConstraintError onError(String value) {
     return buildError(
-      template:
-          'Invalid date format for {{ value }}. Expected format: {{ expected_format }}. Example: {{ example }}',
-      context: {
-        'value': value,
+      extra: {
         'expected_format': 'ISO 8601',
         'example': '2023-01-01T00:00:00.000Z',
       },
@@ -78,6 +75,10 @@ class DateTimeStringValidator extends ConstraintValidator<String>
 
   @override
   Map<String, Object?> toSchema() => {'format': 'date-time'};
+
+  @override
+  String get errorTemplate =>
+      'Invalid date format for {{ value }}. Expected format: {{ extra.expected_format }}. Example: {{ extra.example }}';
 }
 
 /// {@template date_validator}
@@ -111,18 +112,16 @@ class DateStringValidator extends ConstraintValidator<String>
   @override
   ConstraintError onError(String value) {
     return buildError(
-      template:
-          'Invalid date format for {{ value }}. Expected format: {{ expected_format }}. Example: {{ example }}',
-      context: {
-        'value': value,
-        'expected_format': 'YYYY-MM-DD',
-        'example': '2017-07-21',
-      },
+      extra: {'expected_format': 'YYYY-MM-DD', 'example': '2017-07-21'},
     );
   }
 
   @override
   Map<String, Object?> toSchema() => {'format': 'date'};
+
+  @override
+  String get errorTemplate =>
+      'Invalid date format for {{ value }}. Expected format: {{ extra.expected_format }}. Example: {{ extra.example }}';
 }
 
 /// {@template enum_validator}
@@ -142,10 +141,7 @@ class EnumStringValidator extends ConstraintValidator<String>
   @override
   ConstraintError onError(String value) {
     return buildError(
-      template:
-          'Value {{ value }} is not a valid enum value. Did you mean {{ closest_match }}? Must be one of: {{ enum_values }}',
-      context: {
-        'value': value,
+      extra: {
         'closest_match': findClosestStringMatch(value, enumValues),
         'enum_values': enumValues,
         'total_allowed_values': enumValues.length,
@@ -155,6 +151,10 @@ class EnumStringValidator extends ConstraintValidator<String>
 
   @override
   Map<String, Object?> toSchema() => {'enum': enumValues};
+
+  @override
+  String get errorTemplate =>
+      'Value {{ value }} is not a valid enum value. Did you mean {{ extra.closest_match }}? Must be one of: {{ extra.enum_values }}';
 }
 
 /// {@template email_validator}
@@ -206,16 +206,17 @@ class OneOfStringValidator extends RegexPatternStringValidator {
   @override
   ConstraintError onError(String value) {
     return buildError(
-      template:
-          'Value {{ value }} is not allowed. Did you mean {{ closest_match }}? Must be one of: {{ allowed_values }}',
-      context: {
-        'value': value,
+      extra: {
         'allowed_values': values,
         'total_allowed_values': values.length,
         'closest_match': findClosestStringMatch(value, values),
       },
     );
   }
+
+  @override
+  String get errorTemplate =>
+      'Value {{ value }} is not allowed. Must be one of: {{ allowed_values }}';
 }
 
 /// {@template not_one_of_validator}
@@ -225,29 +226,31 @@ class OneOfStringValidator extends RegexPatternStringValidator {
 /// Example: For values ['a', 'b', 'c'], pattern will be '^(?!a|b|c).*$'
 /// {@endtemplate}
 class NotOneOfStringValidator extends RegexPatternStringValidator {
-  final List<String> values;
-  NotOneOfStringValidator(this.values)
+  final List<String> disallowedValues;
+  NotOneOfStringValidator(this.disallowedValues)
       : super(
           name: 'not_one_of',
-          pattern: '^(?!${values.map((e) => RegExp.escape(e)).join('|')}).*\$',
-          example: 'Any value except: $values',
+          pattern:
+              '^(?!${disallowedValues.map((e) => RegExp.escape(e)).join('|')}).*\$',
+          example: 'Any value except: $disallowedValues',
         );
 
   @override
-  bool isValid(String value) => !values.contains(value);
+  bool isValid(String value) => !disallowedValues.contains(value);
 
   @override
   ConstraintError onError(String value) {
     return buildError(
-      template:
-          'Value {{ value }} is not allowed. Must NOT be one of: {{ disallowed_values }}',
-      context: {
-        'value': value,
-        'disallowed_values': values,
-        'total_disallowed_values': values.length,
+      extra: {
+        'disallowed_values': disallowedValues,
+        'total_disallowed_values': disallowedValues.length,
       },
     );
   }
+
+  @override
+  String get errorTemplate =>
+      'Value {{ value }} is not allowed. Must NOT be one of: {{ extra.disallowed_values }}';
 }
 
 /// {@template not_empty_validator}
@@ -264,11 +267,11 @@ class NotEmptyStringValidator extends ConstraintValidator<String> {
 
   @override
   ConstraintError onError(String value) {
-    return buildError(
-      template: 'Value of type String cannot be empty.',
-      context: {'value': value, 'value_length': value.length},
-    );
+    return buildError(extra: {'value_length': value.length});
   }
+
+  @override
+  String get errorTemplate => 'String must not be empty';
 }
 
 /// Base class for regex-based string validators
@@ -305,14 +308,7 @@ class RegexPatternStringValidator extends ConstraintValidator<String>
   @override
   ConstraintError onError(String value) {
     return buildError(
-      template:
-          'Invalid {{ pattern_name }} format. The string must match the pattern: {{ pattern }}. Example: {{ example }}',
-      context: {
-        'pattern_name': name,
-        'pattern': pattern,
-        'value': value,
-        'example': example,
-      },
+      extra: {'pattern_name': name, 'pattern': pattern, 'example': example},
     );
   }
 
@@ -321,6 +317,10 @@ class RegexPatternStringValidator extends ConstraintValidator<String>
 
   @override
   Map<String, Object?> toSchema() => {'pattern': pattern, 'name': name};
+
+  @override
+  String get errorTemplate =>
+      'Invalid {{ extra.pattern_name }} format. The string must match the pattern: {{ extra.pattern }}. Example: {{ extra.example }}';
 }
 
 /// {@template is_empty_validator}
@@ -337,11 +337,11 @@ class IsEmptyStringValidator extends ConstraintValidator<String> {
 
   @override
   ConstraintError onError(String value) {
-    return buildError(
-      template: 'Value of type string must be empty. Instead got: {{ value }}',
-      context: {'value': value, 'value_length': value.length},
-    );
+    return buildError(extra: {'value_length': value.length});
   }
+
+  @override
+  String get errorTemplate => 'String must be empty instead of {{ value }}';
 }
 
 /// {@template min_length_validator}
@@ -363,19 +363,15 @@ class MinLengthStringValidator extends ConstraintValidator<String>
 
   @override
   ConstraintError onError(String value) {
-    return buildError(
-      template:
-          'Value {{ value }} is too short. Has the length of {{ value_length }} characters. Minimum length is {{ min_length }} characters',
-      context: {
-        'value': value,
-        'value_length': value.length,
-        'min_length': min,
-      },
-    );
+    return buildError(extra: {'value_length': value.length, 'min': min});
   }
 
   @override
   Map<String, Object?> toSchema() => {'minLength': min};
+
+  @override
+  String get errorTemplate =>
+      'String must be at least {{ extra.min }} characters long instead of {{ extra.value_length }}';
 }
 
 /// {@template max_length_validator}
@@ -396,18 +392,15 @@ class MaxLengthStringValidator extends ConstraintValidator<String>
   bool isValid(String value) => value.length <= max;
 
   @override
+  @visibleForTesting
   ConstraintError onError(String value) {
-    return buildError(
-      template:
-          'Value {{ value }} is too long. Has the length of {{ value_length }} characters. Maximum length is {{ max_length }} characters',
-      context: {
-        'value': value,
-        'value_length': value.length,
-        'max_length': max,
-      },
-    );
+    return buildError(extra: {'value_length': value.length, 'max': max});
   }
 
   @override
   Map<String, Object?> toSchema() => {'maxLength': max};
+
+  @override
+  String get errorTemplate =>
+      'String must be at most {{ extra.max }} characters long instead of {{ extra.value_length }}';
 }

@@ -38,6 +38,11 @@ class SchemaResult<T extends Object> {
         onFail: (error) => error,
       );
 
+  SchemaError? getErrorOrNull() => match(
+        onOk: (_) => null,
+        onFail: (error) => error,
+      );
+
   /// Returns the contained value if this result is successful; otherwise, returns `null`.
   T? getOrNull() {
     return match(onOk: (value) => value.getOrNull(), onFail: (_) => null);

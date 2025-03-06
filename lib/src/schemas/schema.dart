@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:meta/meta.dart';
 
+import '../context.dart';
 import '../helpers.dart';
 import '../validation/ack_exception.dart';
 import '../validation/constraint_validator.dart';
@@ -84,17 +85,6 @@ sealed class Schema<T extends Object> {
         _constraints = constraints ?? const [],
         _defaultValue = defaultValue;
 
-  /// Attempts to parse the given [value] into type [T].
-  ///
-  /// If [value] is already of type [T], it is returned directly.
-  /// If [_strict] is `false`, attempts will be made to parse [String] and [num]
-  /// values into [T] if possible.
-  ///
-  /// Returns the parsed value of type [T] or `null` if parsing fails.
-  T? _tryParse(Object value) {
-    return value is T ? value : null;
-  }
-
   /// Validates the [value] against the constraints, assuming it is already of type [T].
   ///
   /// This method is primarily for internal use and testing, after the value has
@@ -111,6 +101,19 @@ sealed class Schema<T extends Object> {
     if (errors.isEmpty) return null;
 
     return SchemaConstraintsError.multiple(errors);
+  }
+
+  /// Attempts to parse the given [value] into type [T].
+  ///
+  /// If [value] is already of type [T], it is returned directly.
+  /// If [_strict] is `false`, attempts will be made to parse [String] and [num]
+  /// values into [T] if possible.
+  ///
+  /// Returns the parsed value of type [T] or `null` if parsing fails.
+
+  @visibleForTesting
+  T? tryParse(Object value) {
+    return value is T ? value : null;
   }
 
   Schema<T> call({
@@ -155,7 +158,7 @@ sealed class Schema<T extends Object> {
   ///   - If [_nullable] is `false`, returns [Fail] with a [SchemaError.nonNullableValue].
   ///
   /// If [value] is not `null`:
-  ///   - Attempts to parse [value] to type [T] using [_tryParse].
+  ///   - Attempts to parse [value] to type [T] using [tryParse].
   ///   - If parsing fails, returns [Fail] with a [SchemaError.invalidType].
   ///   - If parsing succeeds, validates the parsed value against the schema's
   ///     constraints using [_validateAsType].
@@ -170,7 +173,7 @@ sealed class Schema<T extends Object> {
           : SchemaConstraintsError.single(NonNullableValueConstraintError());
     }
 
-    final typedValue = _tryParse(value);
+    final typedValue = tryParse(value);
     if (typedValue == null) {
       return SchemaConstraintsError.single(
         InvalidTypeConstraintError(
@@ -191,21 +194,26 @@ sealed class Schema<T extends Object> {
   /// [SchemaError.unknownException] if an exception occurs.
   ///
   /// Use [validateOrThrow] if you prefer to throw an exception on validation failure.
-  SchemaResult<T> validate(Object? value) {
-    try {
-      final error = validateSchema(value);
-      if (error == null) {
-        return SchemaResult.ok(
-          value == null ? _defaultValue : _tryParse(value),
-        );
-      }
+  SchemaResult<T> validate(Object? value, {String? debugName}) {
+    return executeWithContext(
+      ViolationContext(name: debugName, schema: this),
+      () {
+        try {
+          final error = validateSchema(value);
+          if (error == null) {
+            return SchemaResult.ok(
+              value == null ? _defaultValue : tryParse(value),
+            );
+          }
 
-      return SchemaResult.fail(error);
-    } catch (e, stackTrace) {
-      return SchemaResult.fail(
-        UnknownExceptionSchemaError(error: e, stackTrace: stackTrace),
-      );
-    }
+          return SchemaResult.fail(error);
+        } catch (e, stackTrace) {
+          return SchemaResult.fail(
+            UnknownExceptionSchemaError(error: e, stackTrace: stackTrace),
+          );
+        }
+      },
+    );
   }
 
   /// Converts this schema to a [Map] representation.
@@ -263,8 +271,8 @@ mixin SchemaFluentMethods<S extends Schema<T>, T extends Object> on Schema<T> {
   /// **Note**: `AckException` is assumed to be a custom exception class defined elsewhere,
   /// likely in `ack_base.dart`, to handle schema validation errors. Ensure `AckException`
   /// is properly documented to explain its structure and usage for conveying validation failure details.
-  void validateOrThrow(Object value) {
-    return validate(value).match(
+  void validateOrThrow(Object value, {String? debugName}) {
+    return validate(value, debugName: debugName).match(
       onOk: (data) => data,
       onFail: (errors) => throw AckException(errors),
     );
@@ -288,24 +296,6 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
     super.defaultValue,
   })  : _strict = strict ?? false,
         super(nullable: nullable ?? false);
-
-  /// Attempts to parse the given [value] into type [T].
-  ///
-  /// If [value] is already of type [T], it is returned directly.
-  /// If [_strict] is `false`, attempts will be made to parse [String] and [num]
-  /// values into [T] if possible.
-  ///
-  /// Returns the parsed value of type [T] or `null` if parsing fails.
-  @override
-  T? _tryParse(Object value) {
-    if (value is T) return value;
-    if (!_strict) {
-      if (value is String) return _tryParseString(value);
-      if (value is num) return _tryParseNum(value);
-    }
-
-    return null;
-  }
 
   /// Attempts to parse a [num] value into type [T].
   ///
@@ -345,6 +335,24 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
   Self strict() => copyWith(strict: true);
 
   bool getStrictValue() => _strict;
+
+  /// Attempts to parse the given [value] into type [T].
+  ///
+  /// If [value] is already of type [T], it is returned directly.
+  /// If [_strict] is `false`, attempts will be made to parse [String] and [num]
+  /// values into [T] if possible.
+  ///
+  /// Returns the parsed value of type [T] or `null` if parsing fails.
+  @override
+  T? tryParse(Object value) {
+    if (value is T) return value;
+    if (!_strict) {
+      if (value is String) return _tryParseString(value);
+      if (value is num) return _tryParseNum(value);
+    }
+
+    return null;
+  }
 
   @override
   Self call({

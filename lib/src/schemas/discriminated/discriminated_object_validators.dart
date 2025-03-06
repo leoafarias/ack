@@ -8,10 +8,10 @@ ConstraintError _missingDiscriminatorKeyInSchema(
     key: 'missing_discriminator_key_in_schema',
     message:
         'Missing discriminator key: $discriminatorKey in schema: $discriminatorValue',
-    context: {
+    context: ViolationContext.getWithExtras({
       'discriminator_key': discriminatorKey,
       'discriminator_value': discriminatorValue,
-    },
+    }),
   );
 }
 
@@ -23,10 +23,10 @@ ConstraintError _noSchemaForDiscriminatorValue(
     key: 'no_schema_for_discriminator_value',
     message:
         'No schema found for discriminator value: $discriminatorValue for discriminator key: $discriminatorKey',
-    context: {
+    context: ViolationContext.getWithExtras({
       'discriminator_key': discriminatorKey,
       'discriminator_value': discriminatorValue,
-    },
+    }),
   );
 }
 
@@ -37,7 +37,10 @@ ConstraintError _keyMustBeRequiredInSchema(
   return ConstraintError(
     key: 'key_must_be_required_in_schema',
     message: 'Key is required in schema: $discriminatorKey for schema: $schema',
-    context: {'discriminator_key': discriminatorKey, 'schema': schema},
+    context: ViolationContext.getWithExtras({
+      'discriminator_key': discriminatorKey,
+      'schema': schema,
+    }),
   );
 }
 
@@ -48,6 +51,9 @@ ConstraintError _missingDiscriminatorKeyInValue(
   return ConstraintError(
     key: 'missing_discriminator_key',
     message: 'Missing discriminator key: $discriminatorKey in value: $value',
-    context: {'discriminator_key': discriminatorKey, 'value': value},
+    context: ViolationContext.getWithExtras({
+      'discriminator_key': discriminatorKey,
+      'value': value,
+    }),
   );
 }

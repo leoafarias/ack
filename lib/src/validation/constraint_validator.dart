@@ -1,5 +1,7 @@
+import 'package:ack/src/helpers/template.dart';
 import 'package:meta/meta.dart';
 
+import '../context.dart';
 import '../helpers.dart';
 import 'schema_error.dart';
 
@@ -7,7 +9,10 @@ abstract class ConstraintValidator<T extends Object> {
   final String name;
 
   final String description;
+
   const ConstraintValidator({required this.name, required this.description});
+
+  String get errorTemplate;
 
   bool isValid(T value);
 
@@ -22,11 +27,15 @@ abstract class ConstraintValidator<T extends Object> {
   String toJson() => prettyJson(toMap());
 
   @protected
-  ConstraintError buildError({
-    required String template,
-    required Map<String, Object?> context,
-  }) {
-    return ConstraintError(key: name, message: template, context: context);
+  ConstraintError buildError({required Map<String, Object?> extra}) {
+    final context = ViolationContext.getWithExtras(extra);
+    final template = Template(errorTemplate, data: context.toMap());
+
+    return ConstraintError(
+      key: name,
+      message: template.render(),
+      context: context,
+    );
   }
 
   @override

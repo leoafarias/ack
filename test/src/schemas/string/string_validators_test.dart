@@ -1,7 +1,9 @@
 import 'package:ack/ack.dart';
+import 'package:ack/src/context.dart';
 import 'package:test/test.dart';
 
 import '../../../test_helpers.dart';
+import '../../validation/constraint_error_test.dart';
 
 void main() {
   group('String Validators', () {
@@ -123,6 +125,16 @@ void main() {
 
         final result = schema.validate('abcd');
         expect(result, hasOneConstraintError('max_length'));
+      });
+
+      test('error message is rendered correctly', () {
+        wrapWithViolationContext(MockContext({}), () {
+          final error = validator.onError('abcd');
+          expect(
+            error.message,
+            'String must be at most 3 characters long instead of 4',
+          );
+        });
       });
     });
 

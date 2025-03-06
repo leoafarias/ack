@@ -48,14 +48,14 @@ class MinPropertiesObjectValidator extends ConstraintValidator<MapValue>
 
   @override
   ConstraintError onError(MapValue value) {
-    return buildError(
-      template: 'Object must have at least $min properties',
-      context: {'value': value, 'min': min},
-    );
+    return buildError(extra: {'value': value, 'min': min});
   }
 
   @override
   Map<String, Object?> toSchema() => {'minProperties': min};
+
+  @override
+  String get errorTemplate => 'Object must have at least $min properties';
 }
 
 /// {@template object_max_properties_validator}
@@ -80,13 +80,17 @@ class MaxPropertiesObjectValidator extends ConstraintValidator<MapValue>
   @override
   ConstraintError onError(MapValue value) {
     return buildError(
-      template: 'Object must have at most $max properties',
-      context: {'value': value, 'max': max},
+      extra: {'value': value, 'max': max, 'value_length': value.length},
     );
   }
 
   @override
   Map<String, Object?> toSchema() => {'maxProperties': max};
+
+  @override
+  String get errorTemplate => '''
+Object must have at most {{ extra.max }} properties, but has {{ extra.value_length }}
+''';
 }
 
 class UnallowedPropertyConstraintError extends ConstraintValidator<MapValue> {
@@ -106,11 +110,14 @@ class UnallowedPropertyConstraintError extends ConstraintValidator<MapValue> {
     final propertyValue = value[key];
 
     return buildError(
-      template:
-          'Unallowed additional property: {{ key }} with value {{ value }}',
-      context: {'key': key, 'value': propertyValue},
+      extra: {'property_key': key, 'property_value': propertyValue},
     );
   }
+
+  @override
+  String get errorTemplate => '''
+Unallowed additional property: {{ extra.property_key }} with value {{ extra.property_value }}
+''';
 }
 
 class PropertyRequiredConstraintError extends ConstraintValidator<MapValue> {
@@ -120,17 +127,27 @@ class PropertyRequiredConstraintError extends ConstraintValidator<MapValue> {
   PropertyRequiredConstraintError(this.key, this.requiredKeys)
       : super(
           name: 'property_is_required',
-          description: 'Property is required in object',
+          description: 'Property ($key) is required',
         );
 
   @override
-  bool isValid(MapValue value) => value.containsKey(key);
+  bool isValid(MapValue value) {
+    // Valid if the key is not required OR if it is present in the value.
+    return !requiredKeys.contains(key) || value.containsKey(key);
+  }
 
   @override
   ConstraintError onError(MapValue value) {
     return buildError(
-      template: 'Property ({ key }) is required.',
-      context: {'key': key, 'required_keys': requiredKeys},
+      extra: {'key': key, 'required_keys': requiredKeys, 'value': value},
     );
   }
+
+  @override
+  String get errorTemplate => '''
+Property "$key" is required but was not provided.
+
+Required properties:
+{{ extra.required_keys }}
+''';
 }

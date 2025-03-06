@@ -189,12 +189,10 @@ void main() {
       final invalidResult = mergedSchema.validate(invalidObject);
       expect(invalidResult.isFail, isTrue);
 
-      final objectError =
-          (invalidResult as Fail).error as ObjectSchemaPropertiesError;
+      final objectError = (invalidResult as Fail).error as ObjectSchemaError;
       expect(objectError.errors.containsKey('user'), isTrue);
 
-      final userError =
-          objectError.errors['user'] as ObjectSchemaPropertiesError;
+      final userError = objectError.errors['user'] as ObjectSchemaError;
       expect(userError.errors.containsKey('name'), isTrue);
     });
   });

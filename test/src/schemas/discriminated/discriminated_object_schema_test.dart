@@ -225,22 +225,13 @@ void main() {
       final result =
           discriminatedSchema.validate({'key': 'a', 'value': 'not an int'});
 
-      final discriminatedError =
-          (result as Fail).error as DiscriminatedSchemaError;
-
-      expect(discriminatedError.discriminator, 'a');
-
-      // The inner error is an ObjectSchemaPropertiesError
-      expect(discriminatedError.error, isA<ObjectSchemaPropertiesError>());
-
-      final propertiesError =
-          discriminatedError.error as ObjectSchemaPropertiesError;
+      final error = (result as Fail).error as ObjectSchemaError;
 
       // Check that the 'value' property has an error
-      expect(propertiesError.errors.containsKey('value'), isTrue);
+      expect(error.errors.containsKey('value'), isTrue);
 
       // Check that it's an invalid type error
-      final valueError = propertiesError.errors['value']!;
+      final valueError = error.errors['value']!;
       expect(valueError, isA<SchemaConstraintsError>());
 
       final constraintsError = valueError as SchemaConstraintsError;

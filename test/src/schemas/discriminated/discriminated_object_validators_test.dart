@@ -103,28 +103,16 @@ void main() {
 
       expect(
         (result as Fail).error,
-        isA<DiscriminatedSchemaError>(),
+        isA<ObjectSchemaError>(),
       );
 
-      final resultError = (result as Fail).error;
-
-      // Since error structure changed from a flat list to a hierarchical structure
-      expect(resultError, isA<DiscriminatedSchemaError>());
-
-      final discriminatedError = resultError as DiscriminatedSchemaError;
-      expect(discriminatedError.discriminator, 'a');
-
-      // The inner error is an ObjectSchemaPropertiesError
-      expect(discriminatedError.error, isA<ObjectSchemaPropertiesError>());
-
-      final propertiesError =
-          discriminatedError.error as ObjectSchemaPropertiesError;
+      final resultError = (result as Fail).error as ObjectSchemaError;
 
       // Check that the 'value' property has an error
-      expect(propertiesError.errors.containsKey('value'), isTrue);
+      expect(resultError.errors.containsKey('value'), isTrue);
 
       // Check that it's an invalid type error
-      final valueError = propertiesError.errors['value']!;
+      final valueError = resultError.errors['value']!;
       expect(valueError, isA<SchemaConstraintsError>());
 
       final constraintsError = valueError as SchemaConstraintsError;

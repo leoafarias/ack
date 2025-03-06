@@ -49,19 +49,16 @@ class UniqueItemsListValidator<T extends Object>
     final nonUniqueValues = value.duplicates;
 
     return buildError(
-      template:
-          'List should not contain duplicates: These items are repeated: {{ duplicates }}',
-      context: {'value': value, 'duplicates': nonUniqueValues},
+      extra: {'value': value, 'duplicates': nonUniqueValues},
     );
   }
 
   @override
   Map<String, Object?> toSchema() => {'uniqueItems': true};
-  @override
-  String get name => 'unique_items';
 
   @override
-  String get description => 'List items must be unique';
+  String get errorTemplate =>
+      'List should not contain duplicates: These items are repeated: {{ extra.duplicates }}';
 }
 
 /// {@template min_items_list_validator}
@@ -84,14 +81,16 @@ class MinItemsListValidator<T extends Object>
   @override
   ConstraintError onError(List<T> value) {
     return buildError(
-      template:
-          'List length {{ value_length }} is less than the minimum required length: {{ min }}',
-      context: {'value': value, 'value_length': value.length, 'min': min},
+      extra: {'value': value, 'value_length': value.length, 'min': min},
     );
   }
 
   @override
   Map<String, Object?> toSchema() => {'minItems': min};
+
+  @override
+  String get errorTemplate =>
+      'List length {{ extra.value_length }} is less than the minimum required length: {{ extra.min }}';
 }
 
 /// {@template max_items_list_validator}
@@ -102,6 +101,7 @@ class MinItemsListValidator<T extends Object>
 class MaxItemsListValidator<T> extends ConstraintValidator<List<T>>
     with OpenAPiSpecOutput<List<T>> {
   final int max;
+
   const MaxItemsListValidator(this.max)
       : super(
           name: 'max_items',
@@ -114,12 +114,14 @@ class MaxItemsListValidator<T> extends ConstraintValidator<List<T>>
   @override
   ConstraintError onError(List<T> value) {
     return buildError(
-      template:
-          'List length {{ value_length }} is greater than the maximum required length: {{ max }}',
-      context: {'value': value, 'value_length': value.length, 'max': max},
+      extra: {'value': value, 'value_length': value.length, 'max': max},
     );
   }
 
   @override
   Map<String, Object?> toSchema() => {'maxItems': max};
+
+  @override
+  String get errorTemplate =>
+      'List length {{ extra.value_length }} is greater than the maximum required length: {{ extra.max }}';
 }

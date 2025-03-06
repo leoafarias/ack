@@ -133,9 +133,8 @@ List<SchemaError> getErrors(
     SchemaError error, List<SchemaError> aggregatedErrors) {
   final extractedErrors = switch (error) {
     SchemaConstraintsError constraintsError => [constraintsError],
-    ObjectSchemaPropertiesError propertiesError =>
-      propertiesError.errors.values.toList(),
-    ListSchemaItemsError itemsError => itemsError.errors.values.toList(),
+    ObjectSchemaError propertiesError => propertiesError.errors.values.toList(),
+    ListSchemaError itemsError => itemsError.errors.values.toList(),
     DiscriminatedSchemaError discriminatedError => [discriminatedError.error],
     UnknownExceptionSchemaError() => [error],
     InvalidJsonFormatContraintError() => [error],

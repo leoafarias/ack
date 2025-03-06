@@ -63,10 +63,7 @@ class MinNumValidator<T extends num> extends ConstraintValidator<T>
   @override
   ConstraintError onError(num value) {
     return buildError(
-      template: exclusive
-          ? 'Value {{ value }} is not greater than the minimum required value of {{ min }}. Please provide a number greater than {{ min }}.'
-          : 'Value {{ value }} is less than the minimum required value of {{ min }}. Please provide a number greater than or equal to {{ min }}.',
-      context: {'value': value, 'min': min, 'exclusive': exclusive},
+      extra: {'value': value, 'min': min, 'exclusive': exclusive},
     );
   }
 
@@ -75,6 +72,11 @@ class MinNumValidator<T extends num> extends ConstraintValidator<T>
         'minimum': min,
         if (exclusive) 'exclusiveMinimum': exclusive,
       };
+
+  @override
+  String get errorTemplate => exclusive
+      ? 'Value {{ extra.value }} is not greater than the minimum required value of {{ extra.min }}. Please provide a number greater than {{ extra.min }}.'
+      : 'Value {{ extra.value }} is less than the minimum required value of {{ extra.min }}. Please provide a number greater than or equal to {{ extra.min }}.';
 }
 
 // Multiple of
@@ -93,8 +95,7 @@ class MultipleOfNumValidator<T extends num> extends ConstraintValidator<T>
   @override
   ConstraintError onError(num value) {
     return buildError(
-      template: 'Value {{ value }} is not a multiple of {{ multiple }}.',
-      context: {
+      extra: {
         'value': value,
         'multiple': multiple,
         'quotient': value / multiple,
@@ -105,6 +106,10 @@ class MultipleOfNumValidator<T extends num> extends ConstraintValidator<T>
 
   @override
   Map<String, Object?> toSchema() => {'multipleOf': multiple};
+
+  @override
+  String get errorTemplate =>
+      'Value {{ extra.value }} is not a multiple of {{ extra.multiple }}.';
 }
 
 /// {@template max_num_validator}
@@ -131,13 +136,8 @@ class MaxNumValidator<T extends num> extends ConstraintValidator<T>
 
   @override
   ConstraintError onError(num value) {
-    final template = exclusive
-        ? 'Value {{ value }} must be strictly less than {{ max }}.'
-        : 'Value {{ value }} exceeds the maximum allowed value of {{ max }}.';
-
     return buildError(
-      template: template,
-      context: {'value': value, 'max': max, 'exclusive': exclusive},
+      extra: {'value': value, 'max': max, 'exclusive': exclusive},
     );
   }
 
@@ -146,6 +146,11 @@ class MaxNumValidator<T extends num> extends ConstraintValidator<T>
         'maximum': max,
         if (exclusive) 'exclusiveMaximum': exclusive,
       };
+
+  @override
+  String get errorTemplate => exclusive
+      ? 'Value {{ extra.value }} must be strictly less than {{ extra.max }}.'
+      : 'Value {{ extra.value }} exceeds the maximum allowed value of {{ extra.max }}.';
 }
 
 /// {@template range_num_validator}
@@ -175,12 +180,8 @@ class RangeNumValidator<T extends num> extends ConstraintValidator<T>
 
   @override
   ConstraintError onError(num value) {
-    final template =
-        'Value {{ value }} must be between {{ min }} and {{ max }} ${exclusive ? '(exclusive)' : ''}';
-
     return buildError(
-      template: template,
-      context: {'value': value, 'min': min, 'max': max},
+      extra: {'value': value, 'min': min, 'max': max, 'exclusive': exclusive},
     );
   }
 
@@ -191,4 +192,8 @@ class RangeNumValidator<T extends num> extends ConstraintValidator<T>
         if (exclusive) 'exclusiveMinimum': exclusive,
         if (exclusive) 'exclusiveMaximum': exclusive,
       };
+
+  @override
+  String get errorTemplate =>
+      'Value {{ extra.value }} must be between {{ extra.min }} and {{ extra.max }} ${exclusive ? "(exclusive)" : ""}';
 }
