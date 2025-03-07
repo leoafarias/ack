@@ -27,8 +27,8 @@ abstract class ConstraintValidator<T extends Object> {
   String toJson() => prettyJson(toMap());
 
   @protected
-  ConstraintError buildError({required Map<String, Object?> extra}) {
-    final context = ViolationContext.getWithExtras(extra);
+  ConstraintError buildError({Map<String, Object?>? extra}) {
+    final context = ViolationContext.getWithExtras(extra ?? {});
     final template = Template(errorTemplate, data: context.toMap());
 
     return ConstraintError(

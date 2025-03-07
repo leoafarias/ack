@@ -20,6 +20,7 @@ class ViolationContext<T extends Schema> {
     Map<String, Object?>? extra,
   }) : name = name ?? schema?.runtimeType.toString() {
     if (extra != null) {
+      _assertNoReservedKeys(extra);
       this.extra = extra;
     }
   }
@@ -30,6 +31,16 @@ class ViolationContext<T extends Schema> {
     return context == null
         ? ViolationContext(extra: extra)
         : context.mergeExtras(extra);
+  }
+
+  void _assertNoReservedKeys(Map<String, Object?> extra) {
+    const reservedKeys = ['value', 'schema', 'name', 'extra'];
+    for (final key in reservedKeys) {
+      assert(
+        !extra.containsKey(key),
+        'extra must not contain a $key key',
+      );
+    }
   }
 
   bool get isNotEmpty => toMap().isNotEmpty;

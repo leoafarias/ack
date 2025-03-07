@@ -79,11 +79,7 @@ class DateTimeStringValidator extends ConstraintValidator<String>
         );
 
   @override
-  bool isValid(String value) {
-    final dateTime = DateTime.tryParse(value);
-
-    return dateTime != null;
-  }
+  bool isValid(String value) => DateTime.tryParse(value) != null;
 
   @override
   ConstraintError onError(String value) {
