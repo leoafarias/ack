@@ -72,42 +72,24 @@ class Template {
     return _processLoops(updatedTemplate, data);
   }
 
-  String _renderLoop(Object? value, String blockContent) {
-    if (value is List) {
-      return _renderListLoop(value, blockContent);
-    } else if (value is Map) {
-      return _renderMapLoop(value, blockContent);
+  String _renderLoop(Object? collection, String blockContent) {
+    final result = StringBuffer();
+    int index = 0;
+
+    Iterable entries;
+    if (collection is List) {
+      entries = collection.asMap().entries; // Convert list to map-like entries
+    } else if (collection is Map) {
+      entries = collection.entries;
+    } else {
+      return ''; // Invalid input
     }
 
-    return '';
-  }
-
-  String _renderListLoop(List items, String blockContent) {
-    final result = StringBuffer();
-    for (int i = 0; i < items.length; i++) {
-      final item = items[i];
-      final localContext = <String, Object?>{'@this': item, '@index': i};
-
-      if (item is Map) {
-        // Flatten all item properties into local context
-        item.forEach((k, v) {
-          if (k is String) localContext[k] = v;
-        });
-      }
-
-      // Render the sub-block
-      result.write(_renderTemplate(blockContent, {...localContext}));
-    }
-
-    return result.toString();
-  }
-
-  String _renderMapLoop(Map map, String blockContent) {
-    final result = StringBuffer();
-    var index = 0;
-    map.forEach((key, value) {
+    for (final entry in entries) {
+      final key = entry.key;
+      final value = entry.value;
       final localContext = <String, Object?>{
-        '@this': {'key': key, 'value': value},
+        '@this': collection is List ? value : {'key': key, 'value': value},
         '@index': index++,
       };
 
@@ -117,13 +99,12 @@ class Template {
         });
       }
 
-      // Render the sub-block
-      result.write(_renderTemplate(blockContent, {...localContext}));
-    });
+      String rendered = _renderTemplate(blockContent, {...localContext});
+      result.write(rendered);
+    }
 
     return result.toString();
   }
-
   // =========================================================
   // VARIABLE HANDLING
   // =========================================================

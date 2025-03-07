@@ -90,7 +90,7 @@ void main() {
       });
 
       test('schema validation works with min value', () {
-        final schema = DoubleSchema().minValue(5.0);
+        final schema = DoubleSchema().min(5.0);
         expect(schema.validate(6.0).isOk, isTrue);
 
         final result = schema.validate(4.0);
@@ -126,7 +126,7 @@ void main() {
       });
 
       test('schema validation works with max value', () {
-        final schema = DoubleSchema().maxValue(5.0);
+        final schema = DoubleSchema().max(5.0);
         expect(schema.validate(4.0).isOk, isTrue);
 
         final result = schema.validate(6.0);
@@ -310,7 +310,7 @@ void main() {
       });
 
       test('schema validation works with min value', () {
-        final schema = IntegerSchema().minValue(5);
+        final schema = IntegerSchema().min(5);
         expect(schema.validate(6).isOk, isTrue);
 
         final result = schema.validate(4);

@@ -131,3 +131,61 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
       ? (errors, schemas[discriminatorValue])
       : (errors, null);
 }
+
+ConstraintError _missingDiscriminatorKeyInSchema(
+  String discriminatorKey,
+  String discriminatorValue,
+) {
+  return ConstraintError(
+    key: 'missing_discriminator_key_in_schema',
+    message:
+        'Missing discriminator key: $discriminatorKey in schema: $discriminatorValue',
+    context: ViolationContext.getWithExtras({
+      'discriminator_key': discriminatorKey,
+      'discriminator_value': discriminatorValue,
+    }),
+  );
+}
+
+ConstraintError _noSchemaForDiscriminatorValue(
+  String discriminatorKey,
+  String discriminatorValue,
+) {
+  return ConstraintError(
+    key: 'no_schema_for_discriminator_value',
+    message:
+        'No schema found for discriminator value: $discriminatorValue for discriminator key: $discriminatorKey',
+    context: ViolationContext.getWithExtras({
+      'discriminator_key': discriminatorKey,
+      'discriminator_value': discriminatorValue,
+    }),
+  );
+}
+
+ConstraintError _keyMustBeRequiredInSchema(
+  String discriminatorKey,
+  ObjectSchema schema,
+) {
+  return ConstraintError(
+    key: 'key_must_be_required_in_schema',
+    message: 'Key is required in schema: $discriminatorKey for schema: $schema',
+    context: ViolationContext.getWithExtras({
+      'discriminator_key': discriminatorKey,
+      'schema': schema,
+    }),
+  );
+}
+
+ConstraintError _missingDiscriminatorKeyInValue(
+  String discriminatorKey,
+  MapValue value,
+) {
+  return ConstraintError(
+    key: 'missing_discriminator_key',
+    message: 'Missing discriminator key: $discriminatorKey in value: $value',
+    context: ViolationContext.getWithExtras({
+      'discriminator_key': discriminatorKey,
+      'value': value,
+    }),
+  );
+}
