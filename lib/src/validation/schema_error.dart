@@ -1,9 +1,9 @@
 import 'package:ack/src/helpers.dart';
+import 'package:ack/src/helpers/template.dart';
 import 'package:meta/meta.dart';
 
 import '../context.dart';
 import '../schemas/schema.dart';
-import '../utils/template.dart';
 
 /// A mixin that provides common functionality for all types of errors.
 mixin ErrorBase {
@@ -17,19 +17,9 @@ mixin ErrorBase {
   String get template;
 
   /// Renders the message with all variables.
-  String get message =>
-      AckTemplate('$runtimeType $template', variables: variables).render();
+  String get message => Template(template, data: variables).render();
 
-  String render(
-    String Function(String variable) renderer, {
-    bool htmlEscapeValues = true,
-  }) {
-    return AckTemplate(
-      template,
-      variables: variables,
-      htmlEscapeValues: htmlEscapeValues,
-    ).render(renderer: renderer);
-  }
+  late final render = Template(template, data: variables).render;
 
   /// Converts the error to a map representation.
   Map<String, Object?> toMap() {
@@ -146,9 +136,9 @@ final class SchemaValidationError extends SchemaError {
           schema: context.schema,
           value: context.value,
           message: '''
-{{#validations}}
-  - {{key}}: {{message}}
-{{/validations}}
+{{#each validations}}
+  {{key}}: {{message}}
+{{/each}}
 ''',
           variables: {
             'validations': validations.map((e) => e.toMap()).toList(),
@@ -185,9 +175,9 @@ final class NestedSchemaError extends SchemaError {
           schema: context.schema,
           value: context.value,
           message: '''
-{{#errors}}
+{{#each errors}}
   {{name}}: {{message}}
-{{/errors}}
+{{/each}}
 ''',
           variables: {'errors': errors.map((e) => e.toMap()).toList()},
         ) {

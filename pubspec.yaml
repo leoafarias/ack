@@ -8,7 +8,6 @@ environment:
 
 dependencies:
   meta: ^1.15.0
-  mustache_template: ^2.0.0
 dev_dependencies:
   coverage: ^1.11.1
   dart_code_metrics_presets: ^2.21.0

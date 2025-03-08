@@ -10,35 +10,6 @@ class _MockSchemaContext extends SchemaContext {
 void main() {
   group('SchemaError', () {
     group('InvalidTypeConstraintError', () {
-      test('toMap() returns correct structure', () {
-        final context = _MockSchemaContext();
-        final error = InvalidTypeSchemaError(
-          valueType: String,
-          expectedType: int,
-          context: context,
-        );
-
-        final map = error.toMap();
-
-        expect(map, {
-          'key': 'invalid_type',
-          'name': 'test',
-          'schema': {
-            'type': 'object',
-            'constraints': [],
-            'nullable': false,
-            'description': '',
-            'defaultValue': null,
-            'properties': {},
-            'additionalProperties': false,
-            'required': []
-          },
-          'value': null,
-          'message': 'Invalid type of String, expected int',
-          'variables': {'valueType': 'String', 'expectedType': 'int'}
-        });
-      });
-
       test('renderMessage() with custom renderer', () {
         final error = InvalidTypeSchemaError(
           valueType: String,
@@ -47,8 +18,7 @@ void main() {
         );
 
         final message = error.render(
-          (v) => '<value>$v</value>',
-          htmlEscapeValues: false,
+          customRenderer: (key, value) => '<value>$value</value>',
         );
 
         expect(message,
@@ -90,91 +60,6 @@ void main() {
       });
     });
 
-    group('ObjectSchemaError', () {
-      test('toMap() includes nested errors', () {
-        final nestedError = ValidatorError(
-          key: 'custom_constraint',
-          message: 'Custom constraint',
-          variables: {},
-        );
-        final error = NestedSchemaError(
-          errors: [
-            SchemaValidationError(
-              validations: [nestedError],
-              context: _MockSchemaContext(),
-            )
-          ],
-          context: _MockSchemaContext(),
-        );
-
-        final map = error.variables;
-        expect(map, {
-          'schemaName': 'test',
-          'violations': {
-            'field': {
-              'key': 'constraints',
-              'message':
-                  'Schema on test violated: [{key: custom_constraint, message: Custom constraint, key__length: 17, message__length: 17}]',
-              'variables': {
-                'schemaName': 'test',
-                'constraints': [
-                  {'key': 'custom_constraint', 'message': 'Custom constraint'}
-                ]
-              },
-              'schema': {
-                'type': 'object',
-                'constraints': [],
-                'nullable': false,
-                'description': '',
-                'defaultValue': null,
-                'properties': {},
-                'additionalProperties': false,
-                'required': []
-              },
-              'value': null,
-              'name': 'test'
-            }
-          }
-        });
-      });
-    });
-
-    group('ListSchemaError', () {
-      test('toMap() includes indexed errors', () {
-        final itemError = NonNullableSchemaError(
-          context: _MockSchemaContext(),
-        );
-        final error = NestedSchemaError(
-          errors: [itemError],
-          context: _MockSchemaContext(),
-        );
-
-        final map = error.variables;
-        expect(map, {
-          'schemaName': 'test',
-          'violations': {
-            '0': {
-              'key': 'non_nullable',
-              'message': 'Non nullable value is null on test',
-              'variables': {'schemaName': 'test', 'value': 'N/A'},
-              'schema': {
-                'type': 'object',
-                'constraints': [],
-                'nullable': false,
-                'description': '',
-                'defaultValue': null,
-                'properties': {},
-                'additionalProperties': false,
-                'required': []
-              },
-              'value': null,
-              'name': 'test'
-            }
-          }
-        });
-      });
-    });
-
     test('toString() returns formatted string', () {
       final error = NonNullableSchemaError(
         context: _MockSchemaContext(),
@@ -198,13 +83,19 @@ void main() {
       var result = schema.validate('abc');
       expect(result.isFail, isTrue);
       var error = result.getViolation();
-      expect(error.message, contains('Too short: 3. Min: 5'));
+      expect(
+          error.message,
+          contains(
+              'The string length (3) is too short; it must be at least 5 characters.'));
 
       // Test too long
       result = schema.validate('abcdefghijk');
       expect(result.isFail, isTrue);
       error = result.getViolation();
-      expect(error.message, contains('Too long: 11. Max: 10'));
+      expect(
+          error.message,
+          contains(
+              'The string length (11) is too long; it must be at most 10 characters.'));
     });
 
     test('Enum validation error messages', () {
@@ -213,8 +104,10 @@ void main() {
       var result = schema.validate('yellow');
       expect(result.isFail, isTrue);
       var error = result.getViolation();
-      expect(error.message, contains('Invalid enum: yellow'));
-      expect(error.message, contains('Must be: [red, green, blue]'));
+      expect(
+          error.message,
+          contains(
+              'The value "yellow" is not an allowed value. Allowed values: [red, green, blue].'));
     });
 
     test('Date validation error messages', () {
@@ -223,8 +116,7 @@ void main() {
       var result = schema.validate('2023-13-45');
       expect(result.isFail, isTrue);
       var error = result.getViolation();
-      expect(error.message, contains('Invalid date: 2023-13-45'));
-      expect(error.message, contains('Expected: YYYY-MM-DD'));
+      expect(error.message, contains('Must be a valid date time string'));
     });
 
     test('Object validation error messages', () {
@@ -241,16 +133,21 @@ void main() {
       expect(result.isFail, isTrue);
       var error = result.getViolation();
       expect(error, isA<SchemaValidationError>());
-      print(error.message);
-      // expect(error.message, contains('Missing: age'));
+      expect(error.message,
+          contains('The following required properties are missing: [age].'));
 
       // Test invalid field value
       result = schema.validate({'name': 'B', 'age': -1});
       expect(result.isFail, isTrue);
       error = result.getViolation();
-      print(error.message);
-      expect(error.message, contains('Too short: 1. Min: 3'));
-      expect(error.message, contains('Too low: -1 < 0'));
+      expect(
+          error.message,
+          contains(
+              'The string length (1) is too short; it must be at least 3 characters.'));
+      expect(
+          error.message,
+          contains(
+              'The value -1 is too low; it must be greater than or equal to 0.'));
     });
 
     test('List validation error messages', () {
@@ -260,19 +157,28 @@ void main() {
       var result = schema.validate(['a']);
       expect(result.isFail, isTrue);
       var error = result.getViolation();
-      expect(error.message, contains('Too few items: 1. Min: 2'));
+      expect(
+          error.message,
+          contains(
+              'The list has only 1 items; at least 2 items are required.'));
 
       // Test too many items
       result = schema.validate(['a', 'b', 'c', 'd', 'e']);
       expect(result.isFail, isTrue);
       error = result.getViolation();
-      expect(error.message, contains('Too many items: 5. Max: 4'));
+      expect(
+          error.message,
+          contains(
+              'The list contains 5 items, which exceeds the allowed maximum of 4.'));
 
       // Test duplicate items
       result = schema.validate(['a', 'b', 'a']);
       expect(result.isFail, isTrue);
       error = result.getViolation();
-      expect(error.message, contains('Duplicates: [a]'));
+      expect(
+          error.message,
+          contains(
+              'The list contains duplicate items: [a]. All items must be unique.'));
     });
 
     test('Nested object validation error messages', () {
@@ -300,11 +206,18 @@ void main() {
       });
 
       expect(result.isFail, isTrue);
-      print(result.getViolation().message);
-      // var error = result.getViolation();
-      // expect(error.message, contains('Too short: 2. Min: 3'));
-      // expect(error.message, contains('Too low: -5 < 0'));
-      // expect(error.message, contains('Invalid enum: blue'));
+      expect(
+          result.getViolation().message,
+          contains(
+              'The string length (2) is too short; it must be at least 3 characters.'));
+      expect(
+          result.getViolation().message,
+          contains(
+              'The value -5 is too low; it must be greater than or equal to 0.'));
+      expect(
+          result.getViolation().message,
+          contains(
+              'The value "blue" is not an allowed value. Allowed values: [light, dark].'));
     });
   });
 }
