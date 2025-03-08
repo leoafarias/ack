@@ -25,7 +25,7 @@ void main() {
       );
       expect(
         result,
-        hasOneConstraintError(
+        hasOneConstraintViolation(
           'missing_discriminator_key',
         ),
       );
@@ -51,7 +51,7 @@ void main() {
       );
       expect(
         result,
-        hasOneConstraintError(
+        hasOneConstraintViolation(
           'no_schema_for_discriminator_value',
         ),
       );
@@ -79,10 +79,8 @@ void main() {
       );
       final error = (result as Fail).error as SchemaConstraintViolation;
       expect(
-        error.constraints,
-        hasOneConstraintError(
-          'key_must_be_required_in_schema',
-        ),
+        error.constraints.first.key,
+        'schemas_are_discriminated',
       );
     });
 
@@ -110,16 +108,16 @@ void main() {
       final resultError = (result as Fail).error as ObjectSchemaViolation;
 
       // Check that the 'value' property has an error
-      expect(resultError.errors.containsKey('value'), isTrue);
+      expect(resultError.violations.containsKey('value'), isTrue);
 
       // Check that it's an invalid type error
-      final valueError = resultError.errors['value']!;
+      final valueError = resultError.violations['value']!;
       expect(valueError, isA<SchemaConstraintViolation>());
 
       final constraintsError = valueError as SchemaConstraintViolation;
       expect(
         constraintsError.constraints,
-        contains(isA<InvalidTypeConstraintError>()),
+        contains(isA<InvalidTypeViolation>()),
       );
     });
   });

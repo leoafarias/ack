@@ -7,24 +7,33 @@ void main() {
     // Basic variable interpolation tests
     // ---------------------------------------------------------------
     test('Basic variable interpolation', () {
-      final template = Template('Hello, {{ name }}!');
-      expect(template.render({'name': 'World'}), 'Hello, World!');
+      final template = ViolationTemplate('Hello, {{ name }}!');
+      expect(
+        template.render(
+          overrideData: {'name': 'World'},
+        ),
+        'Hello, World!',
+      );
     });
 
     test('Multiple variables', () {
-      final template = Template('{{ greeting }}, {{ name }}!');
+      final template = ViolationTemplate('{{ greeting }}, {{ name }}!');
       expect(
-        template.render({'greeting': 'Hello', 'name': 'World'}),
+        template.render(
+          overrideData: {'greeting': 'Hello', 'name': 'World'},
+        ),
         'Hello, World!',
       );
     });
 
     test('Non-string values', () {
-      final template = Template(
+      final template = ViolationTemplate(
         'Number: {{ number }}, Boolean: {{ flag }}, Null: {{ missing }}',
       );
       expect(
-        template.render({'number': 42, 'flag': true, 'missing': null}),
+        template.render(
+          overrideData: {'number': 42, 'flag': true, 'missing': null},
+        ),
         'Number: 42, Boolean: true, Null: N/A',
       );
     });
@@ -33,51 +42,59 @@ void main() {
     // Nested property access tests
     // ---------------------------------------------------------------
     test('Nested property access', () {
-      final template = Template('{{ user.profile.name }}');
+      final template = ViolationTemplate('{{ user.profile.name }}');
       expect(
-        template.render({
-          'user': {
-            'profile': {'name': 'John Doe'}
-          }
-        }),
+        template.render(
+          overrideData: {
+            'user': {
+              'profile': {'name': 'John Doe'}
+            }
+          },
+        ),
         'John Doe',
       );
     });
 
     test('Deep nested property access', () {
-      final template = Template('{{ a.b.c.d.e }}');
+      final template = ViolationTemplate('{{ a.b.c.d.e }}');
       expect(
-        template.render({
-          'a': {
-            'b': {
-              'c': {
-                'd': {'e': 'Deep value'}
+        template.render(
+          overrideData: {
+            'a': {
+              'b': {
+                'c': {
+                  'd': {'e': 'Deep value'}
+                }
               }
             }
-          }
-        }),
+          },
+        ),
         'Deep value',
       );
     });
 
     test('Missing nested properties', () {
-      final template = Template('{{ a.b.c.missing }}');
+      final template = ViolationTemplate('{{ a.b.c.missing }}');
       expect(
-        template.render({
-          'a': {
-            'b': {'c': {}}
-          }
-        }),
+        template.render(
+          overrideData: {
+            'a': {
+              'b': {'c': {}}
+            }
+          },
+        ),
         'N/A',
       );
     });
 
     test('Null in path', () {
-      final template = Template('{{ a.b.c }}');
+      final template = ViolationTemplate('{{ a.b.c }}');
       expect(
-        template.render({
-          'a': {'b': null}
-        }),
+        template.render(
+          overrideData: {
+            'a': {'b': null}
+          },
+        ),
         'N/A',
       );
     });
@@ -86,89 +103,111 @@ void main() {
     // List iteration tests
     // ---------------------------------------------------------------
     test('Basic list iteration', () {
-      final template = Template('Items: {{#each items}}{{ @this }}{{/each}}');
+      final template =
+          ViolationTemplate('Items: {{#each items}}{{ @this }}{{/each}}');
       expect(
-        template.render({
-          'items': ['apple', 'banana', 'cherry']
-        }),
+        template.render(
+          overrideData: {
+            'items': ['apple', 'banana', 'cherry']
+          },
+        ),
         'Items: applebananacherry',
       );
     });
 
     test('List iteration with index', () {
-      final template = Template(
+      final template = ViolationTemplate(
         'Items: {{#each items}}[{{@index}}] {{ @this }}, {{/each}}',
       );
       expect(
-        template.render({
-          'items': ['apple', 'banana', 'cherry']
-        }),
+        template.render(
+          overrideData: {
+            'items': ['apple', 'banana', 'cherry']
+          },
+        ),
         'Items: [0] apple, [1] banana, [2] cherry, ',
       );
     });
 
     test('List of maps', () {
-      final template = Template(
+      final template = ViolationTemplate(
         'Users: {{#each users}}{{ name }} ({{ email }}), {{/each}}',
       );
       expect(
-        template.render({
-          'users': [
-            {'name': 'John', 'email': 'john@example.com'},
-            {'name': 'Jane', 'email': 'jane@example.com'}
-          ]
-        }),
+        template.render(
+          overrideData: {
+            'users': [
+              {'name': 'John', 'email': 'john@example.com'},
+              {'name': 'Jane', 'email': 'jane@example.com'}
+            ]
+          },
+        ),
         'Users: John (john@example.com), Jane (jane@example.com), ',
       );
     });
 
     test('Empty list', () {
-      final template = Template('Items: {{#each items}}{{ @this }}{{/each}}');
-      expect(template.render({'items': []}), 'Items: ');
+      final template =
+          ViolationTemplate('Items: {{#each items}}{{ @this }}{{/each}}');
+      expect(
+        template.render(
+          overrideData: {'items': []},
+        ),
+        'Items: ',
+      );
     });
 
     // ---------------------------------------------------------------
     // Map iteration tests
     // ---------------------------------------------------------------
     test('Basic map iteration', () {
-      final template = Template(
+      final template = ViolationTemplate(
         'Settings: {{#each settings}}{{ @this.key }}: {{ @this.value }}, {{/each}}',
       );
       expect(
-        template.render({
-          'settings': {'theme': 'dark', 'notifications': true}
-        }),
+        template.render(
+          overrideData: {
+            'settings': {'theme': 'dark', 'notifications': true}
+          },
+        ),
         'Settings: theme: dark, notifications: true, ',
       );
     });
 
     test('Map with nested objects', () {
-      final template = Template(
+      final template = ViolationTemplate(
         'Settings: {{#each settings}}{{ @this.key }}: {{ @this.value.name }}, {{/each}}',
       );
       expect(
-        template.render({
-          'settings': {
-            'profile': {'name': 'John'},
-            'theme': {'name': 'Dark Mode'}
-          }
-        }),
+        template.render(
+          overrideData: {
+            'settings': {
+              'profile': {'name': 'John'},
+              'theme': {'name': 'Dark Mode'}
+            }
+          },
+        ),
         'Settings: profile: John, theme: Dark Mode, ',
       );
     });
 
     test('Empty map', () {
-      final template = Template(
+      final template = ViolationTemplate(
         'Settings: {{#each settings}}{{ @this.key }}: {{ @this.value }}, {{/each}}',
       );
-      expect(template.render({'settings': {}}), 'Settings: ');
+      expect(
+        template.render(
+          overrideData: {'settings': {}},
+        ),
+        'Settings: ',
+      );
     });
 
     // ---------------------------------------------------------------
     // Nested loop tests
     // ---------------------------------------------------------------
     test('Nested list loops', () {
-      final template = Template('''
+      final template = ViolationTemplate('''
 Categories:
 {{#each categories}}
 - {{ name }}:
@@ -178,18 +217,20 @@ Categories:
 {{/each}}
 ''');
       expect(
-        template.render({
-          'categories': [
-            {
-              'name': 'Fruits',
-              'items': ['Apple', 'Banana']
-            },
-            {
-              'name': 'Vegetables',
-              'items': ['Carrot', 'Potato']
-            },
-          ]
-        }),
+        template.render(
+          overrideData: {
+            'categories': [
+              {
+                'name': 'Fruits',
+                'items': ['Apple', 'Banana']
+              },
+              {
+                'name': 'Vegetables',
+                'items': ['Carrot', 'Potato']
+              },
+            ]
+          },
+        ),
         '''
 Categories:
 - Fruits:
@@ -203,7 +244,7 @@ Categories:
     }, skip: 'TODO: Fix nested list loops');
 
     test('List loop inside map loop', () {
-      final template = Template('''
+      final template = ViolationTemplate('''
 {{#each data}}
 Section: {{ @this.key }}
 {{#each @this.value}}
@@ -213,12 +254,14 @@ Section: {{ @this.key }}
 {{/each}}
 ''');
       expect(
-        template.render({
-          'data': {
-            'Fruits': ['Apple', 'Banana'],
-            'Vegetables': ['Carrot', 'Potato']
-          }
-        }),
+        template.render(
+          overrideData: {
+            'data': {
+              'Fruits': ['Apple', 'Banana'],
+              'Vegetables': ['Carrot', 'Potato']
+            }
+          },
+        ),
         '''
 Section: Fruits
   - Apple
@@ -233,7 +276,7 @@ Section: Vegetables
     });
 
     test('Map loop inside list loop', () {
-      final template = Template('''
+      final template = ViolationTemplate('''
 Users:
 {{#each users}}
 - {{ name }}:
@@ -244,18 +287,20 @@ Users:
 {{/each}}
 ''');
       expect(
-        template.render({
-          'users': [
-            {
-              'name': 'John',
-              'settings': {'theme': 'dark', 'notifications': true}
-            },
-            {
-              'name': 'Jane',
-              'settings': {'theme': 'light', 'notifications': false}
-            }
-          ]
-        }),
+        template.render(
+          overrideData: {
+            'users': [
+              {
+                'name': 'John',
+                'settings': {'theme': 'dark', 'notifications': true}
+              },
+              {
+                'name': 'Jane',
+                'settings': {'theme': 'light', 'notifications': false}
+              }
+            ]
+          },
+        ),
         '''
 Users:
 - John:
@@ -274,7 +319,7 @@ Users:
     // Complex nested data
     // ---------------------------------------------------------------
     test('Deeply nested complex data structure', () {
-      final template = Template('''
+      final template = ViolationTemplate('''
 Organization: {{ org.name }}
 Departments:
 {{#each org.departments}}
@@ -291,45 +336,47 @@ Departments:
 ''');
 
       expect(
-        template.render({
-          'org': {
-            'name': 'Acme Inc',
-            'departments': [
-              {
-                'name': 'Engineering',
-                'employees': ['Alice', 'Bob', 'Charlie', 'Dave', 'Eve'],
-                'teams': {
-                  'Frontend': {
-                    'lead': {'name': 'Alice', 'title': 'Senior Developer'},
-                    'members': [
-                      {'name': 'Bob', 'role': 'UI Developer'},
-                      {'name': 'Charlie', 'role': 'UX Designer'}
-                    ]
-                  },
-                  'Backend': {
-                    'lead': {'name': 'Dave', 'title': 'Tech Lead'},
-                    'members': [
-                      {'name': 'Eve', 'role': 'API Developer'}
-                    ]
+        template.render(
+          overrideData: {
+            'org': {
+              'name': 'Acme Inc',
+              'departments': [
+                {
+                  'name': 'Engineering',
+                  'employees': ['Alice', 'Bob', 'Charlie', 'Dave', 'Eve'],
+                  'teams': {
+                    'Frontend': {
+                      'lead': {'name': 'Alice', 'title': 'Senior Developer'},
+                      'members': [
+                        {'name': 'Bob', 'role': 'UI Developer'},
+                        {'name': 'Charlie', 'role': 'UX Designer'}
+                      ]
+                    },
+                    'Backend': {
+                      'lead': {'name': 'Dave', 'title': 'Tech Lead'},
+                      'members': [
+                        {'name': 'Eve', 'role': 'API Developer'}
+                      ]
+                    }
+                  }
+                },
+                {
+                  'name': 'Marketing',
+                  'employees': ['Frank', 'Grace', 'Heidi'],
+                  'teams': {
+                    'Digital': {
+                      'lead': {'name': 'Frank', 'title': 'Marketing Director'},
+                      'members': [
+                        {'name': 'Grace', 'role': 'Social Media Specialist'},
+                        {'name': 'Heidi', 'role': 'Content Writer'}
+                      ]
+                    }
                   }
                 }
-              },
-              {
-                'name': 'Marketing',
-                'employees': ['Frank', 'Grace', 'Heidi'],
-                'teams': {
-                  'Digital': {
-                    'lead': {'name': 'Frank', 'title': 'Marketing Director'},
-                    'members': [
-                      {'name': 'Grace', 'role': 'Social Media Specialist'},
-                      {'name': 'Heidi', 'role': 'Content Writer'}
-                    ]
-                  }
-                }
-              }
-            ]
-          }
-        }),
+              ]
+            }
+          },
+        ),
         '''
 Organization: Acme Inc
 Departments:
@@ -359,11 +406,14 @@ Departments:
 
     /// Demonstrates that null items become "N/A" by default.
     test('Edge case - null in list', () {
-      final template = Template('Items: {{#each items}}{{ @this }}, {{/each}}');
+      final template =
+          ViolationTemplate('Items: {{#each items}}{{ @this }}, {{/each}}');
       expect(
-        template.render({
-          'items': ['apple', null, 'cherry']
-        }),
+        template.render(
+          overrideData: {
+            'items': ['apple', null, 'cherry']
+          },
+        ),
         'Items: apple, N/A, cherry, ',
       );
     });
@@ -372,33 +422,37 @@ Departments:
     /// merges parent context. If your Template code *doesn't* currently merge
     /// parent data, this test will produce 'N/A' instead of 'Inventory'.
     test('Edge case - access outer context in loop', () {
-      final template = Template(
+      final template = ViolationTemplate(
         '{{#each items}}{{ @this }} (from {{ source }}), {{/each}}',
       );
       expect(
-        template.render({
-          'source': 'Inventory',
-          'items': ['Apple', 'Banana', 'Cherry']
-        }),
+        template.render(
+          overrideData: {
+            'source': 'Inventory',
+            'items': ['Apple', 'Banana', 'Cherry']
+          },
+        ),
         // If parent context is merged, we get 'Inventory'
         'Apple (from Inventory), Banana (from Inventory), Cherry (from Inventory), ',
       );
     }, skip: 'TODO: Fix access outer context in loop');
 
     test('Edge case - numeric map keys', () {
-      final template = Template(
+      final template = ViolationTemplate(
         'Scores: {{#each scores}}Student {{@this.key}}: {{@this.value}}, {{/each}}',
       );
       expect(
-        template.render({
-          'scores': {'101': 85, '102': 92, '103': 78}
-        }),
+        template.render(
+          overrideData: {
+            'scores': {'101': 85, '102': 92, '103': 78}
+          },
+        ),
         'Scores: Student 101: 85, Student 102: 92, Student 103: 78, ',
       );
     });
 
     test('Mixed content with variables and loops', () {
-      final template = Template('''
+      final template = ViolationTemplate('''
 Report for {{ company }}
 Date: {{ date }}
 
@@ -421,28 +475,30 @@ Generated by {{ generator }}
 ''');
 
       expect(
-        template.render({
-          'company': 'Acme Inc',
-          'date': '2025-03-06',
-          'employees': [
-            {
-              'name': 'John Doe',
-              'position': 'Developer',
-              'skills': ['JavaScript', 'Python', 'Dart']
+        template.render(
+          overrideData: {
+            'company': 'Acme Inc',
+            'date': '2025-03-06',
+            'employees': [
+              {
+                'name': 'John Doe',
+                'position': 'Developer',
+                'skills': ['JavaScript', 'Python', 'Dart']
+              },
+              {
+                'name': 'Jane Smith',
+                'position': 'Designer',
+                'skills': ['UI/UX', 'Illustration', 'Prototyping']
+              }
+            ],
+            'budgets': {
+              'Engineering': 500000,
+              'Marketing': 300000,
+              'Operations': 200000
             },
-            {
-              'name': 'Jane Smith',
-              'position': 'Designer',
-              'skills': ['UI/UX', 'Illustration', 'Prototyping']
-            }
-          ],
-          'budgets': {
-            'Engineering': 500000,
-            'Marketing': 300000,
-            'Operations': 200000
+            'generator': 'Template Engine'
           },
-          'generator': 'Template Engine'
-        }),
+        ),
         '''
 Report for Acme Inc
 Date: 2025-03-06

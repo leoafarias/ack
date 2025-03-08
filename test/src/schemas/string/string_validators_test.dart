@@ -26,7 +26,7 @@ void main() {
         expect(schema.validate('test@example.com').isOk, isTrue);
 
         final result = schema.validate('not-an-email');
-        expect(result, hasOneConstraintError('email'));
+        expect(result, hasOneConstraintViolation('email'));
       });
     });
 
@@ -52,7 +52,7 @@ void main() {
         expect(schema.validate('#00ff55').isOk, isTrue);
 
         final result = schema.validate('not-a-color');
-        expect(result, hasOneConstraintError('hex_color'));
+        expect(result, hasOneConstraintViolation('hex_color'));
       });
     });
 
@@ -74,7 +74,7 @@ void main() {
         expect(schema.validate('').isOk, isTrue);
 
         final result = schema.validate('not empty');
-        expect(result, hasOneConstraintError('is_empty'));
+        expect(result, hasOneConstraintViolation('is_empty'));
       });
     });
 
@@ -98,7 +98,7 @@ void main() {
         expect(schema.validate('abc').isOk, isTrue);
 
         final result = schema.validate('ab');
-        expect(result, hasOneConstraintError('min_length'));
+        expect(result, hasOneConstraintViolation('min_length'));
       });
     });
 
@@ -122,7 +122,7 @@ void main() {
         expect(schema.validate('abc').isOk, isTrue);
 
         final result = schema.validate('abcd');
-        expect(result, hasOneConstraintError('max_length'));
+        expect(result, hasOneConstraintViolation('max_length'));
       });
     });
 
@@ -145,7 +145,7 @@ void main() {
         expect(schema.validate('orange').isOk, isTrue);
 
         final result = schema.validate('apple');
-        expect(result, hasOneConstraintError('not_one_of'));
+        expect(result, hasOneConstraintViolation('not_one_of'));
       });
     });
 
@@ -169,7 +169,7 @@ void main() {
         expect(schema.validate('red').isOk, isTrue);
 
         final result = schema.validate('yellow');
-        expect(result, hasOneConstraintError('enum'));
+        expect(result, hasOneConstraintViolation('enum'));
       });
     });
 
@@ -191,7 +191,7 @@ void main() {
         expect(schema.validate('hello').isOk, isTrue);
 
         final result = schema.validate('');
-        expect(result, hasOneConstraintError('not_empty'));
+        expect(result, hasOneConstraintViolation('not_empty'));
       });
     });
 
@@ -215,7 +215,7 @@ void main() {
         expect(schema.validate('2023-01-01T00:00:00.000Z').isOk, isTrue);
 
         final result = schema.validate('not a datetime');
-        expect(result, hasOneConstraintError('date_time'));
+        expect(result, hasOneConstraintViolation('date_time'));
       });
     });
   });

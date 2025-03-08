@@ -2,19 +2,24 @@ import 'package:ack/ack.dart';
 import 'package:ack/src/context.dart';
 import 'package:test/test.dart';
 
-class MockContext extends ViolationContext {
-  MockContext(Map<String, Object?> extra)
-      : super(name: 'mock_context', schema: StringSchema(), extra: extra);
+class _MockContext extends SchemaContext {
+  _MockContext(Map<String, Object?> extra)
+      : super(
+          name: 'mock_context',
+          schema: StringSchema(),
+          value: 'mock_value',
+          extra: extra,
+        );
 }
 
 void main() {
-  group('ConstraintError', () {
+  group('ConstraintViolation', () {
     test('toMap() returns correct structure', () {
-      final mockContext = MockContext({'key': 'value'});
+      final mockContext = _MockContext({'key': 'value'});
       final error = ConstraintViolation(
         key: 'test_constraint',
         message: 'Test constraint failed',
-        context: mockContext,
+        extra: {'key': 'value'},
       );
 
       final map = error.toMap();
@@ -30,14 +35,14 @@ void main() {
       final error = ConstraintViolation(
         key: 'test_constraint',
         message: 'Test constraint failed',
-        context: MockContext({'key': 'value'}),
+        extra: {'key': 'value'},
       );
 
       final errorString = error.toString();
 
       expect(
         errorString,
-        contains('ConstraintError:'),
+        contains('ConstraintViolation:'),
       );
       expect(
         errorString,

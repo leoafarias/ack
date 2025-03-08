@@ -23,7 +23,7 @@ void main() {
 
         final result = schema.validate(6);
         expect(result.isFail, isTrue);
-        expect(result, hasOneConstraintError('max_value'));
+        expect(result, hasOneConstraintViolation('max_value'));
       });
     });
 
@@ -62,7 +62,7 @@ void main() {
         expect(result.isOk, isTrue);
 
         final result2 = schema.validate(6);
-        expect(result2, hasOneConstraintError('range'));
+        expect(result2, hasOneConstraintViolation('range'));
       });
     });
   });

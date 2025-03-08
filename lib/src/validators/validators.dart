@@ -97,7 +97,7 @@ class DateTimeStringValidator extends ConstraintValidator<String>
   Map<String, Object?> toSchema() => {'format': 'date-time'};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Invalid date-time: {{ value }}. Expected: {{ extra.expected_format }} (e.g., {{ extra.example }})';
 }
 
@@ -142,7 +142,7 @@ class DateStringValidator extends ConstraintValidator<String>
   Map<String, Object?> toSchema() => {'format': 'date'};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Invalid date: {{ value }}. Expected: {{ extra.expected_format }} (e.g., {{ extra.example }})';
 }
 
@@ -179,7 +179,7 @@ class EnumStringValidator extends ConstraintValidator<String>
   Map<String, Object?> toSchema() => {'enum': enumValues};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Invalid enum: {{ value }}. Must be: {{ extra.enum_values }} (closest: {{ extra.closest_match }})';
 }
 
@@ -247,7 +247,7 @@ class NotOneOfStringValidator extends RegexPatternStringValidator {
   }
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Disallowed: {{ value }}. Not: {{ extra.disallowed_values }}';
 }
 
@@ -270,7 +270,7 @@ class NotEmptyStringValidator extends ConstraintValidator<String> {
   }
 
   @override
-  String get errorTemplate => 'Cannot be empty';
+  String get errorMessage => 'Cannot be empty';
 }
 
 /// {@template is_json_validator}
@@ -299,7 +299,7 @@ class IsJsonStringValidator extends ConstraintValidator<String> {
   }
 
   @override
-  String get errorTemplate => 'Invalid JSON: {{ value }}';
+  String get errorMessage => 'Invalid JSON: {{ value }}';
 }
 
 /// Base class for regex-based string validators
@@ -354,7 +354,7 @@ class RegexPatternStringValidator extends ConstraintValidator<String>
   Map<String, Object?> toSchema() => {'pattern': pattern, 'name': name};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Invalid {{ extra.pattern_name }}: {{ value }} (e.g., {{ extra.example }})';
 }
 
@@ -377,7 +377,7 @@ class IsEmptyStringValidator extends ConstraintValidator<String> {
   }
 
   @override
-  String get errorTemplate => 'Must be empty, got: {{ value }}';
+  String get errorMessage => 'Must be empty, got: {{ value }}';
 }
 
 /// {@template min_length_validator}
@@ -410,7 +410,7 @@ class MinLengthStringValidator extends ConstraintValidator<String>
   Map<String, Object?> toSchema() => {'minLength': min};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Too short: {{ extra.value_length }}. Min: {{ extra.min }}';
 }
 
@@ -445,7 +445,7 @@ class MaxLengthStringValidator extends ConstraintValidator<String>
   Map<String, Object?> toSchema() => {'maxLength': max};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Too long: {{ extra.value_length }}. Max: {{ extra.max }}';
 }
 
@@ -508,7 +508,7 @@ class UniqueItemsListValidator<T extends Object>
   Map<String, Object?> toSchema() => {'uniqueItems': true};
 
   @override
-  String get errorTemplate => 'Cannot have duplicates: {{ extra.duplicates }}';
+  String get errorMessage => 'Cannot have duplicates: {{ extra.duplicates }}';
 }
 
 /// {@template min_items_list_validator}
@@ -541,7 +541,7 @@ class MinItemsListValidator<T extends Object>
   Map<String, Object?> toSchema() => {'minItems': min};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Too few items: {{ value.length }}. Min: {{ extra.min }}';
 }
 
@@ -575,7 +575,7 @@ class MaxItemsListValidator<T> extends ConstraintValidator<List<T>>
   Map<String, Object?> toSchema() => {'maxItems': max};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Too many items: {{ extra.value_length }}. Max: {{ extra.max }}';
 }
 
@@ -618,7 +618,7 @@ class MinNumValidator<T extends num> extends ConstraintValidator<T>
       };
 
   @override
-  String get errorTemplate => exclusive
+  String get errorMessage => exclusive
       ? 'Must be > {{ extra.min }}, got: {{ extra.value }}'
       : 'Too low: {{ extra.value }} < {{ extra.min }}';
 }
@@ -654,7 +654,7 @@ class MultipleOfNumValidator<T extends num> extends ConstraintValidator<T>
   Map<String, Object?> toSchema() => {'multipleOf': multiple};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Not multiple of {{ extra.multiple }}: {{ extra.value }}';
 }
 
@@ -697,7 +697,7 @@ class MaxNumValidator<T extends num> extends ConstraintValidator<T>
       };
 
   @override
-  String get errorTemplate => exclusive
+  String get errorMessage => exclusive
       ? 'Must be < {{ extra.max }}, got: {{ extra.value }}'
       : 'Too high: {{ extra.value }} > {{ extra.max }}';
 }
@@ -752,7 +752,7 @@ class RangeNumValidator<T extends num> extends ConstraintValidator<T>
       };
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Out of range: {{ extra.value }} ({{ extra.min }}-{{ extra.max }})';
 }
 
@@ -812,7 +812,7 @@ class MinPropertiesObjectValidator extends ConstraintValidator<MapValue>
   Map<String, Object?> toSchema() => {'minProperties': min};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Too few properties: {{ extra.value_length }}. Min: {{ extra.min }}';
 }
 
@@ -846,72 +846,169 @@ class MaxPropertiesObjectValidator extends ConstraintValidator<MapValue>
   Map<String, Object?> toSchema() => {'maxProperties': max};
 
   @override
-  String get errorTemplate =>
+  String get errorMessage =>
       'Too many properties: {{ extra.value_length }}. Max: {{ extra.max }}';
 }
 
 /// {@template unallowed_property_constraint_error}
 /// Validator that checks if a [Map] has unallowed properties
 /// {@endtemplate}
-class UnallowedPropertyConstraintError extends ConstraintValidator<MapValue> {
-  /// The key of the unallowed property
-  final String key;
+class UnallowedPropertiesConstraintViolation
+    extends ConstraintValidator<MapValue> {
+  final ObjectSchema schema;
 
   /// {@macro unallowed_property_constraint_error}
-  UnallowedPropertyConstraintError(this.key)
+  UnallowedPropertiesConstraintViolation(this.schema)
       : super(
           name: 'unallowed_property',
-          description: 'Unallowed additional property: $key',
+          description:
+              'Unallowed additional properties: ${schema.getProperties().keys}',
         );
 
+  Iterable<String> _getUnallowedProperties(MapValue value) =>
+      value.keys.toSet().difference(schema.getProperties().keys.toSet());
+
   @override
-  bool isValid(MapValue value) => !value.containsKey(key);
+  bool isValid(MapValue value) => schema.getAllowsAdditionalProperties()
+      ? true
+      : _getUnallowedProperties(value).isEmpty;
 
   @override
   ConstraintViolation buildError(MapValue value, {extra}) {
-    final propertyValue = value[key];
+    final unallowedKeys = _getUnallowedProperties(value);
 
     return super.buildError(value, extra: {
-      'property_key': key,
-      'property_value': propertyValue,
+      'unallowed_properties': unallowedKeys,
     });
   }
 
   @override
-  String get errorTemplate => 'Unallowed: {{ extra.property_key }}';
+  String get errorMessage =>
+      'Unallowed properties: {{ extra.unallowed_properties }}';
 }
 
 /// {@template property_required_constraint_error}
 /// Validator that checks if a [Map] has required properties
 /// {@endtemplate}
-class PropertyRequiredConstraintError extends ConstraintValidator<MapValue> {
-  /// The key of the required property
-  final String key;
-
+class PropertyRequiredConstraintViolation
+    extends ConstraintValidator<MapValue> {
   /// The list of required keys
-  final List<String> requiredKeys;
+  final ObjectSchema schema;
 
   /// {@macro property_required_constraint_error}
-  PropertyRequiredConstraintError(this.key, this.requiredKeys)
+  PropertyRequiredConstraintViolation(this.schema)
       : super(
-          name: 'property_is_required',
-          description: 'Property ($key) is required',
+          name: 'required_properties',
+          description: 'Required properties: ${schema.getRequiredProperties()}',
         );
 
   @override
   bool isValid(MapValue value) {
-    // Valid if the key is not required OR if it is present in the value.
-    return !requiredKeys.contains(key) || value.containsKey(key);
+    return value.keys.containsAll(schema.getRequiredProperties());
   }
 
   @override
   ConstraintViolation buildError(MapValue value, {extra}) {
+    final missingKeys =
+        schema.getRequiredProperties().toSet().difference(value.keys.toSet());
+
     return super.buildError(value, extra: {
-      'key': key,
-      'required_keys': requiredKeys,
+      'missing_properties': missingKeys,
+      'required_properties': schema.getRequiredProperties(),
     });
   }
 
   @override
-  String get errorTemplate => 'Missing: {{ extra.key }}';
+  String get errorMessage =>
+      'Missing required properties: {{ extra.missing_properties }}';
+}
+
+class MustHaveDiscrimatorKeyValidation
+    extends ConstraintValidator<Map<String, ObjectSchema>> {
+  final String discriminatorKey;
+
+  MustHaveDiscrimatorKeyValidation(this.discriminatorKey)
+      : super(
+          name: 'schemas_are_discriminated',
+          description:
+              'Schemas are discriminated by $discriminatorKey, and must be required',
+        );
+
+  /// Returns the keys of schemas that are missing the discriminator key in their properties.
+  List<String> _getSchemasMissingDiscriminatorKey(
+    Map<String, ObjectSchema> value,
+  ) =>
+      value.entries
+          .where((entry) =>
+              !entry.value.getProperties().containsKey(discriminatorKey))
+          .map((entry) => entry.key)
+          .toList();
+
+  /// Returns the keys of schemas where the discriminator key is not a required property.
+  List<String> _getSchemasMissingRequiredKey(
+    Map<String, ObjectSchema> value,
+  ) =>
+      value.entries
+          .where((entry) =>
+              !entry.value.getRequiredProperties().contains(discriminatorKey))
+          .map((entry) => entry.key)
+          .toList();
+
+  @override
+  bool isValid(Map<String, ObjectSchema> value) {
+    return _getSchemasMissingDiscriminatorKey(value).isEmpty &&
+        _getSchemasMissingRequiredKey(value).isEmpty;
+  }
+
+  @override
+  ConstraintViolation buildError(Map<String, ObjectSchema> value, {extra}) {
+    final valuesMissingDiscriminatorKey =
+        _getSchemasMissingDiscriminatorKey(value);
+    final valuesMissingRequiredKey = _getSchemasMissingRequiredKey(value);
+
+    return super.buildError(value, extra: {
+      'discriminator_key': discriminatorKey,
+      'missing_discriminator_key': valuesMissingDiscriminatorKey,
+      'missing_required_key': valuesMissingRequiredKey,
+    });
+  }
+
+  @override
+  String get errorMessage {
+    return '''
+Schemas missing discriminator key: {{extra.discriminator_key}}.
+
+{{#each extra.missing_discriminator_key}}
+Missing discriminator key in schema: {{ @this.type }}
+{{/each}}
+
+{{#each extra.missing_required_key}}
+Missing required key in schema: {{ @this }}
+{{/each}}
+''';
+  }
+}
+
+/// Discriminated validator that checks if there is a schema with the discriminatorValue
+class NoKeyForDiscriminatorValueValidation
+    extends ConstraintValidator<MapValue> {
+  final String discriminatorKey;
+  final Map<String, ObjectSchema> schemas;
+
+  NoKeyForDiscriminatorValueValidation(this.discriminatorKey, this.schemas)
+      : super(
+          name: 'discriminated_schema',
+          description: 'Discriminated schema',
+        );
+
+  @override
+  bool isValid(MapValue value) {
+    final discriminatorValue = value[discriminatorKey];
+
+    return schemas.containsKey(discriminatorValue);
+  }
+
+  @override
+  String get errorMessage =>
+      'No schema found for discriminator value: {{value.$discriminatorKey}}';
 }

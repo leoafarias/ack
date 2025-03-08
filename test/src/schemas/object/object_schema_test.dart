@@ -191,10 +191,10 @@ void main() {
 
       final objectError =
           (invalidResult as Fail).error as ObjectSchemaViolation;
-      expect(objectError.errors.containsKey('user'), isTrue);
+      expect(objectError.violations.containsKey('user'), isTrue);
 
-      final userError = objectError.errors['user'] as ObjectSchemaViolation;
-      expect(userError.errors.containsKey('name'), isTrue);
+      final userError = objectError.violations['user'] as ObjectSchemaViolation;
+      expect(userError.violations.containsKey('name'), isTrue);
     });
   });
   group('Constructor validation', () {

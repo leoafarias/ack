@@ -2,10 +2,19 @@ import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('PropertyRequiredConstraintError', () {
+  late ObjectSchema schema;
+
+  setUp(() {
+    schema = Ack.object({
+      'name': Ack.string,
+      'age': Ack.int,
+    });
+  });
+
+  group('PropertyRequiredConstraintViolation', () {
     test('validates required property correctly', () {
-      final validator =
-          PropertyRequiredConstraintError('name', ['name', 'age']);
+      final validator = PropertyRequiredConstraintViolation(
+          schema.copyWith(required: ['name']));
 
       expect(
         validator.isValid({'name': 'John', 'age': 25}),
@@ -27,7 +36,8 @@ void main() {
     });
 
     test('handles empty required keys list', () {
-      final validator = PropertyRequiredConstraintError('name', []);
+      final validator =
+          PropertyRequiredConstraintViolation(schema.copyWith(required: []));
 
       expect(
         validator.isValid({'email': 'test@test.com'}),
@@ -37,7 +47,8 @@ void main() {
     });
 
     test('handles single required key', () {
-      final validator = PropertyRequiredConstraintError('name', ['name']);
+      final validator = PropertyRequiredConstraintViolation(
+          schema.copyWith(required: ['name']));
 
       expect(
         validator.isValid({'name': 'John'}),
@@ -53,7 +64,8 @@ void main() {
     });
 
     test('validates null values correctly', () {
-      final validator = PropertyRequiredConstraintError('name', ['name']);
+      final validator = PropertyRequiredConstraintViolation(
+          schema.copyWith(required: ['name']));
 
       expect(
         validator.isValid({'name': null}),

@@ -1,23 +1,32 @@
 import 'package:ack/ack.dart';
+import 'package:ack/src/context.dart';
 import 'package:test/test.dart';
 
-import '../../test_helpers.dart';
+class _MockContext extends SchemaContext {
+  _MockContext()
+      : super(
+          name: 'mock_context',
+          schema: StringSchema(),
+          value: 'mock_value',
+          extra: {},
+        );
+}
 
 void main() {
+  late _MockContext mockContext;
+
+  setUp(() {
+    mockContext = _MockContext();
+  });
+
   group('SchemaResult', () {
-    late MockViolationContext mockContext;
-
-    setUp(() {
-      mockContext = MockViolationContext();
-    });
-
     test('Ok result provides correct value access', () {
-      final result = SchemaResult.ok('test');
+      final result = mockContext.ok('test');
       expect(result.isOk, isTrue);
       expect(result.isFail, isFalse);
 
       result.match(
-        onOk: (value) => expect(value.getOrNull(), 'test'),
+        onOk: (value) => expect(value, 'test'),
         onFail: (_) => fail('Should not fail'),
       );
 
@@ -33,18 +42,18 @@ void main() {
     });
 
     test('Ok result with null value', () {
-      final result = SchemaResult.ok<String>(null);
+      final result = mockContext.unit();
       expect(result.getOrNull(), isNull);
       expect(result.getOrElse(() => 'default'), 'default');
-      expect(() => result.getOrThrow(), throwsA(isA<Error>()));
+      expect(() => result.getOrThrow(), throwsA(isA<AckViolationException>()));
     });
 
     test('Fail result provides error access', () {
-      final schemaError = SchemaConstraintViolation.single(
-        NonNullableValueConstraintError(context: mockContext),
-        context: mockContext,
+      final schemaError = SchemaConstraintViolation(
+        constraints: [NonNullableViolation()],
+        context: _MockContext(),
       );
-      final result = SchemaResult.fail(schemaError);
+      final result = mockContext.fail(schemaError);
 
       expect(result.isOk, isFalse);
       expect(result.isFail, isTrue);
@@ -54,10 +63,10 @@ void main() {
         onFail: (error) => expect(error, schemaError),
       );
 
-      expect(result.getErrors(), schemaError);
+      expect(result.getViolation(), schemaError);
       expect(result.getOrNull(), isNull);
       expect(result.getOrElse(() => 'default'), 'default');
-      expect(() => result.getOrThrow(), throwsA(isA<AckException>()));
+      expect(() => result.getOrThrow(), throwsA(isA<AckViolationException>()));
 
       var failCalled = false;
       result.onFail((_) => failCalled = true);
@@ -67,8 +76,8 @@ void main() {
     });
 
     test('getErrors throws on Ok result', () {
-      final result = SchemaResult.ok('test');
-      expect(() => result.getErrors(), throwsA(isA<StateError>()));
+      final result = mockContext.ok('test');
+      expect(() => result.getViolation(), throwsA(isA<ExceptionViolation>()));
     });
   });
 }

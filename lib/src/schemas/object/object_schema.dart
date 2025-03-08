@@ -6,6 +6,7 @@ final class ObjectSchema extends Schema<MapValue>
     with SchemaFluentMethods<ObjectSchema, MapValue> {
   final bool _additionalProperties;
   final List<String> _required;
+
   final Map<String, Schema> _properties;
 
   ObjectSchema(
@@ -35,56 +36,6 @@ final class ObjectSchema extends Schema<MapValue>
     }
   }
 
-  @override
-  SchemaViolation? _validateAsType(MapValue value) {
-    final context = getCurrentViolationContext();
-    final error = super._validateAsType(value);
-
-    if (error != null) return error;
-
-    final constraintErrors = <String, SchemaViolation>{};
-
-    // Validate properties
-    for (final key in _properties.keys) {
-      final requiredError =
-          PropertyRequiredConstraintError(key, _required).validate(value);
-      if (requiredError != null) {
-        constraintErrors[key] = SchemaConstraintViolation.single(
-          requiredError,
-          context: context,
-        );
-        continue;
-      }
-
-      final schemaProp = _properties[key]!;
-
-      final propError = schemaProp.validateSchema(value[key]);
-
-      if (propError == null) continue;
-
-      constraintErrors[key] = propError;
-    }
-
-    if (!_additionalProperties) {
-      final differentKeys =
-          value.keys.toSet().difference(_properties.keys.toSet());
-      for (final key in differentKeys) {
-        final unallowedError =
-            UnallowedPropertyConstraintError(key).validate(value);
-        if (unallowedError != null) {
-          constraintErrors[key] = SchemaConstraintViolation.single(
-            unallowedError,
-            context: context,
-          );
-        }
-      }
-    }
-
-    if (constraintErrors.isEmpty) return null;
-
-    return ObjectSchemaViolation(errors: constraintErrors, context: context);
-  }
-
   ObjectSchema extend(
     Map<String, Schema> properties, {
     bool? additionalProperties,
@@ -108,7 +59,7 @@ final class ObjectSchema extends Schema<MapValue>
           prop._properties,
           additionalProperties: prop._additionalProperties,
           required: prop._required,
-          constraints: prop._constraints,
+          constraints: prop._validators,
         );
       } else {
         mergedProperties[key] = prop;
@@ -121,7 +72,7 @@ final class ObjectSchema extends Schema<MapValue>
       additionalProperties: additionalProperties,
       required: requiredProperties,
       properties: mergedProperties,
-      constraints: [..._constraints, ...?constraints],
+      constraints: [..._validators, ...?constraints],
       nullable: nullable,
       description: description,
       defaultValue: defaultValue,
@@ -133,6 +84,39 @@ final class ObjectSchema extends Schema<MapValue>
   Map<String, Schema> getProperties() => _properties;
 
   bool getAllowsAdditionalProperties() => _additionalProperties;
+
+  @override
+  SchemaResult<MapValue> validateValue(
+    Object? value,
+    SchemaContext<MapValue> context,
+  ) {
+    final result = super.validateValue(value, context);
+
+    if (result.isFail) return result;
+
+    final resultValue = result.getOrNull();
+
+    if (_nullable && resultValue == null) return SchemaResult.unit(this);
+
+    final violations = <String, SchemaViolation>{};
+
+    for (final entry in _properties.entries) {
+      final propKey = entry.key;
+      final propSchema = entry.value;
+
+      final propResult = propSchema.validate(value, debugName: propKey);
+
+      if (propResult.isFail) {
+        violations[propKey] = propResult.getViolation();
+      }
+    }
+
+    if (violations.isEmpty) return context.ok(resultValue!);
+
+    return context.fail(
+      ObjectSchemaViolation(violations: violations, context: context),
+    );
+  }
 
   /// Will extend the ObjectSchema with the values passed into call method
   ///
@@ -177,7 +161,7 @@ final class ObjectSchema extends Schema<MapValue>
     return ObjectSchema(
       properties ?? _properties,
       additionalProperties: additionalProperties ?? _additionalProperties,
-      constraints: constraints ?? _constraints,
+      constraints: constraints ?? _validators,
       description: description ?? _description,
       required: required ?? _required,
       nullable: nullable ?? _nullable,

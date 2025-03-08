@@ -1,26 +1,27 @@
 import 'dart:async';
 
+import 'package:ack/src/schemas/schema.dart';
+import 'package:ack/src/validation/schema_error.dart';
 import 'package:meta/meta.dart';
 
-import 'schemas/schema.dart';
 import 'validation/schema_result.dart';
 
-final _schemaMetadataKey = #schemaMetadata;
+final kSchemaContextKey = #schemaContextKey;
 
-class ViolationContext<T extends Schema> {
+class SchemaContext<T extends Object> {
   final String? name;
   final Object? value;
-  final T? schema;
+  final Schema schema;
+
   Map<String, Object?> extra = {};
 
-  ViolationContext({
-    String? name,
-    this.schema,
-    this.value,
+  SchemaContext({
+    required this.name,
+    required this.schema,
+    required this.value,
     Map<String, Object?>? extra,
-  }) : name = name ?? schema?.runtimeType.toString() {
+  }) {
     if (extra != null) {
-      _assertNoReservedKeys(extra);
       this.extra = extra;
     }
   }
@@ -37,8 +38,15 @@ class ViolationContext<T extends Schema> {
 
   bool get isNotEmpty => toMap().isNotEmpty;
 
-  ViolationContext mergeExtras(Map<String, Object?> extra) {
-    return ViolationContext(
+  SchemaResult<T> ok(T value) => SchemaResult.ok(value, schema);
+
+  SchemaResult<T> fail(SchemaViolation error) =>
+      SchemaResult.fail(error, schema);
+
+  SchemaResult<T> unit() => SchemaResult.unit(schema);
+
+  SchemaContext mergeExtra(Map<String, Object?> extra) {
+    return SchemaContext(
       name: name,
       schema: schema,
       value: value,
@@ -52,17 +60,30 @@ class ViolationContext<T extends Schema> {
     extra.addEntries([entry]);
   }
 
+  @override
   Map<String, Object?> toMap() => {
         if (name != null) 'name': name,
-        if (value != null) 'value': value,
-        if (schema != null) 'schema': schema!.toMap(),
+        'value': value,
         if (extra.isNotEmpty) 'extra': extra,
       };
 }
 
-ViolationContext<T> getCurrentViolationContext<T extends Schema>() {
+SchemaResult<T> executeWithContext<T extends Object>(
+  SchemaContext context,
+  SchemaResult<T> Function() action,
+) {
+  return wrapWithViolationContext(context, () => action());
+}
+
+@visibleForTesting
+T wrapWithViolationContext<T>(SchemaContext context, T Function() action) {
+  return Zone.current
+      .fork(zoneValues: {kSchemaContextKey: context}).run(action);
+}
+
+SchemaContext getCurrentSchemaContext() {
   try {
-    return maybeGetCurrentViolationContext<T>()!;
+    return Zone.current[kSchemaContextKey] as SchemaContext;
   } catch (e) {
     Error.throwWithStackTrace(
       StateError(
@@ -71,21 +92,4 @@ ViolationContext<T> getCurrentViolationContext<T extends Schema>() {
       StackTrace.current,
     );
   }
-}
-
-ViolationContext<T>? maybeGetCurrentViolationContext<T extends Schema>() {
-  return Zone.current[_schemaMetadataKey] as ViolationContext<T>?;
-}
-
-SchemaResult<T> executeWithContext<T extends Object>(
-  ViolationContext context,
-  SchemaResult<T> Function() action,
-) {
-  return wrapWithViolationContext(context, () => action());
-}
-
-@visibleForTesting
-T wrapWithViolationContext<T>(ViolationContext context, T Function() action) {
-  return Zone.current
-      .fork(zoneValues: {_schemaMetadataKey: context}).run(action);
 }

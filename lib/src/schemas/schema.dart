@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:ack/src/ack.dart';
 import 'package:meta/meta.dart';
 
 import '../context.dart';
@@ -60,7 +61,7 @@ sealed class Schema<T extends Object> {
   final T? _defaultValue;
 
   /// A list of validators applied to this schema.
-  final List<ConstraintValidator<T>> _constraints;
+  final List<ConstraintValidator<T>> _validators;
 
   /// {@macro schema}
   ///
@@ -76,7 +77,7 @@ sealed class Schema<T extends Object> {
     required T? defaultValue,
   })  : _nullable = nullable,
         _description = description ?? '',
-        _constraints = constraints ?? const [],
+        _validators = constraints ?? const [],
         _defaultValue = defaultValue;
 
   /// Validates the [value] against the constraints, assuming it is already of type [T].
@@ -84,18 +85,15 @@ sealed class Schema<T extends Object> {
   /// This method is primarily for internal use and testing, after the value has
   /// already been successfully parsed or is known to be of the correct type [T].
   ///
-  /// Returns a list of [SchemaViolation] objects if any constraints are violated,
+  /// Returns a list of [ConstraintViolation] objects if any constraints are violated,
   /// otherwise returns an empty list.
-  SchemaViolation? _validateAsType(T value) {
-    final context = getCurrentViolationContext();
-    final errors = _constraints
+  @protected
+  @mustCallSuper
+  List<ConstraintViolation> checkValidators(T value) {
+    return [..._validators]
         .map((e) => e.validate(value))
         .whereType<ConstraintViolation>()
         .toList();
-
-    if (errors.isEmpty) return null;
-
-    return SchemaConstraintViolation.multiple(errors, context: context);
   }
 
   /// Attempts to parse the given [value] into type [T].
@@ -107,7 +105,7 @@ sealed class Schema<T extends Object> {
   /// Returns the parsed value of type [T] or `null` if parsing fails.
 
   @visibleForTesting
-  T? tryParse(Object value) {
+  T? tryParse(Object? value) {
     return value is T ? value : null;
   }
 
@@ -129,7 +127,7 @@ sealed class Schema<T extends Object> {
   });
 
   /// Returns the list of constraint validators associated with this schema.
-  List<ConstraintValidator<T>> getConstraints() => _constraints;
+  List<ConstraintValidator<T>> getConstraints() => _validators;
 
   /// Returns whether this schema allows null values.
   bool getNullableValue() => _nullable;
@@ -143,50 +141,6 @@ sealed class Schema<T extends Object> {
   /// Returns the default value of this schema.
   T? getDefaultValue() => _defaultValue;
 
-  /// Checks the [value] against this schema, performing type checking and
-  /// constraint validation.
-  ///
-  /// This is the core validation method for [Schema].
-  ///
-  /// If [value] is `null`:
-  ///   - If [_nullable] is `true`, returns [Ok] with `null` data.
-  ///   - If [_nullable] is `false`, returns [Fail] with a [SchemaViolation.nonNullableValue].
-  ///
-  /// If [value] is not `null`:
-  ///   - Attempts to parse [value] to type [T] using [tryParse].
-  ///   - If parsing fails, returns [Fail] with a [SchemaViolation.invalidType].
-  ///   - If parsing succeeds, validates the parsed value against the schema's
-  ///     constraints using [_validateAsType].
-  ///   - Returns [Ok] with the parsed value if validation succeeds, or [Fail]
-  ///     with a list of [SchemaViolation] objects if validation fails.
-  @protected
-  @visibleForTesting
-  SchemaViolation? validateSchema(Object? value) {
-    final context = getCurrentViolationContext();
-    if (value == null) {
-      return _nullable
-          ? null
-          : SchemaConstraintViolation.single(
-              NonNullableValueConstraintError(context: context),
-              context: context,
-            );
-    }
-
-    final typedValue = tryParse(value);
-    if (typedValue == null) {
-      return SchemaConstraintViolation.single(
-        InvalidTypeConstraintError(
-          valueType: value.runtimeType,
-          expectedType: T,
-          context: context,
-        ),
-        context: context,
-      );
-    }
-
-    return _validateAsType(typedValue);
-  }
-
   /// Validates the [value] against this schema and returns a [SchemaResult].
   ///
   /// This method provides a non-throwing way to validate values against the schema.
@@ -195,32 +149,72 @@ sealed class Schema<T extends Object> {
   /// [SchemaViolation.unknownException] if an exception occurs.
   ///
   /// Use [validateOrThrow] if you prefer to throw an exception on validation failure.
+  @protected
+  @mustCallSuper
+  SchemaResult<T> validateValue(Object? value, SchemaContext<T> context) {
+    SchemaResult<T> failConstraints(List<ConstraintViolation> violations) {
+      return SchemaResult.fail(
+        SchemaConstraintViolation(constraints: violations, context: context),
+        this,
+      );
+    }
+
+    try {
+      if (value == null) {
+        return _nullable
+            ? SchemaResult.unit(this)
+            : failConstraints([NonNullableViolation()]);
+      }
+
+      final typedValue = tryParse(value);
+      if (typedValue == null) {
+        return failConstraints([
+          InvalidTypeViolation(
+            valueType: value.runtimeType,
+            expectedType: T,
+          ),
+        ]);
+      }
+
+      final constraintViolations = checkValidators(typedValue);
+
+      if (constraintViolations.isNotEmpty) {
+        return SchemaResult.fail(
+          SchemaConstraintViolation(
+            constraints: constraintViolations,
+            context: context,
+          ),
+          this,
+        );
+      }
+
+      return SchemaResult.ok(typedValue, this);
+    } catch (e, stackTrace) {
+      return SchemaResult.fail(
+        UnknownSchemaViolation(
+          error: e,
+          stackTrace: stackTrace,
+          context: context,
+        ),
+        this,
+      );
+    }
+  }
+
+  /// Validates the [value] against this schema and returns a [SchemaResult].
+  ///
+  /// This method provides a non-throwing way to validate values against the schema.
+  /// It wraps the validation logic in a `try-catch` block to handle potential
+  /// exceptions during validation and returns a [Fail] result with a
+  /// [SchemaViolation.unknownException] if an exception occurs.
   SchemaResult<T> validate(Object? value, {String? debugName}) {
-    return executeWithContext(
-      ViolationContext(name: debugName, schema: this),
-      () {
-        try {
-          final error = validateSchema(value);
-          if (error == null) {
-            return SchemaResult.ok(
-              value == null ? _defaultValue : tryParse(value),
-            );
-          }
-
-          return SchemaResult.fail(error);
-        } catch (e, stackTrace) {
-          final context = getCurrentViolationContext();
-
-          return SchemaResult.fail(
-            UnknownSchemaViolation(
-              error: e,
-              stackTrace: stackTrace,
-              context: context,
-            ),
-          );
-        }
-      },
+    final context = SchemaContext<T>(
+      name: debugName,
+      schema: this,
+      value: value,
     );
+
+    return executeWithContext(context, () => validateValue(value, context));
   }
 
   /// Converts this schema to a [Map] representation.
@@ -230,7 +224,7 @@ sealed class Schema<T extends Object> {
   Map<String, Object?> toMap() {
     return {
       'type': type.name,
-      'constraints': _constraints.map((e) => e.toMap()).toList(),
+      'constraints': _validators.map((e) => e.toMap()).toList(),
       'nullable': _nullable,
       'description': _description,
       'defaultValue': _defaultValue,
@@ -257,7 +251,7 @@ mixin SchemaFluentMethods<S extends Schema<T>, T extends Object> on Schema<T> {
   /// The new schema will inherit all properties of the original schema and
   /// include the provided [constraints] in addition to its existing ones.
   S withConstraints(List<ConstraintValidator<T>> constraints) =>
-      copyWith(constraints: [..._constraints, ...constraints]) as S;
+      copyWith(constraints: [..._validators, ...constraints]) as S;
 
   /// Creates a [ListSchema] with this schema as its item schema.
   ///
@@ -270,19 +264,16 @@ mixin SchemaFluentMethods<S extends Schema<T>, T extends Object> on Schema<T> {
   /// This is a convenience method equivalent to calling `copyWith(nullable: true)`.
   S nullable() => copyWith(nullable: true) as S;
 
-  /// Validates the [value] against this schema and throws an [AckException] if validation fails.
+  /// Validates the [value] against this schema and throws an [AckViolationException] if validation fails.
   ///
   /// If validation is successful, returns the validated value of type [T].
-  /// If validation fails, throws an [AckException] containing a list of [SchemaViolation] objects.
+  /// If validation fails, throws an [AckViolationException] containing a list of [SchemaViolation] objects.
   ///
   /// **Note**: `AckException` is assumed to be a custom exception class defined elsewhere,
   /// likely in `ack_base.dart`, to handle schema validation errors. Ensure `AckException`
   /// is properly documented to explain its structure and usage for conveying validation failure details.
   void validateOrThrow(Object value, {String? debugName}) {
-    return validate(value, debugName: debugName).match(
-      onOk: (data) => data,
-      onFail: (errors) => throw AckException(errors),
-    );
+    validate(value, debugName: debugName).getOrThrow();
   }
 }
 
@@ -351,7 +342,7 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
   ///
   /// Returns the parsed value of type [T] or `null` if parsing fails.
   @override
-  T? tryParse(Object value) {
+  T? tryParse(Object? value) {
     if (value is T) return value;
     if (!_strict) {
       if (value is String) return _tryParseString(value);
@@ -384,7 +375,7 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
     String? description,
   }) {
     return builder(
-      constraints: constraints ?? _constraints,
+      constraints: constraints ?? _validators,
       description: description ?? _description,
       nullable: nullable ?? _nullable,
       strict: strict ?? _strict,

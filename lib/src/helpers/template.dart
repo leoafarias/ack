@@ -1,8 +1,8 @@
-class Template {
+class ViolationTemplate {
   final String _content;
   final Map<String, Object?> _data;
 
-  const Template(this._content, {Map<String, Object?>? data})
+  const ViolationTemplate(this._content, {Map<String, Object?>? data})
       : _data = data ?? const {};
 
   /// Orchestrates both loop parsing and variable replacement
@@ -147,9 +147,25 @@ class Template {
     return current;
   }
 
-  String render([Map<String, Object?>? overrideData]) {
+  String render({
+    Map<String, Object?>? overrideData,
+    TemplateRenderer? customRenderer,
+  }) {
     final renderData = overrideData ?? _data;
 
-    return _renderTemplate(_content, renderData);
+    if (customRenderer == null) {
+      return _renderTemplate(_content, renderData);
+    }
+
+    final customRenderedData = <String, Object?>{};
+
+    for (final entry in renderData.entries) {
+      final customRendered = customRenderer(entry);
+      customRenderedData[entry.key] = customRendered;
+    }
+
+    return _renderTemplate(_content, customRenderedData);
   }
 }
+
+typedef TemplateRenderer = String Function(MapEntry<String, Object?> entry);

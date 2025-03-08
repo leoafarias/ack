@@ -1,5 +1,4 @@
 import 'package:ack/ack.dart';
-import 'package:ack/src/context.dart';
 import 'package:test/test.dart';
 
 class IsSchemaError extends Matcher {
@@ -36,10 +35,10 @@ class IsSchemaError extends Matcher {
   }
 }
 
-class IsConstraintError extends Matcher {
+class IsConstraintViolation extends Matcher {
   final String key;
 
-  IsConstraintError(this.key);
+  IsConstraintViolation(this.key);
 
   @override
   bool matches(item, Map matchState) {
@@ -135,11 +134,9 @@ List<SchemaViolation> getErrors(
   final extractedErrors = switch (error) {
     SchemaConstraintViolation constraintsError => [constraintsError],
     ObjectSchemaViolation propertiesError =>
-      propertiesError.errors.values.toList(),
-    ListSchemaViolation itemsError => itemsError.errors.values.toList(),
-    DiscriminatedSchemaViolation discriminatedError => [
-        discriminatedError.error
-      ],
+      propertiesError.violations.values.toList(),
+    ListSchemaViolation itemsError => itemsError.violations.values.toList(),
+    ExceptionViolation() => [error],
     UnknownSchemaViolation() => [error],
   };
 
@@ -245,32 +242,5 @@ class IsOkMatcher<T extends Object> extends Matcher {
   }
 }
 
-Matcher isSchemaError(String type) => IsSchemaError(type);
-Matcher isConstraintError(String name) => IsConstraintError(name);
-
-Matcher hasOneSchemaError(String type) => _hasSchemaErrors([type], count: 1);
-
-Matcher hasSchemaErrors(List<String> types, {required int count}) =>
-    _hasSchemaErrors(types, count: count);
-
-Matcher hasOneConstraintError(String name) => HasConstraintErrors([name], 1);
-
-Matcher hasConstraintErrors(List<String> names, {required int count}) =>
-    HasConstraintErrors(names, count);
-
-extension FailExt<T extends Object> on Fail<T> {
-  List<ConstraintViolation> get constraintErrors {
-    if (error is! SchemaConstraintViolation) {
-      throw ArgumentError('error is not a SchemaError');
-    }
-    return (error as SchemaConstraintViolation)
-        .constraints
-        .whereType<ConstraintViolation>()
-        .toList();
-  }
-}
-
-class MockViolationContext extends ViolationContext {
-  MockViolationContext({Map<String, Object?>? extra, Schema? schema})
-      : super(name: 'mock_context', schema: schema, extra: extra);
-}
+Matcher hasOneConstraintViolation(String name) =>
+    HasConstraintErrors([name], 1);

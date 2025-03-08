@@ -35,7 +35,7 @@ void main() {
     test('error message is correct', () {
       final validator = MinItemsListValidator(3);
       final error = validator.buildError([1, 2]);
-      expect(error.message, 'Too few items: 2. Min: 3');
+      expect(error.template, 'Too few items: 2. Min: 3');
     });
   });
 }

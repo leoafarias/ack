@@ -1,39 +1,36 @@
 import 'package:ack/ack.dart';
+import 'package:ack/src/context.dart';
 import 'package:test/test.dart';
 
-import 'constraint_error_test.dart';
+class _MockSchemaContext extends SchemaContext {
+  _MockSchemaContext()
+      : super(name: 'test', schema: ObjectSchema({}), value: null);
+}
 
 void main() {
-  late MockContext mockContext;
-
-  setUp(() {
-    mockContext = MockContext({});
-  });
-
   group('AckException', () {
     test('toMap() returns error map', () {
       // Create a SchemaConstraintsError containing the constraint errors
       final constraintErrors = [
-        NonNullableValueConstraintError(context: mockContext),
-        InvalidTypeConstraintError(
+        NonNullableViolation(),
+        InvalidTypeViolation(
           valueType: String,
           expectedType: int,
-          context: mockContext,
         ),
       ];
 
-      final schemaError = SchemaConstraintViolation.multiple(
-        constraintErrors,
-        context: mockContext,
+      final schemaError = SchemaConstraintViolation(
+        constraints: constraintErrors,
+        context: _MockSchemaContext(),
       );
-      final exception = AckException(schemaError);
+      final exception = AckViolationException(schemaError);
       final map = exception.toMap();
 
       // Now checks a single 'error' field instead of 'errors' list
-      expect(map.containsKey('error'), isTrue);
+      expect(map.containsKey('violation'), isTrue);
 
       // Check the structure of the error
-      final errorMap = map['error'] as Map<String, dynamic>;
+      final errorMap = map['violation'] as Map<String, dynamic>;
       expect(errorMap['key'], 'constraints');
 
       // Verify the constraints are included
@@ -44,19 +41,18 @@ void main() {
     });
 
     test('toString() includes error details', () {
-      final constraintError =
-          NonNullableValueConstraintError(context: mockContext);
-      final schemaError = SchemaConstraintViolation.single(
-        constraintError,
-        context: mockContext,
+      final constraintError = NonNullableViolation();
+      final schemaError = SchemaConstraintViolation(
+        constraints: [constraintError],
+        context: _MockSchemaContext(),
       );
-      final exception = AckException(schemaError);
+      final exception = AckViolationException(schemaError);
 
       final value = exception.toString();
 
       expect(
         value,
-        contains('AckException:'),
+        contains('$AckViolationException'),
       );
       expect(
         value,

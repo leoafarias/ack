@@ -12,32 +12,40 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
   })  : _itemSchema = itemSchema,
         super(type: SchemaType.list);
 
-  @override
-  SchemaViolation? _validateAsType(List<V> value) {
-    final context = getCurrentViolationContext();
-    final error = super._validateAsType(value);
-
-    if (error != null) return error;
-
-    final constraintErrors = <int, SchemaViolation>{};
-
-    for (var i = 0; i < value.length; i++) {
-      final indexError = _itemSchema.validateSchema(value[i]);
-
-      if (indexError == null) continue;
-
-      constraintErrors[i] = indexError;
-    }
-
-    if (constraintErrors.isEmpty) return null;
-
-    return ListSchemaViolation(errors: constraintErrors, context: context);
-  }
-
   Schema<V> getItemSchema() => _itemSchema;
 
   @override
-  List<V>? tryParse(Object value) {
+  SchemaResult<List<V>> validateValue(
+    Object? value,
+    SchemaContext<List<V>> context,
+  ) {
+    final result = super.validateValue(value, context);
+
+    if (result.isFail) return result;
+
+    final listValue = result.getOrNull();
+
+    if (_nullable && listValue == null) return context.unit();
+
+    final itemsViolation = <int, SchemaViolation>{};
+
+    for (var i = 0; i < listValue!.length; i++) {
+      final itemResult = _itemSchema.validate(listValue[i], debugName: '$i');
+
+      if (itemResult.isFail) {
+        itemsViolation[i] = itemResult.getViolation();
+      }
+    }
+
+    if (itemsViolation.isEmpty) return context.ok(listValue);
+
+    return context.fail(
+      ListSchemaViolation(violations: itemsViolation, context: context),
+    );
+  }
+
+  @override
+  List<V>? tryParse(Object? value) {
     if (value is! List) return null;
 
     List<V>? parsedList = <V>[];
@@ -62,7 +70,7 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
   }) {
     return ListSchema(
       _itemSchema,
-      constraints: constraints ?? _constraints,
+      constraints: constraints ?? _validators,
       nullable: nullable ?? _nullable,
       description: description ?? _description,
       defaultValue: defaultValue ?? _defaultValue,

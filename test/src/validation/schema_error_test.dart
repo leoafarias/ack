@@ -1,22 +1,19 @@
 import 'package:ack/ack.dart';
+import 'package:ack/src/context.dart';
 import 'package:test/test.dart';
 
-import '../../test_helpers.dart';
+class _MockSchemaContext extends SchemaContext {
+  _MockSchemaContext()
+      : super(name: 'test', schema: ObjectSchema({}), value: null);
+}
 
 void main() {
   group('SchemaError', () {
-    late MockViolationContext mockContext;
-
-    setUp(() {
-      mockContext = MockViolationContext();
-    });
-
     group('InvalidTypeConstraintError', () {
       test('toMap() returns correct structure', () {
-        final error = InvalidTypeConstraintError(
+        final error = InvalidTypeViolation(
           valueType: String,
           expectedType: int,
-          context: mockContext,
         );
 
         final map = error.toMap();
@@ -24,38 +21,34 @@ void main() {
         expect(map, {
           'key': 'invalid_type',
           'message': 'Invalid type of String, expected int',
-          'context': {
-            'extra': {
-              'value_type': 'String',
-              'expected_type': 'int',
-            },
+          'extra': {
+            'value_type': 'String',
+            'expected_type': 'int',
           },
         });
       });
 
       test('renderMessage() with custom renderer', () {
-        final error = InvalidTypeConstraintError(
+        final error = InvalidTypeViolation(
           valueType: String,
           expectedType: int,
-          context: mockContext,
         );
 
-        final message = error.renderMessage(
-          (key, value) => '[$key: $value]',
+        final message = error.render(
+          customRenderer: (entry) => '<value>${entry.value}</value>',
         );
 
-        expect(message, 'Invalid type of String, expected int');
+        expect(message,
+            'Invalid type of <value>String</value>, expected <value>int</value>');
       });
     });
 
     group('SchemaConstraintsError', () {
       test('single constraint error', () {
-        final constraintError = NonNullableValueConstraintError(
-          context: mockContext,
-        );
-        final error = SchemaConstraintViolation.single(
-          constraintError,
-          context: mockContext,
+        final constraintError = NonNullableViolation();
+        final error = SchemaConstraintViolation(
+          constraints: [constraintError],
+          context: _MockSchemaContext(),
         );
 
         expect(error.constraints.length, 1);
@@ -64,16 +57,15 @@ void main() {
 
       test('multiple constraint errors', () {
         final errors = [
-          NonNullableValueConstraintError(context: mockContext),
-          InvalidTypeConstraintError(
+          NonNullableViolation(),
+          InvalidTypeViolation(
             valueType: String,
             expectedType: int,
-            context: mockContext,
           ),
         ];
-        final error = SchemaConstraintViolation.multiple(
-          errors,
-          context: mockContext,
+        final error = SchemaConstraintViolation(
+          constraints: errors,
+          context: _MockSchemaContext(),
         );
 
         expect(error.constraints.length, 2);
@@ -83,31 +75,32 @@ void main() {
 
     group('ObjectSchemaError', () {
       test('toMap() includes nested errors', () {
-        final nestedError = NonNullableValueConstraintError(
-          context: mockContext,
-        );
+        final nestedError = NonNullableViolation();
         final error = ObjectSchemaViolation(
-          errors: {
-            'field': SchemaConstraintViolation.single(
-              nestedError,
-              context: mockContext,
+          violations: {
+            'field': SchemaConstraintViolation(
+              constraints: [nestedError],
+              context: _MockSchemaContext(),
             )
           },
-          context: mockContext,
+          context: _MockSchemaContext(),
         );
 
-        final map = error.context.extra;
+        final map = error.extra;
         expect(map, {
-          'errors': {
+          'violations': {
             'field': {
               'key': 'constraints',
-              'message': 'Schema Constraints Validation failed',
-              'constraints': [
-                {
-                  'key': 'non_nullable_value',
-                  'message': 'Non nullable value is null',
-                }
-              ]
+              'message': 'Total of 1 constraint violations',
+              'extra': {
+                'constraints': [
+                  {
+                    'key': 'non_nullable_value',
+                    'message': 'Non nullable value is null'
+                  }
+                ]
+              },
+              'context': {'name': 'test', 'value': null}
             }
           }
         });
@@ -116,28 +109,32 @@ void main() {
 
     group('ListSchemaError', () {
       test('toMap() includes indexed errors', () {
-        final itemError = NonNullableValueConstraintError(
-          context: mockContext,
-        );
+        final itemError = NonNullableViolation();
         final error = ListSchemaViolation(
-          errors: {
-            0: SchemaConstraintViolation.single(itemError, context: mockContext)
+          violations: {
+            0: SchemaConstraintViolation(
+              constraints: [itemError],
+              context: _MockSchemaContext(),
+            )
           },
-          context: mockContext,
+          context: _MockSchemaContext(),
         );
 
-        final map = error.context.extra;
+        final map = error.extra;
         expect(map, {
-          'errors': {
+          'violations': {
             0: {
               'key': 'constraints',
-              'message': 'Schema Constraints Validation failed',
-              'constraints': [
-                {
-                  'key': 'non_nullable_value',
-                  'message': 'Non nullable value is null'
-                }
-              ]
+              'message': 'Total of 1 constraint violations',
+              'extra': {
+                'constraints': [
+                  {
+                    'key': 'non_nullable_value',
+                    'message': 'Non nullable value is null'
+                  }
+                ]
+              },
+              'context': {'name': 'test', 'value': null}
             }
           }
         });
@@ -145,12 +142,10 @@ void main() {
     });
 
     test('toString() returns formatted string', () {
-      final error = NonNullableValueConstraintError(
-        context: mockContext,
-      );
+      final error = NonNullableViolation();
       expect(
         error.toString(),
-        contains('NonNullableValueConstraintError:'),
+        contains('NonNullableViolation:'),
       );
       expect(
         error.toString(),

@@ -8,17 +8,19 @@ import '../validation/constraint_validator.dart';
 
 class OpenApiConverterException implements Exception {
   final Object? error;
-  final AckException? _ackException;
+  final AckViolationException? _ackException;
 
   final String _message;
 
   const OpenApiConverterException(
     this._message, {
     this.error,
-    AckException? ackException,
+    AckViolationException? ackException,
   }) : _ackException = ackException;
 
-  static OpenApiConverterException validationError(AckException ackException) {
+  static OpenApiConverterException validationError(
+    AckViolationException ackException,
+  ) {
     return OpenApiConverterException(
       'Validation error',
       ackException: ackException,
@@ -110,7 +112,7 @@ $stopSequence
         OpenApiConverterException.jsonDecodeError(e),
         stackTrace,
       );
-    } on AckException catch (e, stackTrace) {
+    } on AckViolationException catch (e, stackTrace) {
       Error.throwWithStackTrace(
         OpenApiConverterException.validationError(e),
         stackTrace,

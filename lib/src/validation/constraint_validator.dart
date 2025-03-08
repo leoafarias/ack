@@ -1,8 +1,5 @@
-import 'package:ack/src/helpers/template.dart';
-import 'package:ack/src/schemas/schema.dart';
 import 'package:meta/meta.dart';
 
-import '../context.dart';
 import '../helpers.dart';
 import 'schema_error.dart';
 
@@ -13,26 +10,14 @@ abstract class ConstraintValidator<T extends Object> {
 
   const ConstraintValidator({required this.name, required this.description});
 
-  ViolationContext _getWithExtras(T value, Map<String, Object?> extra) {
-    ViolationContext? context =
-        maybeGetCurrentViolationContext<Schema<Object>>();
-
-    return context == null
-        ? ViolationContext(value: value, extra: extra)
-        : context.mergeExtras(extra);
-  }
-
-  String get errorTemplate;
+  String get errorMessage;
 
   @protected
   ConstraintViolation buildError(T value, {Map<String, Object?>? extra}) {
-    final context = _getWithExtras(value, extra ?? {});
-    final template = Template(errorTemplate, data: context.toMap());
-
     return ConstraintViolation(
       key: name,
-      message: template.render(),
-      context: context,
+      message: errorMessage,
+      extra: extra ?? {},
     );
   }
 
