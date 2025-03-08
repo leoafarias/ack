@@ -26,8 +26,7 @@ void main() {
 
       final constraintsError = error as SchemaConstraintViolation;
       expect(
-        constraintsError.constraints
-            .any((e) => e.constraintName == 'min_items'),
+        constraintsError.constraints.any((e) => e.key == 'min_items'),
         isTrue,
       );
     });

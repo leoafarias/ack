@@ -29,7 +29,7 @@ void main() {
 
         final constraintsError = error as NonNullableSchemaViolation;
         expect(
-          constraintsError.name == 'non_nullable',
+          constraintsError.key == 'non_nullable',
           isTrue,
         );
       });

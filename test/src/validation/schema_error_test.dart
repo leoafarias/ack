@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 
 class _MockSchemaContext extends SchemaContext {
   _MockSchemaContext()
-      : super(alias: 'test', schema: ObjectSchema({}), value: null);
+      : super(name: 'test', schema: ObjectSchema({}), value: null);
 }
 
 void main() {
@@ -21,8 +21,8 @@ void main() {
         final map = error.toMap();
 
         expect(map, {
-          'name': 'invalid_type',
-          'alias': 'test',
+          'key': 'invalid_type',
+          'name': 'test',
           'schema': {
             'type': 'object',
             'constraints': [],
@@ -57,13 +57,13 @@ void main() {
 
     group('SchemaConstraintsError', () {
       final constraintError1 = ConstraintViolation(
-        constraintName: 'custom_constraint',
+        key: 'custom_constraint',
         message: 'Custom constraint',
         variables: {},
       );
 
       final constraintError2 = ConstraintViolation(
-        constraintName: 'custom_constraint2',
+        key: 'custom_constraint2',
         message: 'Custom constraint 2',
         variables: {},
       );
@@ -92,7 +92,7 @@ void main() {
     group('ObjectSchemaError', () {
       test('toMap() includes nested errors', () {
         final nestedError = ConstraintViolation(
-          constraintName: 'custom_constraint',
+          key: 'custom_constraint',
           message: 'Custom constraint',
           variables: {},
         );
@@ -111,8 +111,8 @@ void main() {
           'schema_name': 'test',
           'violations': {
             'field': {
-              'name': 'constraints',
-              'alias': 'test',
+              'key': 'constraints',
+              'name': 'test',
               'schema': {
                 'type': 'object',
                 'constraints': [],
@@ -125,14 +125,11 @@ void main() {
               },
               'value': null,
               'message':
-                  'Schema on test violated: [{constraintName: custom_constraint, message: Custom constraint}]',
+                  'Schema on test violated: [{key: custom_constraint, message: Custom constraint}]',
               'variables': {
                 'schema_name': 'test',
                 'constraints': [
-                  {
-                    'constraintName': 'custom_constraint',
-                    'message': 'Custom constraint'
-                  }
+                  {'key': 'custom_constraint', 'message': 'Custom constraint'}
                 ]
               }
             }
@@ -156,8 +153,8 @@ void main() {
           'schema_name': 'test',
           'violations': {
             '0': {
-              'name': 'non_nullable',
-              'alias': 'test',
+              'key': 'non_nullable',
+              'name': 'test',
               'schema': {
                 'type': 'object',
                 'constraints': [],

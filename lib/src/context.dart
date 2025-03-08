@@ -7,12 +7,12 @@ import 'validation/schema_result.dart';
 final kSchemaContextKey = #schemaContextKey;
 
 class SchemaContext {
-  final String alias;
+  final String name;
   final Object? value;
   final Schema schema;
 
   const SchemaContext({
-    required this.alias,
+    required this.name,
     required this.schema,
     required this.value,
   });

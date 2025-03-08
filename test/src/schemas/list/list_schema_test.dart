@@ -78,8 +78,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints
-              .any((e) => e.constraintName == 'unique_items'),
+          constraintsError.constraints.any((e) => e.key == 'unique_items'),
           isTrue,
         );
       });
@@ -109,8 +108,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints
-              .any((e) => e.constraintName == 'min_items'),
+          constraintsError.constraints.any((e) => e.key == 'min_items'),
           isTrue,
         );
       });
@@ -140,8 +138,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints
-              .any((e) => e.constraintName == 'max_items'),
+          constraintsError.constraints.any((e) => e.key == 'max_items'),
           isTrue,
         );
       });

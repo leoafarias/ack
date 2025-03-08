@@ -207,7 +207,7 @@ sealed class Schema<T extends Object> {
   /// [SchemaViolation.unknownException] if an exception occurs.
   SchemaResult<T> validate(Object? value, {String? debugName}) {
     return executeWithContext(
-      SchemaContext(alias: debugName ?? type.name, schema: this, value: value),
+      SchemaContext(name: debugName ?? type.name, schema: this, value: value),
       () => validateValue(value),
     );
   }

@@ -160,3 +160,25 @@ bool isJsonValue(String value) {
   return (trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) ||
       (trimmedValue.startsWith('[') && trimmedValue.endsWith(']'));
 }
+
+/// Extension to check if an object is considered "truthy"
+extension TruthyCheck on Object? {
+  bool get isTruthy {
+    final value = this;
+
+    return switch (value) {
+      String v => v.isNotEmpty,
+      Iterable v => v.isNotEmpty,
+      Map v => v.isNotEmpty,
+      bool v => v,
+      Future _ => true,
+      num v => v != 0,
+      Duration v => v != Duration.zero,
+      Uri v => v.toString().isNotEmpty,
+      RegExp r => r.pattern.isNotEmpty,
+      Exception e => e != Exception(),
+      Error err => err != Error(),
+      _ => false,
+    };
+  }
+}

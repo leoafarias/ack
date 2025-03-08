@@ -27,7 +27,7 @@ void main() {
       expect(schemaError, isA<NonNullableSchemaViolation>());
       final constraintsError = schemaError as NonNullableSchemaViolation;
       expect(
-        constraintsError.name == 'non_nullable',
+        constraintsError.key == 'non_nullable',
         isTrue,
       );
     });
@@ -51,7 +51,7 @@ void main() {
       expect(schemaError, isA<InvalidTypeSchemaViolation>());
       final constraintsError = schemaError as InvalidTypeSchemaViolation;
       expect(
-        constraintsError.name == 'invalid_type',
+        constraintsError.key == 'invalid_type',
         isTrue,
       );
     });

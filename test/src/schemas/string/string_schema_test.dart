@@ -338,7 +338,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.constraintName == 'date'),
+          constraintsError.constraints.any((c) => c.key == 'date'),
           isTrue,
         );
       });
@@ -371,7 +371,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.constraintName == 'enum'),
+          constraintsError.constraints.any((c) => c.key == 'enum'),
           isTrue,
         );
       });

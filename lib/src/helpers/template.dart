@@ -1,3 +1,5 @@
+import 'package:ack/src/helpers.dart';
+
 class Template {
   final String _content;
   final Map<String, Object?> _data;
@@ -6,14 +8,94 @@ class Template {
       : _data = data ?? const {};
 
   /// Orchestrates both loop parsing and variable replacement
+  /// Modified method to include conditionals processing
   String _renderTemplate(String template, Map<String, Object?> data) {
-    // First handle loops (recursively)
-    final withLoopsHandled = _processLoops(template, data);
+    // First handle conditionals (recursively)
+    final withConditionalsHandled = _processConditionals(template, data);
 
-    // Then handle variable substitutions
+    // Then handle loops (recursively)
+    final withLoopsHandled = _processLoops(withConditionalsHandled, data);
+
+    // Finally handle variable substitutions
     return _processVariables(withLoopsHandled, data);
   }
 
+  String _processConditionals(String template, Map<String, Object?> data) {
+    // Find the first conditional opening
+    final startRegex = RegExp(r'\{\{#if\s+([^\}]+)\}\}\n?');
+    final startMatch = startRegex.firstMatch(template);
+
+    if (startMatch == null) {
+      return template; // No conditional, nothing more to do
+    }
+
+    final condition = startMatch.group(1)?.trim() ?? '';
+    final startTagEnd = startMatch.end;
+
+    // Find matching else and /if tags, accounting for nested conditionals
+    final tagRegex = RegExp(r'\{\{(#if\s+[^\}]+|else|\/if)\}\}');
+    int nested = 1;
+    int elseTagStart = -1;
+    int endTagStart = -1;
+
+    for (final match in tagRegex.allMatches(template, startTagEnd)) {
+      final tag = match.group(0)!;
+
+      if (tag.startsWith('{{#if')) {
+        nested++;
+      } else if (tag == '{{else}}' && nested == 1 && elseTagStart == -1) {
+        elseTagStart = match.start;
+      } else if (tag == '{{/if}}') {
+        nested--;
+        if (nested == 0) {
+          endTagStart = match.start;
+          break;
+        }
+      }
+    }
+
+    if (endTagStart == -1) {
+      // No matching closing tag found
+      return template;
+    }
+
+    final closingRegex = RegExp(r'\{\{/if\}\}\n?');
+    final closingMatch = closingRegex.matchAsPrefix(template, endTagStart);
+    final endIndex = closingMatch != null
+        ? closingMatch.end
+        : endTagStart + '{{/if}}'.length;
+
+    // Extract if and else blocks
+    final ifContent = elseTagStart == -1
+        ? template.substring(startTagEnd, endTagStart)
+        : template.substring(startTagEnd, elseTagStart);
+
+    final elseContent = elseTagStart == -1
+        ? ''
+        : template.substring(elseTagStart + '{{else}}'.length, endTagStart);
+
+    // Evaluate the condition
+    final conditionResult = _evaluateCondition(condition, data);
+
+    // Render the appropriate block
+    final renderedBlock = conditionResult ? ifContent : elseContent;
+
+    // Replace the entire conditional block with the rendered content
+    final updatedTemplate =
+        template.replaceRange(startMatch.start, endIndex, renderedBlock);
+
+    // Recursively handle any further conditionals in the updated template
+    return _processConditionals(updatedTemplate, data);
+  }
+
+  bool _evaluateCondition(String condition, Map<String, Object?> data) {
+    // Get the value from data
+    final value = _getNestedValue(data, condition);
+
+    // Convert to boolean using the extension method
+
+    return value.isTruthy;
+  }
   // =========================================================
   // LOOP HANDLING
   // =========================================================

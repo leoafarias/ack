@@ -8,7 +8,7 @@ class IsSchemaError extends Matcher {
 
   @override
   bool matches(item, Map matchState) {
-    return item is SchemaViolation && item.alias == key;
+    return item is SchemaViolation && item.name == key;
   }
 
   @override
@@ -42,7 +42,7 @@ class IsConstraintViolation extends Matcher {
 
   @override
   bool matches(item, Map matchState) {
-    return item is ConstraintViolation && item.constraintName == key;
+    return item is ConstraintViolation && item.key == key;
   }
 
   @override
@@ -91,7 +91,7 @@ class HasSchemaErrors extends Matcher {
 
     if (errors.length != expectedCount) {
       matchState['reason'] =
-          'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.alias).toList()}';
+          'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.name).toList()}';
       return false;
     }
 
@@ -101,9 +101,9 @@ class HasSchemaErrors extends Matcher {
     }
 
     for (final error in errors) {
-      if (!types.contains(error.alias)) {
+      if (!types.contains(error.name)) {
         matchState['reason'] =
-            'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.alias).toList()}';
+            'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.name).toList()}';
         return false;
       }
     }
@@ -168,14 +168,14 @@ class HasConstraintErrors extends Matcher {
 
     if (errors.length != expectedCount) {
       matchState['reason'] =
-          'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.constraintName).toList()}';
+          'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.key).toList()}';
       return false;
     }
 
     for (final error in errors) {
-      if (!names.contains(error.constraintName)) {
+      if (!names.contains(error.key)) {
         matchState['reason'] =
-            'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.constraintName).toList()}';
+            'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.key).toList()}';
         return false;
       }
     }

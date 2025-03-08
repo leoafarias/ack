@@ -4,24 +4,24 @@ import 'package:test/test.dart';
 
 class _MockSchemaContext extends SchemaContext {
   _MockSchemaContext()
-      : super(alias: 'test', schema: ObjectSchema({}), value: null);
+      : super(name: 'test', schema: ObjectSchema({}), value: null);
 }
 
 void main() {
   group('AckException', () {
     test('toMap() returns error map', () {
       final constraint1Violation = ConstraintViolation(
-        constraintName: 'custom_constraint1',
+        key: 'custom_constraint1',
         message: 'Custom constraint',
         variables: {'key1': 'value1'},
       );
       final constraint2Violation = ConstraintViolation(
-        constraintName: 'custom_constraint2',
+        key: 'custom_constraint2',
         message: 'Custom constraint 2',
         variables: {'key2': 'value2'},
       );
       final constraint3Violation = ConstraintViolation(
-        constraintName: 'custom_constraint3',
+        key: 'custom_constraint3',
         message: 'Custom constraint 3',
         variables: {'key3': 'value3'},
       );
@@ -43,19 +43,19 @@ void main() {
 
       // Check the structure of the error
       final errorMap = map['violation'] as Map<String, dynamic>;
-      expect(errorMap['name'], 'constraints');
+      expect(errorMap['key'], 'constraints');
 
       // Verify the constraints are included
       final constraintsList = schemaError.constraints;
       expect(constraintsList.length, 3);
-      expect(constraintsList[0].constraintName, 'custom_constraint1');
-      expect(constraintsList[1].constraintName, 'custom_constraint2');
-      expect(constraintsList[2].constraintName, 'custom_constraint3');
+      expect(constraintsList[0].key, 'custom_constraint1');
+      expect(constraintsList[1].key, 'custom_constraint2');
+      expect(constraintsList[2].key, 'custom_constraint3');
     });
 
     test('toString() includes error details', () {
       final constraintError = ConstraintViolation(
-        constraintName: 'custom_constraint',
+        key: 'custom_constraint',
         message: 'Custom constraint',
         variables: {'key': 'value'},
       );

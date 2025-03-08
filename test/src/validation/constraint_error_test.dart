@@ -5,7 +5,7 @@ void main() {
   group('ConstraintViolation', () {
     test('toMap() returns correct structure', () {
       final error = ConstraintViolation(
-        constraintName: 'test_constraint',
+        key: 'test_constraint',
         message: 'Test constraint failed',
         variables: {'key': 'value'},
       );
@@ -14,14 +14,14 @@ void main() {
 
       expect(map, {
         'message': 'Test constraint failed',
-        'constraintName': 'test_constraint',
+        'key': 'test_constraint',
         'variables': {'key': 'value'},
       });
     });
 
     test('toString() returns formatted string', () {
       final error = ConstraintViolation(
-        constraintName: 'test_constraint',
+        key: 'test_constraint',
         message: 'Test constraint failed',
         variables: {'key': 'value'},
       );

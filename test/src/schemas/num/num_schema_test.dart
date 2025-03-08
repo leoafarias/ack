@@ -31,7 +31,7 @@ void main() {
 
         final nonNullableError = error as NonNullableSchemaViolation;
         expect(
-          nonNullableError.name == 'non_nullable',
+          nonNullableError.key == 'non_nullable',
           isTrue,
         );
       });
@@ -94,7 +94,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.first.constraintName == 'min_value',
+          constraintsError.constraints.first.key == 'min_value',
           isTrue,
         );
       });
@@ -360,7 +360,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.constraintName == 'range'),
+          constraintsError.constraints.any((c) => c.key == 'range'),
           isTrue,
         );
       });
