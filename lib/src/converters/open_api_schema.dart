@@ -198,6 +198,7 @@ String _convertSchemaType(SchemaType type) {
     SchemaType.list => 'array',
     SchemaType.object => 'object',
     SchemaType.discriminatedObject => '',
+    SchemaType.unknown => 'unknown',
   };
 }
 

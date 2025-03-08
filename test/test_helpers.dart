@@ -8,7 +8,7 @@ class IsSchemaError extends Matcher {
 
   @override
   bool matches(item, Map matchState) {
-    return item is SchemaViolation && item.key == key;
+    return item is SchemaViolation && item.alias == key;
   }
 
   @override
@@ -42,7 +42,7 @@ class IsConstraintViolation extends Matcher {
 
   @override
   bool matches(item, Map matchState) {
-    return item is ConstraintViolation && item.key == key;
+    return item is ConstraintViolation && item.constraintName == key;
   }
 
   @override
@@ -91,7 +91,7 @@ class HasSchemaErrors extends Matcher {
 
     if (errors.length != expectedCount) {
       matchState['reason'] =
-          'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.key).toList()}';
+          'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.alias).toList()}';
       return false;
     }
 
@@ -101,9 +101,9 @@ class HasSchemaErrors extends Matcher {
     }
 
     for (final error in errors) {
-      if (!types.contains(error.key)) {
+      if (!types.contains(error.alias)) {
         matchState['reason'] =
-            'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.key).toList()}';
+            'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.alias).toList()}';
         return false;
       }
     }
@@ -133,11 +133,12 @@ List<SchemaViolation> getErrors(
     SchemaViolation error, List<SchemaViolation> aggregatedErrors) {
   final extractedErrors = switch (error) {
     SchemaConstraintViolation constraintsError => [constraintsError],
-    ObjectSchemaViolation propertiesError =>
+    NestedSchemaViolation propertiesError =>
       propertiesError.violations.values.toList(),
-    ListSchemaViolation itemsError => itemsError.violations.values.toList(),
-    ExceptionViolation() => [error],
+    InvalidTypeSchemaViolation() => [error],
+    NonNullableSchemaViolation() => [error],
     UnknownSchemaViolation() => [error],
+    MockSchemaViolation() => [error],
   };
 
   return [...aggregatedErrors, ...extractedErrors];
@@ -167,14 +168,14 @@ class HasConstraintErrors extends Matcher {
 
     if (errors.length != expectedCount) {
       matchState['reason'] =
-          'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.key).toList()}';
+          'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.constraintName).toList()}';
       return false;
     }
 
     for (final error in errors) {
-      if (!names.contains(error.key)) {
+      if (!names.contains(error.constraintName)) {
         matchState['reason'] =
-            'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.key).toList()}';
+            'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.constraintName).toList()}';
         return false;
       }
     }

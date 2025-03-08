@@ -30,33 +30,32 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
   List<ObjectSchema> getSchemas() => _schemas.values.toList();
 
   @override
-  List<ConstraintViolation> checkValidators(MapValue value) {
-    final extraValidation = [
-      MustHaveDiscrimatorKeyValidation(_discriminatorKey).validate(_schemas),
-      NoKeyForDiscriminatorValueValidation(_discriminatorKey, _schemas)
-          .validate(value),
-    ];
-
-    return [
-      ...super.checkValidators(value),
-      ...extraValidation.whereType<ConstraintViolation>(),
-    ];
-  }
-
-  @override
-  SchemaResult<MapValue> validateValue(
-    Object? value,
-    SchemaContext<MapValue> context,
-  ) {
-    final result = super.validateValue(value, context);
+  SchemaResult<MapValue> validateValue(Object? value) {
+    final result = super.validateValue(value);
 
     if (result.isFail) return result;
 
     final mapValue = result.getOrNull();
 
-    if (_nullable && mapValue == null) return context.unit();
+    if (_nullable && mapValue == null) return SchemaResult.unit();
 
-    final discrimnatorValue = _getDiscriminator(mapValue!);
+    final violations = [
+      DiscriminatorSchemaStructureViolation(_discriminatorKey)
+          .validate(_schemas),
+      DiscriminatorValueViolation(_discriminatorKey, _schemas)
+          .validate(mapValue!),
+    ].whereType<ConstraintViolation>();
+
+    if (violations.isNotEmpty) {
+      return SchemaResult.fail(
+        SchemaConstraintViolation(
+          constraints: violations.toList(),
+          context: context,
+        ),
+      );
+    }
+
+    final discrimnatorValue = _getDiscriminator(mapValue);
 
     final discriminatedSchema = _schemas[discrimnatorValue]!;
 

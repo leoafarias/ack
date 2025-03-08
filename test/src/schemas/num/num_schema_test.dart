@@ -27,12 +27,11 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<NonNullableSchemaViolation>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final nonNullableError = error as NonNullableSchemaViolation;
         expect(
-          constraintsError.constraints
-              .any((c) => c.key == 'non_nullable_value'),
+          nonNullableError.name == 'non_nullable',
           isTrue,
         );
       });
@@ -49,13 +48,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
-
-        final constraintsError = error as SchemaConstraintViolation;
-        expect(
-          constraintsError.constraints.any((c) => c.key == 'invalid_type'),
-          isTrue,
-        );
+        expect(error, isA<InvalidTypeSchemaViolation>());
       });
 
       test('Valid double passes with no constraints', () {
@@ -101,7 +94,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'min_value'),
+          constraintsError.constraints.first.constraintName == 'min_value',
           isTrue,
         );
       });
@@ -137,8 +130,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'max_value'),
-          isTrue,
+          constraintsError.getConstraint('max_value'),
+          isNotNull,
         );
       });
     });
@@ -177,8 +170,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'range'),
-          isTrue,
+          constraintsError.getConstraint('range'),
+          isNotNull,
         );
       });
     });
@@ -209,8 +202,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'multiple_of'),
-          isTrue,
+          constraintsError.getConstraint('multiple_of'),
+          isNotNull,
         );
       });
     });
@@ -241,14 +234,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
-
-        final constraintsError = error as SchemaConstraintViolation;
-        expect(
-          constraintsError.constraints
-              .any((c) => c.key == 'non_nullable_value'),
-          isTrue,
-        );
+        expect(error, isA<NonNullableSchemaViolation>());
       });
 
       test('Nullable schema passes on null', () {
@@ -263,13 +249,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
-
-        final constraintsError = error as SchemaConstraintViolation;
-        expect(
-          constraintsError.constraints.any((c) => c.key == 'invalid_type'),
-          isTrue,
-        );
+        expect(error, isA<InvalidTypeSchemaViolation>());
       });
 
       test('Valid int passes with no constraints', () {
@@ -321,8 +301,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'min_value'),
-          isTrue,
+          constraintsError.getConstraint('min_value'),
+          isNotNull,
         );
       });
     });
@@ -380,7 +360,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'range'),
+          constraintsError.constraints.any((c) => c.constraintName == 'range'),
           isTrue,
         );
       });
@@ -412,8 +392,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'multiple_of'),
-          isTrue,
+          constraintsError.getConstraint('multiple_of'),
+          isNotNull,
         );
       });
     });

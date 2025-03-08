@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:ack/src/ack.dart';
 import 'package:meta/meta.dart';
 
 import '../context.dart';
@@ -26,6 +25,9 @@ enum SchemaType {
   object,
   discriminatedObject,
   list,
+
+  /// Used for unknown errors
+  unknown,
 }
 
 /// {@template schema}
@@ -79,6 +81,8 @@ sealed class Schema<T extends Object> {
         _description = description ?? '',
         _validators = constraints ?? const [],
         _defaultValue = defaultValue;
+
+  SchemaContext get context => getCurrentSchemaContext();
 
   /// Validates the [value] against the constraints, assuming it is already of type [T].
   ///
@@ -151,29 +155,25 @@ sealed class Schema<T extends Object> {
   /// Use [validateOrThrow] if you prefer to throw an exception on validation failure.
   @protected
   @mustCallSuper
-  SchemaResult<T> validateValue(Object? value, SchemaContext<T> context) {
-    SchemaResult<T> failConstraints(List<ConstraintViolation> violations) {
-      return SchemaResult.fail(
-        SchemaConstraintViolation(constraints: violations, context: context),
-        this,
-      );
-    }
-
+  SchemaResult<T> validateValue(Object? value) {
     try {
       if (value == null) {
         return _nullable
-            ? SchemaResult.unit(this)
-            : failConstraints([NonNullableViolation()]);
+            ? SchemaResult.unit()
+            : SchemaResult.fail(
+                NonNullableSchemaViolation(context: context),
+              );
       }
 
       final typedValue = tryParse(value);
       if (typedValue == null) {
-        return failConstraints([
-          InvalidTypeViolation(
+        return SchemaResult.fail(
+          InvalidTypeSchemaViolation(
             valueType: value.runtimeType,
             expectedType: T,
+            context: context,
           ),
-        ]);
+        );
       }
 
       final constraintViolations = checkValidators(typedValue);
@@ -184,11 +184,10 @@ sealed class Schema<T extends Object> {
             constraints: constraintViolations,
             context: context,
           ),
-          this,
         );
       }
 
-      return SchemaResult.ok(typedValue, this);
+      return SchemaResult.ok(typedValue);
     } catch (e, stackTrace) {
       return SchemaResult.fail(
         UnknownSchemaViolation(
@@ -196,7 +195,6 @@ sealed class Schema<T extends Object> {
           stackTrace: stackTrace,
           context: context,
         ),
-        this,
       );
     }
   }
@@ -208,13 +206,10 @@ sealed class Schema<T extends Object> {
   /// exceptions during validation and returns a [Fail] result with a
   /// [SchemaViolation.unknownException] if an exception occurs.
   SchemaResult<T> validate(Object? value, {String? debugName}) {
-    final context = SchemaContext<T>(
-      name: debugName,
-      schema: this,
-      value: value,
+    return executeWithContext(
+      SchemaContext(alias: debugName ?? type.name, schema: this, value: value),
+      () => validateValue(value),
     );
-
-    return executeWithContext(context, () => validateValue(value, context));
   }
 
   /// Converts this schema to a [Map] representation.
@@ -323,8 +318,8 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
   Self Function({
     bool? nullable,
     String? description,
-    bool? strict,
     List<ConstraintValidator<T>>? constraints,
+    bool? strict,
   }) get builder;
 
   /// Creates a new schema of the same type that enforces strict parsing.
@@ -385,5 +380,34 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
   @override
   Map<String, Object?> toMap() {
     return {...super.toMap(), 'strict': _strict};
+  }
+}
+
+@internal
+final class UnknownSchema extends Schema<Object> {
+  const UnknownSchema()
+      : super(
+          type: SchemaType.unknown,
+          description: 'Unknown Schema',
+          constraints: const [],
+          defaultValue: null,
+        );
+
+  @override
+  Schema<Object> call({
+    bool? nullable,
+    String? description,
+    List<ConstraintValidator<Object>>? constraints,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Schema<Object> copyWith({
+    bool? nullable,
+    List<ConstraintValidator<Object>>? constraints,
+    String? description,
+  }) {
+    throw UnimplementedError();
   }
 }

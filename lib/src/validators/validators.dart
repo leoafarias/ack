@@ -913,7 +913,7 @@ class PropertyRequiredConstraintViolation
         schema.getRequiredProperties().toSet().difference(value.keys.toSet());
 
     return super.buildError(value, extra: {
-      'missing_properties': missingKeys,
+      'missing_properties': missingKeys.toList(),
       'required_properties': schema.getRequiredProperties(),
     });
   }
@@ -923,92 +923,123 @@ class PropertyRequiredConstraintViolation
       'Missing required properties: {{ extra.missing_properties }}';
 }
 
-class MustHaveDiscrimatorKeyValidation
+/// Validates that schemas in a discriminated object are properly structured.
+/// Each schema must include the discriminator key as a required property.
+class DiscriminatorSchemaStructureViolation
     extends ConstraintValidator<Map<String, ObjectSchema>> {
   final String discriminatorKey;
 
-  MustHaveDiscrimatorKeyValidation(this.discriminatorKey)
+  DiscriminatorSchemaStructureViolation(this.discriminatorKey)
       : super(
-          name: 'schemas_are_discriminated',
+          name: 'discriminator_schema_structure',
           description:
-              'Schemas are discriminated by $discriminatorKey, and must be required',
+              'All schemas must have "$discriminatorKey" as a required property',
         );
 
-  /// Returns the keys of schemas that are missing the discriminator key in their properties.
-  List<String> _getSchemasMissingDiscriminatorKey(
-    Map<String, ObjectSchema> value,
-  ) =>
-      value.entries
-          .where((entry) =>
-              !entry.value.getProperties().containsKey(discriminatorKey))
-          .map((entry) => entry.key)
-          .toList();
+  /// Returns schemas missing the discriminator key in their properties
+  List<String> _getSchemasWithMissingDiscriminator(
+    Map<String, ObjectSchema> schemas,
+  ) {
+    return schemas.entries
+        .where((entry) =>
+            !entry.value.getProperties().containsKey(discriminatorKey))
+        .map((entry) => entry.key)
+        .toList();
+  }
 
-  /// Returns the keys of schemas where the discriminator key is not a required property.
-  List<String> _getSchemasMissingRequiredKey(
-    Map<String, ObjectSchema> value,
-  ) =>
-      value.entries
-          .where((entry) =>
-              !entry.value.getRequiredProperties().contains(discriminatorKey))
-          .map((entry) => entry.key)
-          .toList();
+  /// Returns schemas where the discriminator is not a required property
+  List<String> _getSchemasWithNotRequiredDiscriminator(
+    Map<String, ObjectSchema> schemas,
+  ) {
+    return schemas.entries
+        .where((entry) =>
+            entry.value.getProperties().containsKey(discriminatorKey) &&
+            !entry.value.getRequiredProperties().contains(discriminatorKey))
+        .map((entry) => entry.key)
+        .toList();
+  }
 
   @override
   bool isValid(Map<String, ObjectSchema> value) {
-    return _getSchemasMissingDiscriminatorKey(value).isEmpty &&
-        _getSchemasMissingRequiredKey(value).isEmpty;
+    return _getSchemasWithMissingDiscriminator(value).isEmpty &&
+        _getSchemasWithNotRequiredDiscriminator(value).isEmpty;
   }
 
   @override
   ConstraintViolation buildError(Map<String, ObjectSchema> value, {extra}) {
-    final valuesMissingDiscriminatorKey =
-        _getSchemasMissingDiscriminatorKey(value);
-    final valuesMissingRequiredKey = _getSchemasMissingRequiredKey(value);
+    final missingDiscriminator = _getSchemasWithMissingDiscriminator(value);
+    final notRequiredDiscriminator =
+        _getSchemasWithNotRequiredDiscriminator(value);
 
     return super.buildError(value, extra: {
       'discriminator_key': discriminatorKey,
-      'missing_discriminator_key': valuesMissingDiscriminatorKey,
-      'missing_required_key': valuesMissingRequiredKey,
+      'missing_discriminator': missingDiscriminator,
+      'discriminator_not_required': notRequiredDiscriminator,
+    });
+  }
+
+  @override
+  String get errorMessage => '''
+Discriminated object schemas must properly define the discriminator key "$discriminatorKey":
+{{#if extra.missing_discriminator.length}}
+- Schemas missing the discriminator property: {{extra.missing_discriminator}}
+{{/if}}
+{{#if extra.discriminator_not_required.length}}
+- Schemas where discriminator is not required: {{extra.discriminator_not_required}}
+{{/if}}
+''';
+}
+
+/// Validates that a value has a valid discriminator that matches a known schema.
+class DiscriminatorValueViolation extends ConstraintValidator<MapValue> {
+  final String discriminatorKey;
+  final Map<String, ObjectSchema> schemas;
+
+  DiscriminatorValueViolation(this.discriminatorKey, this.schemas)
+      : super(
+          name: 'discriminator_value',
+          description: 'Value must have a valid discriminator',
+        );
+
+  @override
+  bool isValid(MapValue value) {
+    // Check if discriminator key exists
+    if (!value.containsKey(discriminatorKey)) {
+      return false;
+    }
+
+    // Get the discriminator value
+    final discriminatorValue = value[discriminatorKey];
+
+    // Check if value is convertible to string and matches a schema
+    return discriminatorValue != null &&
+        schemas.containsKey(discriminatorValue.toString());
+  }
+
+  @override
+  ConstraintViolation buildError(MapValue value, {extra}) {
+    final hasDiscriminator = value.containsKey(discriminatorKey);
+    final discriminatorValue =
+        hasDiscriminator ? value[discriminatorKey] : null;
+    final validSchemaKeys = schemas.keys.toList();
+
+    return super.buildError(value, extra: {
+      'discriminator_key': discriminatorKey,
+      'missing_key': !hasDiscriminator,
+      'discriminator_value': discriminatorValue,
+      'valid_values': validSchemaKeys,
     });
   }
 
   @override
   String get errorMessage {
     return '''
-Schemas missing discriminator key: {{extra.discriminator_key}}.
-
-{{#each extra.missing_discriminator_key}}
-Missing discriminator key in schema: {{ @this.type }}
-{{/each}}
-
-{{#each extra.missing_required_key}}
-Missing required key in schema: {{ @this }}
-{{/each}}
+{{#if extra.missing_key}}
+Missing discriminator field "$discriminatorKey" in object.
+{{else}}
+Invalid discriminator value: "{{extra.discriminator_value}}".
+Valid values are: {{extra.valid_values}}.
+{{/if}}
 ''';
   }
-}
-
-/// Discriminated validator that checks if there is a schema with the discriminatorValue
-class NoKeyForDiscriminatorValueValidation
-    extends ConstraintValidator<MapValue> {
-  final String discriminatorKey;
-  final Map<String, ObjectSchema> schemas;
-
-  NoKeyForDiscriminatorValueValidation(this.discriminatorKey, this.schemas)
-      : super(
-          name: 'discriminated_schema',
-          description: 'Discriminated schema',
-        );
-
-  @override
-  bool isValid(MapValue value) {
-    final discriminatorValue = value[discriminatorKey];
-
-    return schemas.containsKey(discriminatorValue);
-  }
-
-  @override
-  String get errorMessage =>
-      'No schema found for discriminator value: {{value.$discriminatorKey}}';
 }

@@ -27,6 +27,7 @@ final class ObjectSchema extends Schema<MapValue>
     }
 
     // Check if properties has a key called 'type'
+    // TODO: need to remove this
     if (_properties.containsKey('type')) {
       log('Warning: Property name "type" is reserved for OpenAPI schema');
     }
@@ -86,17 +87,29 @@ final class ObjectSchema extends Schema<MapValue>
   bool getAllowsAdditionalProperties() => _additionalProperties;
 
   @override
-  SchemaResult<MapValue> validateValue(
-    Object? value,
-    SchemaContext<MapValue> context,
-  ) {
-    final result = super.validateValue(value, context);
+  List<ConstraintViolation> checkValidators(MapValue value) {
+    final extraValidation = [
+      UnallowedPropertiesConstraintViolation(this),
+      PropertyRequiredConstraintViolation(this),
+    ];
+
+    return [
+      ...super.checkValidators(value),
+      ...extraValidation
+          .map((v) => v.validate(value))
+          .whereType<ConstraintViolation>(),
+    ];
+  }
+
+  @override
+  SchemaResult<MapValue> validateValue(Object? value) {
+    final result = super.validateValue(value);
 
     if (result.isFail) return result;
 
     final resultValue = result.getOrNull();
 
-    if (_nullable && resultValue == null) return SchemaResult.unit(this);
+    if (_nullable && resultValue == null) return SchemaResult.unit();
 
     final violations = <String, SchemaViolation>{};
 
@@ -104,17 +117,19 @@ final class ObjectSchema extends Schema<MapValue>
       final propKey = entry.key;
       final propSchema = entry.value;
 
-      final propResult = propSchema.validate(value, debugName: propKey);
+      final propValue = resultValue?[propKey];
+
+      final propResult = propSchema.validate(propValue, debugName: propKey);
 
       if (propResult.isFail) {
         violations[propKey] = propResult.getViolation();
       }
     }
 
-    if (violations.isEmpty) return context.ok(resultValue!);
+    if (violations.isEmpty) return SchemaResult.ok(resultValue!);
 
-    return context.fail(
-      ObjectSchemaViolation(violations: violations, context: context),
+    return SchemaResult.fail(
+      NestedSchemaViolation(violations: violations, context: context),
     );
   }
 

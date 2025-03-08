@@ -25,12 +25,11 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<NonNullableSchemaViolation>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as NonNullableSchemaViolation;
         expect(
-          constraintsError.constraints
-              .any((e) => e.key == 'non_nullable_value'),
+          constraintsError.name == 'non_nullable',
           isTrue,
         );
       });
@@ -48,13 +47,7 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
-
-        final constraintsError = error as SchemaConstraintViolation;
-        expect(
-          constraintsError.constraints.any((e) => e.key == 'invalid_type'),
-          isTrue,
-        );
+        expect(error, isA<InvalidTypeSchemaViolation>());
       });
 
       test('Valid boolean passes with no constraints', () {
@@ -86,13 +79,7 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
-
-        final constraintsError = error as SchemaConstraintViolation;
-        expect(
-          constraintsError.constraints.any((e) => e.key == 'invalid_type'),
-          isTrue,
-        );
+        expect(error, isA<InvalidTypeSchemaViolation>());
       });
     });
   });

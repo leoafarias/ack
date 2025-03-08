@@ -1,27 +1,10 @@
 import 'package:ack/ack.dart';
-import 'package:ack/src/context.dart';
 import 'package:test/test.dart';
 
-class _MockContext extends SchemaContext {
-  _MockContext()
-      : super(
-          name: 'mock_context',
-          schema: StringSchema(),
-          value: 'mock_value',
-          extra: {},
-        );
-}
-
 void main() {
-  late _MockContext mockContext;
-
-  setUp(() {
-    mockContext = _MockContext();
-  });
-
   group('SchemaResult', () {
     test('Ok result provides correct value access', () {
-      final result = mockContext.ok('test');
+      final result = SchemaResult.ok('test');
       expect(result.isOk, isTrue);
       expect(result.isFail, isFalse);
 
@@ -42,18 +25,16 @@ void main() {
     });
 
     test('Ok result with null value', () {
-      final result = mockContext.unit();
+      final result = SchemaResult.unit<String>();
       expect(result.getOrNull(), isNull);
       expect(result.getOrElse(() => 'default'), 'default');
-      expect(() => result.getOrThrow(), throwsA(isA<AckViolationException>()));
+      expect(() => result.getOrThrow(), throwsA(isA<Exception>()));
     });
 
     test('Fail result provides error access', () {
-      final schemaError = SchemaConstraintViolation(
-        constraints: [NonNullableViolation()],
-        context: _MockContext(),
-      );
-      final result = mockContext.fail(schemaError);
+      final schemaError = MockSchemaViolation();
+
+      final result = SchemaResult.fail(schemaError);
 
       expect(result.isOk, isFalse);
       expect(result.isFail, isTrue);
@@ -76,8 +57,11 @@ void main() {
     });
 
     test('getErrors throws on Ok result', () {
-      final result = mockContext.ok('test');
-      expect(() => result.getViolation(), throwsA(isA<ExceptionViolation>()));
+      final result = SchemaResult.ok('test');
+      expect(
+        () => result.getViolation(),
+        throwsA(isA<Exception>()),
+      );
     });
   });
 }

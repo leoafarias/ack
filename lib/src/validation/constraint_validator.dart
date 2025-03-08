@@ -15,9 +15,9 @@ abstract class ConstraintValidator<T extends Object> {
   @protected
   ConstraintViolation buildError(T value, {Map<String, Object?>? extra}) {
     return ConstraintViolation(
-      key: name,
+      constraintName: name,
       message: errorMessage,
-      extra: extra ?? {},
+      variables: extra ?? {},
     );
   }
 

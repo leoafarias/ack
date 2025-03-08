@@ -15,32 +15,29 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
   Schema<V> getItemSchema() => _itemSchema;
 
   @override
-  SchemaResult<List<V>> validateValue(
-    Object? value,
-    SchemaContext<List<V>> context,
-  ) {
-    final result = super.validateValue(value, context);
+  SchemaResult<List<V>> validateValue(Object? value) {
+    final result = super.validateValue(value);
 
     if (result.isFail) return result;
 
     final listValue = result.getOrNull();
 
-    if (_nullable && listValue == null) return context.unit();
+    if (_nullable && listValue == null) return SchemaResult.unit();
 
-    final itemsViolation = <int, SchemaViolation>{};
+    final itemsViolation = <String, SchemaViolation>{};
 
     for (var i = 0; i < listValue!.length; i++) {
       final itemResult = _itemSchema.validate(listValue[i], debugName: '$i');
 
       if (itemResult.isFail) {
-        itemsViolation[i] = itemResult.getViolation();
+        itemsViolation[i.toString()] = itemResult.getViolation();
       }
     }
 
-    if (itemsViolation.isEmpty) return context.ok(listValue);
+    if (itemsViolation.isEmpty) return SchemaResult.ok(listValue);
 
-    return context.fail(
-      ListSchemaViolation(violations: itemsViolation, context: context),
+    return SchemaResult.fail(
+      NestedSchemaViolation(violations: itemsViolation, context: context),
     );
   }
 

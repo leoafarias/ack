@@ -28,14 +28,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
-
-        final constraintsError = error as SchemaConstraintViolation;
-        expect(
-          constraintsError.constraints
-              .any((c) => c.key == 'non_nullable_value'),
-          isTrue,
-        );
+        expect(error, isA<NonNullableSchemaViolation>());
       });
 
       test('Nullable schema passes on null', () {
@@ -54,13 +47,7 @@ void main() {
         expect(strictResult.isFail, isTrue);
 
         final error = (strictResult as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
-
-        final constraintsError = error as SchemaConstraintViolation;
-        expect(
-          constraintsError.constraints.any((c) => c.key == 'invalid_type'),
-          isTrue,
-        );
+        expect(error, isA<InvalidTypeSchemaViolation>());
       });
 
       test('Valid string passes with no constraints', () {
@@ -98,8 +85,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'email'),
-          isTrue,
+          constraintsError.getConstraint('email'),
+          isNotNull,
         );
       });
     });
@@ -133,8 +120,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'hex_color'),
-          isTrue,
+          constraintsError.getConstraint('hex_color'),
+          isNotNull,
         );
       });
     });
@@ -162,8 +149,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'is_empty'),
-          isTrue,
+          constraintsError.getConstraint('is_empty'),
+          isNotNull,
         );
       });
     });
@@ -195,8 +182,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'min_length'),
-          isTrue,
+          constraintsError.getConstraint('min_length'),
+          isNotNull,
         );
       });
     });
@@ -228,8 +215,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'max_length'),
-          isTrue,
+          constraintsError.getConstraint('max_length'),
+          isNotNull,
         );
       });
     });
@@ -259,8 +246,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'not_one_of'),
-          isTrue,
+          constraintsError.getConstraint('not_one_of'),
+          isNotNull,
         );
       });
     });
@@ -288,8 +275,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'not_empty'),
-          isTrue,
+          constraintsError.getConstraint('not_empty'),
+          isNotNull,
         );
       });
     });
@@ -319,8 +306,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'date_time'),
-          isTrue,
+          constraintsError.getConstraint('date_time'),
+          isNotNull,
         );
       });
     });
@@ -351,7 +338,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'date'),
+          constraintsError.constraints.any((c) => c.constraintName == 'date'),
           isTrue,
         );
       });
@@ -384,7 +371,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'enum'),
+          constraintsError.constraints.any((c) => c.constraintName == 'enum'),
           isTrue,
         );
       });

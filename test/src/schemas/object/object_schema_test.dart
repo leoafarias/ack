@@ -24,10 +24,10 @@ void main() {
       expect(result.isFail, isTrue);
 
       final schemaError = (result as Fail).error;
-      expect(schemaError, isA<SchemaConstraintViolation>());
-      final constraintsError = schemaError as SchemaConstraintViolation;
+      expect(schemaError, isA<NonNullableSchemaViolation>());
+      final constraintsError = schemaError as NonNullableSchemaViolation;
       expect(
-        constraintsError.constraints.any((e) => e.key == 'non_nullable_value'),
+        constraintsError.name == 'non_nullable',
         isTrue,
       );
     });
@@ -48,10 +48,10 @@ void main() {
       expect(result.isFail, isTrue);
 
       final schemaError = (result as Fail).error;
-      expect(schemaError, isA<SchemaConstraintViolation>());
-      final constraintsError = schemaError as SchemaConstraintViolation;
+      expect(schemaError, isA<InvalidTypeSchemaViolation>());
+      final constraintsError = schemaError as InvalidTypeSchemaViolation;
       expect(
-        constraintsError.constraints.any((e) => e.key == 'invalid_type'),
+        constraintsError.name == 'invalid_type',
         isTrue,
       );
     });
@@ -190,11 +190,21 @@ void main() {
       expect(invalidResult.isFail, isTrue);
 
       final objectError =
-          (invalidResult as Fail).error as ObjectSchemaViolation;
+          (invalidResult as Fail).error as NestedSchemaViolation;
       expect(objectError.violations.containsKey('user'), isTrue);
 
-      final userError = objectError.violations['user'] as ObjectSchemaViolation;
-      expect(userError.violations.containsKey('name'), isTrue);
+      final userError =
+          objectError.violations['user'] as SchemaConstraintViolation;
+
+      expect(userError.getConstraint('required_properties'), isNotNull);
+
+      expect(
+        userError
+            .getConstraint('required_properties')!
+            .getVariable<List<String>>('missing_properties')
+            .contains('name'),
+        isTrue,
+      );
     });
   });
   group('Constructor validation', () {

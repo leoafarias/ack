@@ -1,8 +1,8 @@
-class ViolationTemplate {
+class Template {
   final String _content;
   final Map<String, Object?> _data;
 
-  const ViolationTemplate(this._content, {Map<String, Object?>? data})
+  const Template(this._content, {Map<String, Object?>? data})
       : _data = data ?? const {};
 
   /// Orchestrates both loop parsing and variable replacement
@@ -130,17 +130,15 @@ class ViolationTemplate {
     final keys = path.split('.');
     Object? current = data;
 
-    final isList = current is List;
-
-    if (isList) {}
-
     for (final key in keys) {
       if (current is Map && current.containsKey(key)) {
         current = current[key];
-      } else if (current is List && key == 'length') {
-        return current.length;
-      } else {
-        return null;
+      }
+      if (key == 'length') {
+        final currentValue = current;
+        if (currentValue is Iterable) return currentValue.length;
+        if (currentValue is Map) return currentValue.length;
+        if (currentValue is String) return currentValue.length;
       }
     }
 

@@ -1,72 +1,43 @@
 import 'package:ack/src/helpers.dart';
 import 'package:ack/src/helpers/template.dart';
+import 'package:meta/meta.dart';
 
 import '../context.dart';
 import '../schemas/schema.dart';
 
-abstract class AckViolation {
-  final String key;
-  final Map<String, Object?>? extra;
-
-  late final ViolationTemplate template;
-
+sealed class SchemaViolation extends SchemaContext {
+  final Map<String, Object?> variables;
+  late final Template template;
   late final render = template.render;
+  final String name;
 
-  AckViolation({required this.key, required String message, this.extra}) {
-    template = ViolationTemplate(message, data: extra);
+  SchemaViolation({
+    required super.alias,
+    required super.schema,
+    required super.value,
+    required String message,
+    required this.name,
+    this.variables = const {},
+  }) {
+    template = Template(message, data: variables);
   }
 
   String get message => template.render();
 
   Map<String, Object?> toMap() {
     return {
-      'key': key,
+      'name': name,
+      'alias': alias,
+      'schema': schema.toMap(),
+      'value': value,
       'message': message,
-      if (extra != null) 'extra': extra,
+      if (variables.isNotEmpty) 'variables': variables,
     };
   }
 
-  String toJson() => prettyJson(toMap());
-
   @override
-  String toString() => '$runtimeType: ${toJson()}';
-}
-
-sealed class SchemaViolation extends AckViolation {
-  final SchemaContext context;
-  SchemaViolation({
-    required super.key,
-    required super.message,
-    Map<String, Object?>? extra,
-    required this.context,
-  }) : super(extra: {...context.extra, ...?extra});
-
-  @override
-  Map<String, Object?> toMap() {
-    return {...super.toMap(), 'context': context.toMap()};
-  }
-}
-
-final class ExceptionViolation extends SchemaViolation {
-  final Object error;
-  final StackTrace stackTrace;
-  ExceptionViolation({
-    required this.error,
-    required this.stackTrace,
-    required Schema schema,
-  }) : super(
-          key: 'out_of_context',
-          message: 'Out of context',
-          extra: {
-            'error': error.toString(),
-            'stackTrace': stackTrace.toString(),
-          },
-          context: SchemaContext(
-            name: schema.type.name,
-            schema: schema,
-            value: null,
-          ),
-        );
+  String toString() =>
+      '$runtimeType: name: $name, alias: $alias, schema: ${schema.runtimeType}, value: ${value ?? 'N/A'}, message: $message, variables: $variables';
 }
 
 final class UnknownSchemaViolation extends SchemaViolation {
@@ -75,30 +46,37 @@ final class UnknownSchemaViolation extends SchemaViolation {
   UnknownSchemaViolation({
     required this.error,
     required this.stackTrace,
-    required super.context,
+    required SchemaContext context,
   }) : super(
-          key: 'unknown_exception',
-          message: 'Unknown Exception when validating schema {{ error }}',
-          extra: {
+          name: 'unknown',
+          alias: context.alias,
+          schema: context.schema,
+          value: context.value,
+          message: 'Unknown schema violation: {{error}} \n{{stackTrace}}',
+          variables: {
             'error': error.toString(),
             'stackTrace': stackTrace.toString(),
           },
         );
 }
 
-final class InvalidTypeViolation extends ConstraintViolation {
+final class InvalidTypeSchemaViolation extends SchemaViolation {
   final Type valueType;
   final Type expectedType;
-  InvalidTypeViolation({
+  InvalidTypeSchemaViolation({
     required this.valueType,
     required this.expectedType,
+    required SchemaContext context,
   }) : super(
-          key: 'invalid_type',
+          name: 'invalid_type',
+          alias: context.alias,
+          schema: context.schema,
+          value: context.value,
           message:
-              'Invalid type of {{ value_type }}, expected {{ expected_type }}',
-          extra: {
-            'value_type': valueType.toString(),
-            'expected_type': expectedType.toString(),
+              'Invalid type of {{ valueType }}, expected {{ expectedType }}',
+          variables: {
+            'valueType': valueType.toString(),
+            'expectedType': expectedType.toString(),
           },
         );
 }
@@ -107,59 +85,128 @@ final class SchemaConstraintViolation extends SchemaViolation {
   final List<ConstraintViolation> constraints;
   SchemaConstraintViolation({
     required this.constraints,
-    required super.context,
+    required SchemaContext context,
   }) : super(
-          key: 'constraints',
-          message: 'Total of {{ constraints.length }} constraint violations',
-          extra: {'constraints': constraints.map((e) => e.toMap()).toList()},
+          name: 'constraints',
+          alias: context.alias,
+          schema: context.schema,
+          value: context.value,
+          message: 'Schema on {{schema_name}} violated: {{constraints}}',
+          variables: {
+            'schema_name': context.alias,
+            'constraints': constraints.map((e) => e.toMap()).toList(),
+          },
         );
+
+  ConstraintViolation? getConstraint(String constraintName) {
+    return constraints
+        .firstWhereOrNull((e) => e.constraintName == constraintName);
+  }
 }
 
-final class NonNullableViolation extends ConstraintViolation {
-  NonNullableViolation()
+final class NonNullableSchemaViolation extends SchemaViolation {
+  NonNullableSchemaViolation({required SchemaContext context})
       : super(
-          key: 'non_nullable_value',
-          message: 'Non nullable value is null',
+          name: 'non_nullable',
+          alias: context.alias,
+          schema: context.schema,
+          value: context.value,
+          message: 'Non nullable value is null on {{schema_name}}',
+          variables: {
+            'schema_name': context.alias,
+            'value': context.value?.toString() ?? 'N/A',
+          },
         );
 }
 
-final class ObjectSchemaViolation extends SchemaViolation {
+final class NestedSchemaViolation extends SchemaViolation {
   final Map<String, SchemaViolation> violations;
 
-  ObjectSchemaViolation({required this.violations, required super.context})
-      : super(
-          key: 'object',
-          message:
-              'Object schema total of {{ violations.length }} validation failed',
-          extra: {
+  NestedSchemaViolation({
+    required this.violations,
+    required SchemaContext context,
+  }) : super(
+          name: 'nested',
+          alias: context.alias,
+          schema: context.schema,
+          value: context.value,
+          message: '''
+Schema violation of {{schema_name}}:
+
+{{#each violations}}
+  {{ name }}: {{ message }}
+{{/each}}
+''',
+          variables: {
+            'schema_name': context.alias,
             'violations': {
               for (final entry in violations.entries)
                 entry.key: entry.value.toMap(),
             },
           },
-        );
+        ) {
+    assert(schema is ObjectSchema || schema is ListSchema,
+        'NestedSchemaViolation must be used with ObjectSchema or ListSchema');
+  }
 }
 
-final class ListSchemaViolation extends SchemaViolation {
-  final Map<int, SchemaViolation> violations;
+final class ConstraintViolation {
+  final Map<String, Object?>? variables;
+  late final Template template;
+  final String constraintName;
 
-  ListSchemaViolation({required this.violations, required super.context})
-      : super(
-          key: 'list',
-          message: 'List schema items validation failed',
-          extra: {
-            'violations': {
-              for (final entry in violations.entries)
-                entry.key: entry.value.toMap(),
-            },
-          },
-        );
-}
+  late final render = template.render;
 
-final class ConstraintViolation extends AckViolation {
   ConstraintViolation({
-    required super.key,
-    required super.message,
-    super.extra,
-  });
+    required this.constraintName,
+    required String message,
+    this.variables,
+  }) {
+    template = Template(message, data: variables);
+  }
+
+  String get message => template.render();
+
+  Map<String, Object?> toMap() {
+    return {
+      'constraintName': constraintName,
+      'message': message,
+      if (variables != null && variables!.isNotEmpty) 'variables': variables,
+    };
+  }
+
+  T getVariable<T>(String key) {
+    final value = variables?[key];
+    if (value == null) {
+      throw ArgumentError('Variable $key not found');
+    }
+
+    return value as T;
+  }
+
+  @override
+  String toString() => 'ConstraintViolation: $constraintName: $message';
+}
+
+@visibleForTesting
+class MockSchemaViolation extends SchemaViolation {
+  MockSchemaViolation({
+    SchemaContext context = const MockContext(),
+    super.message = 'mock_message',
+    super.variables,
+  }) : super(
+          name: 'mock_schema',
+          alias: context.alias,
+          schema: context.schema,
+          value: context.value,
+        );
+}
+
+class MockContext extends SchemaContext {
+  const MockContext()
+      : super(
+          alias: 'mock_context',
+          schema: const StringSchema(),
+          value: 'mock_value',
+        );
 }

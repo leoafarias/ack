@@ -29,14 +29,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
-
-        final constraintsError = error as SchemaConstraintViolation;
-        expect(
-          constraintsError.constraints
-              .any((e) => e.key == 'non_nullable_value'),
-          isTrue,
-        );
+        expect(error, isA<NonNullableSchemaViolation>());
       });
 
       test('Nullable schema passes on null', () {
@@ -52,13 +45,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
-
-        final constraintsError = error as SchemaConstraintViolation;
-        expect(
-          constraintsError.constraints.any((e) => e.key == 'invalid_type'),
-          isTrue,
-        );
+        expect(error, isA<InvalidTypeSchemaViolation>());
       });
 
       test('Valid list passes with no constraints', () {
@@ -91,7 +78,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((e) => e.key == 'unique_items'),
+          constraintsError.constraints
+              .any((e) => e.constraintName == 'unique_items'),
           isTrue,
         );
       });
@@ -121,7 +109,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((e) => e.key == 'min_items'),
+          constraintsError.constraints
+              .any((e) => e.constraintName == 'min_items'),
           isTrue,
         );
       });
@@ -151,7 +140,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintViolation;
         expect(
-          constraintsError.constraints.any((e) => e.key == 'max_items'),
+          constraintsError.constraints
+              .any((e) => e.constraintName == 'max_items'),
           isTrue,
         );
       });

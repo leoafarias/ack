@@ -138,6 +138,14 @@ extension IterableExt<T> on Iterable<T> {
 
   Iterable<T> getNonContainedValues(Iterable<T> iterable) =>
       iterable.where((e) => !contains(e));
+
+  T? firstWhereOrNull(bool Function(T) test) {
+    for (final element in this) {
+      if (test(element)) return element;
+    }
+
+    return null;
+  }
 }
 
 /// Checks if a string is a valid json format

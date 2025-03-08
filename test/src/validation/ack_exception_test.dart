@@ -4,19 +4,31 @@ import 'package:test/test.dart';
 
 class _MockSchemaContext extends SchemaContext {
   _MockSchemaContext()
-      : super(name: 'test', schema: ObjectSchema({}), value: null);
+      : super(alias: 'test', schema: ObjectSchema({}), value: null);
 }
 
 void main() {
   group('AckException', () {
     test('toMap() returns error map', () {
-      // Create a SchemaConstraintsError containing the constraint errors
+      final constraint1Violation = ConstraintViolation(
+        constraintName: 'custom_constraint1',
+        message: 'Custom constraint',
+        variables: {'key1': 'value1'},
+      );
+      final constraint2Violation = ConstraintViolation(
+        constraintName: 'custom_constraint2',
+        message: 'Custom constraint 2',
+        variables: {'key2': 'value2'},
+      );
+      final constraint3Violation = ConstraintViolation(
+        constraintName: 'custom_constraint3',
+        message: 'Custom constraint 3',
+        variables: {'key3': 'value3'},
+      );
       final constraintErrors = [
-        NonNullableViolation(),
-        InvalidTypeViolation(
-          valueType: String,
-          expectedType: int,
-        ),
+        constraint1Violation,
+        constraint2Violation,
+        constraint3Violation,
       ];
 
       final schemaError = SchemaConstraintViolation(
@@ -31,17 +43,22 @@ void main() {
 
       // Check the structure of the error
       final errorMap = map['violation'] as Map<String, dynamic>;
-      expect(errorMap['key'], 'constraints');
+      expect(errorMap['name'], 'constraints');
 
       // Verify the constraints are included
       final constraintsList = schemaError.constraints;
-      expect(constraintsList.length, 2);
-      expect(constraintsList[0].key, 'non_nullable_value');
-      expect(constraintsList[1].key, 'invalid_type');
+      expect(constraintsList.length, 3);
+      expect(constraintsList[0].constraintName, 'custom_constraint1');
+      expect(constraintsList[1].constraintName, 'custom_constraint2');
+      expect(constraintsList[2].constraintName, 'custom_constraint3');
     });
 
     test('toString() includes error details', () {
-      final constraintError = NonNullableViolation();
+      final constraintError = ConstraintViolation(
+        constraintName: 'custom_constraint',
+        message: 'Custom constraint',
+        variables: {'key': 'value'},
+      );
       final schemaError = SchemaConstraintViolation(
         constraints: [constraintError],
         context: _MockSchemaContext(),
@@ -56,7 +73,7 @@ void main() {
       );
       expect(
         value,
-        contains('non_nullable_value'),
+        contains('custom_constraint'),
       );
     });
   });

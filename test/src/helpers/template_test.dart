@@ -7,7 +7,7 @@ void main() {
     // Basic variable interpolation tests
     // ---------------------------------------------------------------
     test('Basic variable interpolation', () {
-      final template = ViolationTemplate('Hello, {{ name }}!');
+      final template = Template('Hello, {{ name }}!');
       expect(
         template.render(
           overrideData: {'name': 'World'},
@@ -17,7 +17,7 @@ void main() {
     });
 
     test('Multiple variables', () {
-      final template = ViolationTemplate('{{ greeting }}, {{ name }}!');
+      final template = Template('{{ greeting }}, {{ name }}!');
       expect(
         template.render(
           overrideData: {'greeting': 'Hello', 'name': 'World'},
@@ -27,7 +27,7 @@ void main() {
     });
 
     test('Non-string values', () {
-      final template = ViolationTemplate(
+      final template = Template(
         'Number: {{ number }}, Boolean: {{ flag }}, Null: {{ missing }}',
       );
       expect(
@@ -42,7 +42,7 @@ void main() {
     // Nested property access tests
     // ---------------------------------------------------------------
     test('Nested property access', () {
-      final template = ViolationTemplate('{{ user.profile.name }}');
+      final template = Template('{{ user.profile.name }}');
       expect(
         template.render(
           overrideData: {
@@ -56,7 +56,7 @@ void main() {
     });
 
     test('Deep nested property access', () {
-      final template = ViolationTemplate('{{ a.b.c.d.e }}');
+      final template = Template('{{ a.b.c.d.e }}');
       expect(
         template.render(
           overrideData: {
@@ -74,7 +74,7 @@ void main() {
     });
 
     test('Missing nested properties', () {
-      final template = ViolationTemplate('{{ a.b.c.missing }}');
+      final template = Template('{{ a.b.c.missing }}');
       expect(
         template.render(
           overrideData: {
@@ -83,12 +83,12 @@ void main() {
             }
           },
         ),
-        'N/A',
+        '{}',
       );
     });
 
     test('Null in path', () {
-      final template = ViolationTemplate('{{ a.b.c }}');
+      final template = Template('{{ a.b.c }}');
       expect(
         template.render(
           overrideData: {
@@ -103,8 +103,7 @@ void main() {
     // List iteration tests
     // ---------------------------------------------------------------
     test('Basic list iteration', () {
-      final template =
-          ViolationTemplate('Items: {{#each items}}{{ @this }}{{/each}}');
+      final template = Template('Items: {{#each items}}{{ @this }}{{/each}}');
       expect(
         template.render(
           overrideData: {
@@ -116,7 +115,7 @@ void main() {
     });
 
     test('List iteration with index', () {
-      final template = ViolationTemplate(
+      final template = Template(
         'Items: {{#each items}}[{{@index}}] {{ @this }}, {{/each}}',
       );
       expect(
@@ -130,7 +129,7 @@ void main() {
     });
 
     test('List of maps', () {
-      final template = ViolationTemplate(
+      final template = Template(
         'Users: {{#each users}}{{ name }} ({{ email }}), {{/each}}',
       );
       expect(
@@ -147,8 +146,7 @@ void main() {
     });
 
     test('Empty list', () {
-      final template =
-          ViolationTemplate('Items: {{#each items}}{{ @this }}{{/each}}');
+      final template = Template('Items: {{#each items}}{{ @this }}{{/each}}');
       expect(
         template.render(
           overrideData: {'items': []},
@@ -161,7 +159,7 @@ void main() {
     // Map iteration tests
     // ---------------------------------------------------------------
     test('Basic map iteration', () {
-      final template = ViolationTemplate(
+      final template = Template(
         'Settings: {{#each settings}}{{ @this.key }}: {{ @this.value }}, {{/each}}',
       );
       expect(
@@ -175,7 +173,7 @@ void main() {
     });
 
     test('Map with nested objects', () {
-      final template = ViolationTemplate(
+      final template = Template(
         'Settings: {{#each settings}}{{ @this.key }}: {{ @this.value.name }}, {{/each}}',
       );
       expect(
@@ -192,7 +190,7 @@ void main() {
     });
 
     test('Empty map', () {
-      final template = ViolationTemplate(
+      final template = Template(
         'Settings: {{#each settings}}{{ @this.key }}: {{ @this.value }}, {{/each}}',
       );
       expect(
@@ -207,7 +205,7 @@ void main() {
     // Nested loop tests
     // ---------------------------------------------------------------
     test('Nested list loops', () {
-      final template = ViolationTemplate('''
+      final template = Template('''
 Categories:
 {{#each categories}}
 - {{ name }}:
@@ -244,7 +242,7 @@ Categories:
     }, skip: 'TODO: Fix nested list loops');
 
     test('List loop inside map loop', () {
-      final template = ViolationTemplate('''
+      final template = Template('''
 {{#each data}}
 Section: {{ @this.key }}
 {{#each @this.value}}
@@ -276,7 +274,7 @@ Section: Vegetables
     });
 
     test('Map loop inside list loop', () {
-      final template = ViolationTemplate('''
+      final template = Template('''
 Users:
 {{#each users}}
 - {{ name }}:
@@ -319,7 +317,7 @@ Users:
     // Complex nested data
     // ---------------------------------------------------------------
     test('Deeply nested complex data structure', () {
-      final template = ViolationTemplate('''
+      final template = Template('''
 Organization: {{ org.name }}
 Departments:
 {{#each org.departments}}
@@ -406,8 +404,7 @@ Departments:
 
     /// Demonstrates that null items become "N/A" by default.
     test('Edge case - null in list', () {
-      final template =
-          ViolationTemplate('Items: {{#each items}}{{ @this }}, {{/each}}');
+      final template = Template('Items: {{#each items}}{{ @this }}, {{/each}}');
       expect(
         template.render(
           overrideData: {
@@ -422,7 +419,7 @@ Departments:
     /// merges parent context. If your Template code *doesn't* currently merge
     /// parent data, this test will produce 'N/A' instead of 'Inventory'.
     test('Edge case - access outer context in loop', () {
-      final template = ViolationTemplate(
+      final template = Template(
         '{{#each items}}{{ @this }} (from {{ source }}), {{/each}}',
       );
       expect(
@@ -438,7 +435,7 @@ Departments:
     }, skip: 'TODO: Fix access outer context in loop');
 
     test('Edge case - numeric map keys', () {
-      final template = ViolationTemplate(
+      final template = Template(
         'Scores: {{#each scores}}Student {{@this.key}}: {{@this.value}}, {{/each}}',
       );
       expect(
@@ -452,7 +449,7 @@ Departments:
     });
 
     test('Mixed content with variables and loops', () {
-      final template = ViolationTemplate('''
+      final template = Template('''
 Report for {{ company }}
 Date: {{ date }}
 

@@ -26,7 +26,8 @@ void main() {
 
       final constraintsError = error as SchemaConstraintViolation;
       expect(
-        constraintsError.constraints.any((e) => e.key == 'min_items'),
+        constraintsError.constraints
+            .any((e) => e.constraintName == 'min_items'),
         isTrue,
       );
     });
@@ -35,7 +36,7 @@ void main() {
     test('error message is correct', () {
       final validator = MinItemsListValidator(3);
       final error = validator.buildError([1, 2]);
-      expect(error.template, 'Too few items: 2. Min: 3');
+      expect(error.message, 'Too few items: 2. Min: 3');
     });
   });
 }
