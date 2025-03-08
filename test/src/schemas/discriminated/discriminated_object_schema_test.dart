@@ -53,9 +53,9 @@ void main() {
 
       expect(result.isFail, isTrue);
       final error = (result as Fail).error;
-      expect(error, isA<SchemaConstraintsError>());
+      expect(error, isA<SchemaConstraintViolation>());
 
-      final constraintsError = error as SchemaConstraintsError;
+      final constraintsError = error as SchemaConstraintViolation;
       expect(
         constraintsError.constraints.any((e) => e.key == 'non_nullable_value'),
         isTrue,
@@ -100,9 +100,9 @@ void main() {
 
       expect(result.isFail, isTrue);
       final error = (result as Fail).error;
-      expect(error, isA<SchemaConstraintsError>());
+      expect(error, isA<SchemaConstraintViolation>());
 
-      final constraintsError = error as SchemaConstraintsError;
+      final constraintsError = error as SchemaConstraintViolation;
       expect(
         constraintsError.constraints.any((e) => e.key == 'invalid_type'),
         isTrue,
@@ -225,16 +225,16 @@ void main() {
       final result =
           discriminatedSchema.validate({'key': 'a', 'value': 'not an int'});
 
-      final error = (result as Fail).error as ObjectSchemaError;
+      final error = (result as Fail).error as ObjectSchemaViolation;
 
       // Check that the 'value' property has an error
       expect(error.errors.containsKey('value'), isTrue);
 
       // Check that it's an invalid type error
       final valueError = error.errors['value']!;
-      expect(valueError, isA<SchemaConstraintsError>());
+      expect(valueError, isA<SchemaConstraintViolation>());
 
-      final constraintsError = valueError as SchemaConstraintsError;
+      final constraintsError = valueError as SchemaConstraintViolation;
       expect(
         constraintsError.constraints,
         contains(isA<InvalidTypeConstraintError>()),

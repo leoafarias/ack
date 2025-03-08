@@ -36,19 +36,23 @@ final class ObjectSchema extends Schema<MapValue>
   }
 
   @override
-  SchemaError? _validateAsType(MapValue value) {
+  SchemaViolation? _validateAsType(MapValue value) {
+    final context = getCurrentViolationContext();
     final error = super._validateAsType(value);
 
     if (error != null) return error;
 
-    final constraintErrors = <String, SchemaError>{};
+    final constraintErrors = <String, SchemaViolation>{};
 
     // Validate properties
     for (final key in _properties.keys) {
       final requiredError =
           PropertyRequiredConstraintError(key, _required).validate(value);
       if (requiredError != null) {
-        constraintErrors[key] = SchemaConstraintsError.single(requiredError);
+        constraintErrors[key] = SchemaConstraintViolation.single(
+          requiredError,
+          context: context,
+        );
         continue;
       }
 
@@ -68,31 +72,17 @@ final class ObjectSchema extends Schema<MapValue>
         final unallowedError =
             UnallowedPropertyConstraintError(key).validate(value);
         if (unallowedError != null) {
-          constraintErrors[key] = SchemaConstraintsError.single(unallowedError);
+          constraintErrors[key] = SchemaConstraintViolation.single(
+            unallowedError,
+            context: context,
+          );
         }
       }
     }
 
     if (constraintErrors.isEmpty) return null;
 
-    return ObjectSchemaError(errors: constraintErrors);
-  }
-
-  /// Validate the [value] as a JSON string
-  ///
-  /// This method is useful for validating JSON strings against the schema.
-  ///
-  /// If the value is not a JSON string, it will be converted to a JSON string
-  /// using [jsonEncode].
-  SchemaResult<MapValue> validateJson(String value, {String? debugName}) {
-    try {
-      return validate(
-        jsonDecode(value) as Map<String, Object?>,
-        debugName: debugName,
-      );
-    } catch (e) {
-      return SchemaResult.fail(InvalidJsonFormatContraintError(json: value));
-    }
+    return ObjectSchemaViolation(errors: constraintErrors, context: context);
   }
 
   ObjectSchema extend(

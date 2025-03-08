@@ -1,8 +1,16 @@
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
+import '../../test_helpers.dart';
+
 void main() {
   group('SchemaResult', () {
+    late MockViolationContext mockContext;
+
+    setUp(() {
+      mockContext = MockViolationContext();
+    });
+
     test('Ok result provides correct value access', () {
       final result = SchemaResult.ok('test');
       expect(result.isOk, isTrue);
@@ -32,8 +40,9 @@ void main() {
     });
 
     test('Fail result provides error access', () {
-      final schemaError = SchemaConstraintsError.single(
-        NonNullableValueConstraintError(),
+      final schemaError = SchemaConstraintViolation.single(
+        NonNullableValueConstraintError(context: mockContext),
+        context: mockContext,
       );
       final result = SchemaResult.fail(schemaError);
 

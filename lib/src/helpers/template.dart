@@ -130,6 +130,10 @@ class Template {
     final keys = path.split('.');
     Object? current = data;
 
+    final isList = current is List;
+
+    if (isList) {}
+
     for (final key in keys) {
       if (current is Map && current.containsKey(key)) {
         current = current[key];

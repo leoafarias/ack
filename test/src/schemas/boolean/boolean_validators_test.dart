@@ -25,9 +25,9 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
+        expect(error, isA<SchemaConstraintViolation>());
 
-        final constraintsError = error as SchemaConstraintsError;
+        final constraintsError = error as SchemaConstraintViolation;
         expect(
           constraintsError.constraints.any((e) => e.key == 'invalid_type'),
           isTrue,
@@ -41,9 +41,9 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
+        expect(error, isA<SchemaConstraintViolation>());
 
-        final constraintsError = error as SchemaConstraintsError;
+        final constraintsError = error as SchemaConstraintViolation;
         expect(
           constraintsError.constraints.any((e) => e.key == 'invalid_type'),
           isTrue,
@@ -58,9 +58,9 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
+        expect(error, isA<SchemaConstraintViolation>());
 
-        final constraintsError = error as SchemaConstraintsError;
+        final constraintsError = error as SchemaConstraintViolation;
         expect(
           constraintsError.constraints.any((e) => e.key == 'invalid_type'),
           isTrue,
@@ -73,9 +73,9 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
+        expect(error, isA<SchemaConstraintViolation>());
 
-        final constraintsError = error as SchemaConstraintsError;
+        final constraintsError = error as SchemaConstraintViolation;
         expect(
           constraintsError.constraints.any((e) => e.key == 'invalid_type'),
           isTrue,

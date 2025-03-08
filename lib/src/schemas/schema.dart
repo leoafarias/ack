@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 
 import 'package:meta/meta.dart';
@@ -85,17 +84,18 @@ sealed class Schema<T extends Object> {
   /// This method is primarily for internal use and testing, after the value has
   /// already been successfully parsed or is known to be of the correct type [T].
   ///
-  /// Returns a list of [SchemaError] objects if any constraints are violated,
+  /// Returns a list of [SchemaViolation] objects if any constraints are violated,
   /// otherwise returns an empty list.
-  SchemaError? _validateAsType(T value) {
+  SchemaViolation? _validateAsType(T value) {
+    final context = getCurrentViolationContext();
     final errors = _constraints
         .map((e) => e.validate(value))
-        .whereType<ConstraintError>()
+        .whereType<ConstraintViolation>()
         .toList();
 
     if (errors.isEmpty) return null;
 
-    return SchemaConstraintsError.multiple(errors);
+    return SchemaConstraintViolation.multiple(errors, context: context);
   }
 
   /// Attempts to parse the given [value] into type [T].
@@ -150,31 +150,37 @@ sealed class Schema<T extends Object> {
   ///
   /// If [value] is `null`:
   ///   - If [_nullable] is `true`, returns [Ok] with `null` data.
-  ///   - If [_nullable] is `false`, returns [Fail] with a [SchemaError.nonNullableValue].
+  ///   - If [_nullable] is `false`, returns [Fail] with a [SchemaViolation.nonNullableValue].
   ///
   /// If [value] is not `null`:
   ///   - Attempts to parse [value] to type [T] using [tryParse].
-  ///   - If parsing fails, returns [Fail] with a [SchemaError.invalidType].
+  ///   - If parsing fails, returns [Fail] with a [SchemaViolation.invalidType].
   ///   - If parsing succeeds, validates the parsed value against the schema's
   ///     constraints using [_validateAsType].
   ///   - Returns [Ok] with the parsed value if validation succeeds, or [Fail]
-  ///     with a list of [SchemaError] objects if validation fails.
+  ///     with a list of [SchemaViolation] objects if validation fails.
   @protected
   @visibleForTesting
-  SchemaError? validateSchema(Object? value) {
+  SchemaViolation? validateSchema(Object? value) {
+    final context = getCurrentViolationContext();
     if (value == null) {
       return _nullable
           ? null
-          : SchemaConstraintsError.single(NonNullableValueConstraintError());
+          : SchemaConstraintViolation.single(
+              NonNullableValueConstraintError(context: context),
+              context: context,
+            );
     }
 
     final typedValue = tryParse(value);
     if (typedValue == null) {
-      return SchemaConstraintsError.single(
+      return SchemaConstraintViolation.single(
         InvalidTypeConstraintError(
           valueType: value.runtimeType,
           expectedType: T,
+          context: context,
         ),
+        context: context,
       );
     }
 
@@ -186,7 +192,7 @@ sealed class Schema<T extends Object> {
   /// This method provides a non-throwing way to validate values against the schema.
   /// It wraps the validation logic in a `try-catch` block to handle potential
   /// exceptions during validation and returns a [Fail] result with a
-  /// [SchemaError.unknownException] if an exception occurs.
+  /// [SchemaViolation.unknownException] if an exception occurs.
   ///
   /// Use [validateOrThrow] if you prefer to throw an exception on validation failure.
   SchemaResult<T> validate(Object? value, {String? debugName}) {
@@ -203,8 +209,14 @@ sealed class Schema<T extends Object> {
 
           return SchemaResult.fail(error);
         } catch (e, stackTrace) {
+          final context = getCurrentViolationContext();
+
           return SchemaResult.fail(
-            UnknownExceptionSchemaError(error: e, stackTrace: stackTrace),
+            UnknownSchemaViolation(
+              error: e,
+              stackTrace: stackTrace,
+              context: context,
+            ),
           );
         }
       },
@@ -261,7 +273,7 @@ mixin SchemaFluentMethods<S extends Schema<T>, T extends Object> on Schema<T> {
   /// Validates the [value] against this schema and throws an [AckException] if validation fails.
   ///
   /// If validation is successful, returns the validated value of type [T].
-  /// If validation fails, throws an [AckException] containing a list of [SchemaError] objects.
+  /// If validation fails, throws an [AckException] containing a list of [SchemaViolation] objects.
   ///
   /// **Note**: `AckException` is assumed to be a custom exception class defined elsewhere,
   /// likely in `ack_base.dart`, to handle schema validation errors. Ensure `AckException`

@@ -25,16 +25,8 @@ class ViolationContext<T extends Schema> {
     }
   }
 
-  static ViolationContext getWithExtras(Map<String, Object?> extra) {
-    ViolationContext? context = maybeGetCurrentViolationContext();
-
-    return context == null
-        ? ViolationContext(extra: extra)
-        : context.mergeExtras(extra);
-  }
-
   void _assertNoReservedKeys(Map<String, Object?> extra) {
-    const reservedKeys = ['value', 'schema', 'name', 'extra'];
+    const reservedKeys = ['value', 'schema'];
     for (final key in reservedKeys) {
       assert(
         !extra.containsKey(key),

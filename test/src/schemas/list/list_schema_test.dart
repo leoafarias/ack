@@ -29,9 +29,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
+        expect(error, isA<SchemaConstraintViolation>());
 
-        final constraintsError = error as SchemaConstraintsError;
+        final constraintsError = error as SchemaConstraintViolation;
         expect(
           constraintsError.constraints
               .any((e) => e.key == 'non_nullable_value'),
@@ -52,9 +52,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
+        expect(error, isA<SchemaConstraintViolation>());
 
-        final constraintsError = error as SchemaConstraintsError;
+        final constraintsError = error as SchemaConstraintViolation;
         expect(
           constraintsError.constraints.any((e) => e.key == 'invalid_type'),
           isTrue,
@@ -87,9 +87,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
+        expect(error, isA<SchemaConstraintViolation>());
 
-        final constraintsError = error as SchemaConstraintsError;
+        final constraintsError = error as SchemaConstraintViolation;
         expect(
           constraintsError.constraints.any((e) => e.key == 'unique_items'),
           isTrue,
@@ -117,9 +117,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
+        expect(error, isA<SchemaConstraintViolation>());
 
-        final constraintsError = error as SchemaConstraintsError;
+        final constraintsError = error as SchemaConstraintViolation;
         expect(
           constraintsError.constraints.any((e) => e.key == 'min_items'),
           isTrue,
@@ -147,9 +147,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
+        expect(error, isA<SchemaConstraintViolation>());
 
-        final constraintsError = error as SchemaConstraintsError;
+        final constraintsError = error as SchemaConstraintViolation;
         expect(
           constraintsError.constraints.any((e) => e.key == 'max_items'),
           isTrue,

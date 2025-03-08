@@ -77,8 +77,9 @@ void main() {
         result.isFail,
         isTrue,
       );
+      final error = (result as Fail).error as SchemaConstraintViolation;
       expect(
-        result,
+        error.constraints,
         hasOneConstraintError(
           'key_must_be_required_in_schema',
         ),
@@ -103,19 +104,19 @@ void main() {
 
       expect(
         (result as Fail).error,
-        isA<ObjectSchemaError>(),
+        isA<ObjectSchemaViolation>(),
       );
 
-      final resultError = (result as Fail).error as ObjectSchemaError;
+      final resultError = (result as Fail).error as ObjectSchemaViolation;
 
       // Check that the 'value' property has an error
       expect(resultError.errors.containsKey('value'), isTrue);
 
       // Check that it's an invalid type error
       final valueError = resultError.errors['value']!;
-      expect(valueError, isA<SchemaConstraintsError>());
+      expect(valueError, isA<SchemaConstraintViolation>());
 
-      final constraintsError = valueError as SchemaConstraintsError;
+      final constraintsError = valueError as SchemaConstraintViolation;
       expect(
         constraintsError.constraints,
         contains(isA<InvalidTypeConstraintError>()),

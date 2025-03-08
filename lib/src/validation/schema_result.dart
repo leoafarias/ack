@@ -4,7 +4,7 @@ import 'schema_error.dart';
 /// Represents either a successful outcome or a failure.
 ///
 /// A [SchemaResult] encapsulates a successful value (an [Ok] instance)
-/// or a failure (a [Fail] instance containing a list of [SchemaError]s).
+/// or a failure (a [Fail] instance containing a list of [SchemaViolation]s).
 class SchemaResult<T extends Object> {
   /// Creates a new [SchemaResult] instance.
   const SchemaResult();
@@ -15,7 +15,7 @@ class SchemaResult<T extends Object> {
   }
 
   /// Returns a failure result that wraps the specified list of [errors].
-  static SchemaResult<T> fail<T extends Object>(SchemaError error) {
+  static SchemaResult<T> fail<T extends Object>(SchemaViolation error) {
     return Fail(error);
   }
 
@@ -33,12 +33,12 @@ class SchemaResult<T extends Object> {
   ///
   /// If this result is successful, it returns an empty list.
   /// If this result is a failure, it returns the list of errors.
-  SchemaError getErrors() => match(
+  SchemaViolation getErrors() => match(
         onOk: (_) => throw StateError('Cannot get errors from Ok'),
         onFail: (error) => error,
       );
 
-  SchemaError? getErrorOrNull() => match(
+  SchemaViolation? getErrorOrNull() => match(
         onOk: (_) => null,
         onFail: (error) => error,
       );
@@ -78,7 +78,7 @@ class SchemaResult<T extends Object> {
   /// Returns the result of the invoked callback.
   R match<R>({
     required R Function(Ok<T> value) onOk,
-    required R Function(SchemaError error) onFail,
+    required R Function(SchemaViolation error) onFail,
   }) {
     final self = this;
     if (self is Ok<T>) return onOk(self);
@@ -90,7 +90,7 @@ class SchemaResult<T extends Object> {
   ///
   /// If this instance is a [Fail], it calls [onFail] with its list of errors.
   /// Otherwise, it does nothing.
-  void onFail(void Function(SchemaError error) onFail) {
+  void onFail(void Function(SchemaViolation error) onFail) {
     match(onOk: (_) {}, onFail: onFail);
   }
 
@@ -133,11 +133,11 @@ final class Ok<T extends Object> extends SchemaResult<T> {
 /// Represents a failure outcome with associated errors.
 ///
 /// A [Fail] instance indicates that an operation failed and encapsulates a list
-/// of [SchemaError]s describing what went wrong.
+/// of [SchemaViolation]s describing what went wrong.
 class Fail<T extends Object> extends SchemaResult<T> {
   /// The list of errors associated with this failure.
 
-  final SchemaError error;
+  final SchemaViolation error;
 
   /// Creates a failure result with the specified [error].
   const Fail(this.error);

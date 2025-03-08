@@ -17,22 +17,25 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
         super(type: SchemaType.discriminatedObject);
 
   @override
-  SchemaError? _validateAsType(MapValue value) {
+  SchemaViolation? _validateAsType(MapValue value) {
     final discriminatorValue = _getDiscriminatorValue(value);
+    final context = getCurrentViolationContext();
 
     if (discriminatorValue == null) {
-      return SchemaConstraintsError.single(
-        _missingDiscriminatorKeyInValue(_discriminatorKey, value),
+      return SchemaConstraintViolation.single(
+        _missingDiscriminatorKeyInValue(_discriminatorKey, context),
+        context: context,
       );
     }
     final (errors, discriminatedSchema) = _validateDiscriminatedSchemas(
       schemas: _schemas,
       discriminatorKey: _discriminatorKey,
       discriminatorValue: discriminatorValue,
+      context: context,
     );
 
     if (discriminatedSchema == null) {
-      return SchemaConstraintsError.multiple(errors);
+      return SchemaConstraintViolation.multiple(errors, context: context);
     }
 
     final result =
@@ -102,19 +105,26 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
   }
 }
 
-(List<ConstraintError>, ObjectSchema?) _validateDiscriminatedSchemas({
+(List<ConstraintViolation>, ObjectSchema?) _validateDiscriminatedSchemas({
   required Map<String, ObjectSchema> schemas,
   required String discriminatorKey,
   required String discriminatorValue,
+  required ViolationContext context,
 }) {
   // Check if schema exists for the discriminator value
   if (!schemas.containsKey(discriminatorValue)) {
     return (
-      [_noSchemaForDiscriminatorValue(discriminatorKey, discriminatorValue)],
+      [
+        _noSchemaForDiscriminatorValue(
+          discriminatorKey,
+          discriminatorValue,
+          context,
+        ),
+      ],
       null,
     );
   }
-  final errors = <ConstraintError>[];
+  final errors = <ConstraintViolation>[];
   // Validate the schema configuration
   for (final MapEntry(:key, value: schema) in schemas.entries) {
     final keyIsRequired = schema._required.contains(discriminatorKey);
@@ -122,8 +132,9 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
 
     errors.addAll([
       if (!propertyExists)
-        _missingDiscriminatorKeyInSchema(discriminatorKey, key),
-      if (!keyIsRequired) _keyMustBeRequiredInSchema(discriminatorKey, schema),
+        _missingDiscriminatorKeyInSchema(discriminatorKey, key, context),
+      if (!keyIsRequired)
+        _keyMustBeRequiredInSchema(discriminatorKey, schema, context),
     ]);
   }
 
@@ -132,60 +143,61 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
       : (errors, null);
 }
 
-ConstraintError _missingDiscriminatorKeyInSchema(
+ConstraintViolation _missingDiscriminatorKeyInSchema(
   String discriminatorKey,
   String discriminatorValue,
+  ViolationContext context,
 ) {
-  return ConstraintError(
+  return ConstraintViolation(
     key: 'missing_discriminator_key_in_schema',
     message:
         'Missing discriminator key: $discriminatorKey in schema: $discriminatorValue',
-    context: ViolationContext.getWithExtras({
+    context: context.mergeExtras({
       'discriminator_key': discriminatorKey,
       'discriminator_value': discriminatorValue,
     }),
   );
 }
 
-ConstraintError _noSchemaForDiscriminatorValue(
+ConstraintViolation _noSchemaForDiscriminatorValue(
   String discriminatorKey,
   String discriminatorValue,
+  ViolationContext context,
 ) {
-  return ConstraintError(
+  return ConstraintViolation(
     key: 'no_schema_for_discriminator_value',
     message:
         'No schema found for discriminator value: $discriminatorValue for discriminator key: $discriminatorKey',
-    context: ViolationContext.getWithExtras({
+    context: context.mergeExtras({
       'discriminator_key': discriminatorKey,
       'discriminator_value': discriminatorValue,
     }),
   );
 }
 
-ConstraintError _keyMustBeRequiredInSchema(
+ConstraintViolation _keyMustBeRequiredInSchema(
   String discriminatorKey,
   ObjectSchema schema,
+  ViolationContext context,
 ) {
-  return ConstraintError(
+  return ConstraintViolation(
     key: 'key_must_be_required_in_schema',
     message: 'Key is required in schema: $discriminatorKey for schema: $schema',
-    context: ViolationContext.getWithExtras({
+    context: context.mergeExtras({
       'discriminator_key': discriminatorKey,
-      'schema': schema,
+      'object_schema': schema.toMap(),
     }),
   );
 }
 
-ConstraintError _missingDiscriminatorKeyInValue(
+ConstraintViolation _missingDiscriminatorKeyInValue(
   String discriminatorKey,
-  MapValue value,
+  ViolationContext context,
 ) {
-  return ConstraintError(
+  return ConstraintViolation(
     key: 'missing_discriminator_key',
-    message: 'Missing discriminator key: $discriminatorKey in value: $value',
-    context: ViolationContext.getWithExtras({
-      'discriminator_key': discriminatorKey,
-      'value': value,
-    }),
+    message:
+        'Missing discriminator key: $discriminatorKey in value: ${context.value ?? ''}',
+    context: context.mergeExtras({'discriminator_key': discriminatorKey}),
   );
 }

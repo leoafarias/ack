@@ -126,29 +126,6 @@ void main() {
       });
     });
 
-    group('OneOfValidator', () {
-      final validator = OneOfStringValidator(['apple', 'banana']);
-
-      test('Strings in allowed values pass validation', () {
-        expect(validator.isValid('apple'), isTrue);
-        expect(validator.isValid('banana'), isTrue);
-      });
-
-      test('Strings not in allowed values fail validation', () {
-        expect(validator.isValid('orange'), isFalse);
-        expect(validator.isValid(''), isFalse);
-        expect(validator.isValid('APPLE'), isFalse);
-      });
-
-      test('schema validation works with oneOf validator', () {
-        final schema = StringSchema().oneOf(['apple', 'banana']);
-        expect(schema.validate('apple').isOk, isTrue);
-
-        final result = schema.validate('orange');
-        expect(result, hasOneConstraintError('one_of'));
-      });
-    });
-
     group('NotOneOfValidator', () {
       final validator = NotOneOfStringValidator(['apple', 'banana']);
 

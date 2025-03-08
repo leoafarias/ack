@@ -1,4 +1,5 @@
 import 'package:ack/src/helpers/template.dart';
+import 'package:ack/src/schemas/schema.dart';
 import 'package:meta/meta.dart';
 
 import '../context.dart';
@@ -12,31 +13,40 @@ abstract class ConstraintValidator<T extends Object> {
 
   const ConstraintValidator({required this.name, required this.description});
 
+  ViolationContext _getWithExtras(T value, Map<String, Object?> extra) {
+    ViolationContext? context =
+        maybeGetCurrentViolationContext<Schema<Object>>();
+
+    return context == null
+        ? ViolationContext(value: value, extra: extra)
+        : context.mergeExtras(extra);
+  }
+
   String get errorTemplate;
 
+  @protected
+  ConstraintViolation buildError(T value, {Map<String, Object?>? extra}) {
+    final context = _getWithExtras(value, extra ?? {});
+    final template = Template(errorTemplate, data: context.toMap());
+
+    return ConstraintViolation(
+      key: name,
+      message: template.render(),
+      context: context,
+    );
+  }
+
+  @protected
   bool isValid(T value);
 
-  ConstraintError? validate(T value) => isValid(value) ? null : onError(value);
-
-  ConstraintError onError(T value);
+  ConstraintViolation? validate(T value) =>
+      isValid(value) ? null : buildError(value);
 
   Map<String, Object?> toMap() {
     return {'name': name, 'description': description};
   }
 
   String toJson() => prettyJson(toMap());
-
-  @protected
-  ConstraintError buildError({Map<String, Object?>? extra}) {
-    final context = ViolationContext.getWithExtras(extra ?? {});
-    final template = Template(errorTemplate, data: context.toMap());
-
-    return ConstraintError(
-      key: name,
-      message: template.render(),
-      context: context,
-    );
-  }
 
   @override
   String toString() => toJson();

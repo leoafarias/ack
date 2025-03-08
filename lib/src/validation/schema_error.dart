@@ -2,14 +2,14 @@ import 'package:ack/src/helpers.dart';
 
 import '../context.dart';
 
-abstract class Violation {
+abstract class AckViolation {
   final String key;
 
   final ViolationContext context;
 
   final String _message;
 
-  const Violation({
+  const AckViolation({
     required this.key,
     required this.context,
     String? message,
@@ -39,17 +39,17 @@ abstract class Violation {
   String toString() => '$runtimeType: ${toJson()}';
 }
 
-sealed class SchemaError extends Violation {
-  const SchemaError({
+sealed class SchemaViolation extends AckViolation {
+  const SchemaViolation({
     required super.key,
     required super.message,
     required super.context,
   });
 }
 
-final class SchemaConstraintsError extends SchemaError {
-  final List<ConstraintError> constraints;
-  SchemaConstraintsError({
+final class SchemaConstraintViolation extends SchemaViolation {
+  final List<ConstraintViolation> constraints;
+  SchemaConstraintViolation({
     required this.constraints,
     required super.context,
   }) : super(
@@ -57,15 +57,17 @@ final class SchemaConstraintsError extends SchemaError {
           message: 'Schema Constraints Validation failed',
         );
 
-  SchemaConstraintsError.single(
-    ConstraintError error, {
+  SchemaConstraintViolation.single(
+    ConstraintViolation error, {
     Map<String, Object?>? extra,
-  }) : this.multiple([error], extra: extra);
+    required ViolationContext context,
+  }) : this.multiple([error], extra: extra, context: context);
 
-  SchemaConstraintsError.multiple(
-    List<ConstraintError> errors, {
+  SchemaConstraintViolation.multiple(
+    List<ConstraintViolation> errors, {
     Map<String, Object?>? extra,
-  }) : this(constraints: errors, context: ViolationContext.getWithExtras({}));
+    required ViolationContext context,
+  }) : this(constraints: errors, context: context.mergeExtras(extra ?? {}));
   @override
   Map<String, Object?> toMap() {
     return {
@@ -75,81 +77,80 @@ final class SchemaConstraintsError extends SchemaError {
   }
 }
 
-final class UnknownExceptionSchemaError extends SchemaError {
+final class UnknownSchemaViolation extends SchemaViolation {
   final Object? error;
   final StackTrace? stackTrace;
-  UnknownExceptionSchemaError({this.error, this.stackTrace})
-      : super(
+  UnknownSchemaViolation({
+    this.error,
+    this.stackTrace,
+    required ViolationContext context,
+  }) : super(
           key: 'unknown_exception',
           message: 'Unknown Exception when validating schema {{ error }}',
-          context: ViolationContext.getWithExtras({
+          context: context.mergeExtras({
             'error': error?.toString(),
             'stack_trace': stackTrace?.toString(),
           }),
         );
 }
 
-final class InvalidTypeConstraintError extends ConstraintError {
+final class InvalidTypeConstraintError extends ConstraintViolation {
   final Type valueType;
   final Type expectedType;
   InvalidTypeConstraintError({
     required this.valueType,
     required this.expectedType,
+    required ViolationContext context,
   }) : super(
           key: 'invalid_type',
           message: 'Invalid type of $valueType, expected $expectedType',
-          context: ViolationContext.getWithExtras({
+          context: context.mergeExtras({
             'value_type': valueType.toString(),
             'expected_type': expectedType.toString(),
           }),
         );
 }
 
-final class InvalidJsonFormatContraintError extends SchemaError {
-  final String json;
-  InvalidJsonFormatContraintError({required this.json})
-      : super(
-          key: 'invalid_json_format',
-          message: 'Invalid JSON format: {{ json }}',
-          context: ViolationContext.getWithExtras({'json': json}),
-        );
-}
-
-final class NonNullableValueConstraintError extends ConstraintError {
-  NonNullableValueConstraintError()
+final class NonNullableValueConstraintError extends ConstraintViolation {
+  NonNullableValueConstraintError({required ViolationContext context})
       : super(
           key: 'non_nullable_value',
           message: 'Non nullable value is null',
-          context: ViolationContext.getWithExtras({}),
+          context: context.mergeExtras({}),
         );
 }
 
 @Deprecated('Use ObjectSchemaError instead')
-final class DiscriminatedSchemaError extends SchemaError {
+final class DiscriminatedSchemaViolation extends SchemaViolation {
   final String discriminator;
 
-  final SchemaError error;
-  DiscriminatedSchemaError({
+  final SchemaViolation error;
+  @override
+  final ViolationContext context;
+  DiscriminatedSchemaViolation({
     required this.discriminator,
     required this.error,
+    required this.context,
   }) : super(
           key: 'discriminated',
           message: 'Discriminated schema validation failed',
-          context: ViolationContext.getWithExtras({
+          context: context.mergeExtras({
             'discriminator': discriminator,
             'error': error.toMap(),
           }),
         );
 }
 
-final class ObjectSchemaError extends SchemaError {
-  final Map<String, SchemaError> errors;
+final class ObjectSchemaViolation extends SchemaViolation {
+  final Map<String, SchemaViolation> errors;
 
-  ObjectSchemaError({required this.errors})
-      : super(
+  ObjectSchemaViolation({
+    required this.errors,
+    required ViolationContext context,
+  }) : super(
           key: 'object',
           message: 'Object schema validation failed',
-          context: ViolationContext.getWithExtras({
+          context: context.mergeExtras({
             'errors': {
               for (final entry in errors.entries)
                 entry.key: entry.value.toMap(),
@@ -168,14 +169,14 @@ final class ObjectSchemaError extends SchemaError {
   }
 }
 
-final class ListSchemaError extends SchemaError {
-  final Map<int, SchemaError> errors;
+final class ListSchemaViolation extends SchemaViolation {
+  final Map<int, SchemaViolation> errors;
 
-  ListSchemaError({required this.errors})
+  ListSchemaViolation({required this.errors, required ViolationContext context})
       : super(
           key: 'list',
           message: 'List schema items validation failed',
-          context: ViolationContext.getWithExtras({
+          context: context.mergeExtras({
             'errors': {
               for (final entry in errors.entries)
                 entry.key: entry.value.toMap(),
@@ -184,9 +185,8 @@ final class ListSchemaError extends SchemaError {
         );
 }
 
-// TODO: Rename this to ConstraintViolation
-final class ConstraintError extends Violation {
-  const ConstraintError({
+final class ConstraintViolation extends AckViolation {
+  const ConstraintViolation({
     required super.key,
     required super.message,
     required super.context,

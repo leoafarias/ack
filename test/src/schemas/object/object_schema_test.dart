@@ -24,8 +24,8 @@ void main() {
       expect(result.isFail, isTrue);
 
       final schemaError = (result as Fail).error;
-      expect(schemaError, isA<SchemaConstraintsError>());
-      final constraintsError = schemaError as SchemaConstraintsError;
+      expect(schemaError, isA<SchemaConstraintViolation>());
+      final constraintsError = schemaError as SchemaConstraintViolation;
       expect(
         constraintsError.constraints.any((e) => e.key == 'non_nullable_value'),
         isTrue,
@@ -48,8 +48,8 @@ void main() {
       expect(result.isFail, isTrue);
 
       final schemaError = (result as Fail).error;
-      expect(schemaError, isA<SchemaConstraintsError>());
-      final constraintsError = schemaError as SchemaConstraintsError;
+      expect(schemaError, isA<SchemaConstraintViolation>());
+      final constraintsError = schemaError as SchemaConstraintViolation;
       expect(
         constraintsError.constraints.any((e) => e.key == 'invalid_type'),
         isTrue,
@@ -189,10 +189,11 @@ void main() {
       final invalidResult = mergedSchema.validate(invalidObject);
       expect(invalidResult.isFail, isTrue);
 
-      final objectError = (invalidResult as Fail).error as ObjectSchemaError;
+      final objectError =
+          (invalidResult as Fail).error as ObjectSchemaViolation;
       expect(objectError.errors.containsKey('user'), isTrue);
 
-      final userError = objectError.errors['user'] as ObjectSchemaError;
+      final userError = objectError.errors['user'] as ObjectSchemaViolation;
       expect(userError.errors.containsKey('name'), isTrue);
     });
   });

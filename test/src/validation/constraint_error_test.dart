@@ -11,7 +11,7 @@ void main() {
   group('ConstraintError', () {
     test('toMap() returns correct structure', () {
       final mockContext = MockContext({'key': 'value'});
-      final error = ConstraintError(
+      final error = ConstraintViolation(
         key: 'test_constraint',
         message: 'Test constraint failed',
         context: mockContext,
@@ -27,7 +27,7 @@ void main() {
     });
 
     test('toString() returns formatted string', () {
-      final error = ConstraintError(
+      final error = ConstraintViolation(
         key: 'test_constraint',
         message: 'Test constraint failed',
         context: MockContext({'key': 'value'}),

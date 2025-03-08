@@ -1,19 +1,31 @@
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
+import 'constraint_error_test.dart';
+
 void main() {
+  late MockContext mockContext;
+
+  setUp(() {
+    mockContext = MockContext({});
+  });
+
   group('AckException', () {
     test('toMap() returns error map', () {
       // Create a SchemaConstraintsError containing the constraint errors
       final constraintErrors = [
-        NonNullableValueConstraintError(),
+        NonNullableValueConstraintError(context: mockContext),
         InvalidTypeConstraintError(
           valueType: String,
           expectedType: int,
+          context: mockContext,
         ),
       ];
 
-      final schemaError = SchemaConstraintsError.multiple(constraintErrors);
+      final schemaError = SchemaConstraintViolation.multiple(
+        constraintErrors,
+        context: mockContext,
+      );
       final exception = AckException(schemaError);
       final map = exception.toMap();
 
@@ -32,8 +44,12 @@ void main() {
     });
 
     test('toString() includes error details', () {
-      final constraintError = NonNullableValueConstraintError();
-      final schemaError = SchemaConstraintsError.single(constraintError);
+      final constraintError =
+          NonNullableValueConstraintError(context: mockContext);
+      final schemaError = SchemaConstraintViolation.single(
+        constraintError,
+        context: mockContext,
+      );
       final exception = AckException(schemaError);
 
       final value = exception.toString();

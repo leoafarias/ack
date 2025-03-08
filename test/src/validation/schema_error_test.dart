@@ -1,13 +1,22 @@
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
+import '../../test_helpers.dart';
+
 void main() {
   group('SchemaError', () {
+    late MockViolationContext mockContext;
+
+    setUp(() {
+      mockContext = MockViolationContext();
+    });
+
     group('InvalidTypeConstraintError', () {
       test('toMap() returns correct structure', () {
         final error = InvalidTypeConstraintError(
           valueType: String,
           expectedType: int,
+          context: mockContext,
         );
 
         final map = error.toMap();
@@ -28,6 +37,7 @@ void main() {
         final error = InvalidTypeConstraintError(
           valueType: String,
           expectedType: int,
+          context: mockContext,
         );
 
         final message = error.renderMessage(
@@ -40,8 +50,13 @@ void main() {
 
     group('SchemaConstraintsError', () {
       test('single constraint error', () {
-        final constraintError = NonNullableValueConstraintError();
-        final error = SchemaConstraintsError.single(constraintError);
+        final constraintError = NonNullableValueConstraintError(
+          context: mockContext,
+        );
+        final error = SchemaConstraintViolation.single(
+          constraintError,
+          context: mockContext,
+        );
 
         expect(error.constraints.length, 1);
         expect(error.constraints.first, constraintError);
@@ -49,13 +64,17 @@ void main() {
 
       test('multiple constraint errors', () {
         final errors = [
-          NonNullableValueConstraintError(),
+          NonNullableValueConstraintError(context: mockContext),
           InvalidTypeConstraintError(
             valueType: String,
             expectedType: int,
+            context: mockContext,
           ),
         ];
-        final error = SchemaConstraintsError.multiple(errors);
+        final error = SchemaConstraintViolation.multiple(
+          errors,
+          context: mockContext,
+        );
 
         expect(error.constraints.length, 2);
         expect(error.constraints, errors);
@@ -64,9 +83,17 @@ void main() {
 
     group('ObjectSchemaError', () {
       test('toMap() includes nested errors', () {
-        final nestedError = NonNullableValueConstraintError();
-        final error = ObjectSchemaError(
-          errors: {'field': SchemaConstraintsError.single(nestedError)},
+        final nestedError = NonNullableValueConstraintError(
+          context: mockContext,
+        );
+        final error = ObjectSchemaViolation(
+          errors: {
+            'field': SchemaConstraintViolation.single(
+              nestedError,
+              context: mockContext,
+            )
+          },
+          context: mockContext,
         );
 
         final map = error.context.extra;
@@ -89,9 +116,14 @@ void main() {
 
     group('ListSchemaError', () {
       test('toMap() includes indexed errors', () {
-        final itemError = NonNullableValueConstraintError();
-        final error = ListSchemaError(
-          errors: {0: SchemaConstraintsError.single(itemError)},
+        final itemError = NonNullableValueConstraintError(
+          context: mockContext,
+        );
+        final error = ListSchemaViolation(
+          errors: {
+            0: SchemaConstraintViolation.single(itemError, context: mockContext)
+          },
+          context: mockContext,
         );
 
         final map = error.context.extra;
@@ -113,7 +145,9 @@ void main() {
     });
 
     test('toString() returns formatted string', () {
-      final error = NonNullableValueConstraintError();
+      final error = NonNullableValueConstraintError(
+        context: mockContext,
+      );
       expect(
         error.toString(),
         contains('NonNullableValueConstraintError:'),

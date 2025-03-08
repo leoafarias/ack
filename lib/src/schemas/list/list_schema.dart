@@ -13,12 +13,13 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
         super(type: SchemaType.list);
 
   @override
-  SchemaError? _validateAsType(List<V> value) {
+  SchemaViolation? _validateAsType(List<V> value) {
+    final context = getCurrentViolationContext();
     final error = super._validateAsType(value);
 
     if (error != null) return error;
 
-    final constraintErrors = <int, SchemaError>{};
+    final constraintErrors = <int, SchemaViolation>{};
 
     for (var i = 0; i < value.length; i++) {
       final indexError = _itemSchema.validateSchema(value[i]);
@@ -30,7 +31,7 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
 
     if (constraintErrors.isEmpty) return null;
 
-    return ListSchemaError(errors: constraintErrors);
+    return ListSchemaViolation(errors: constraintErrors, context: context);
   }
 
   Schema<V> getItemSchema() => _itemSchema;

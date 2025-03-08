@@ -1,4 +1,5 @@
 import 'package:ack/ack.dart';
+import 'package:ack/src/context.dart';
 import 'package:test/test.dart';
 
 class IsSchemaError extends Matcher {
@@ -8,7 +9,7 @@ class IsSchemaError extends Matcher {
 
   @override
   bool matches(item, Map matchState) {
-    return item is SchemaError && item.key == key;
+    return item is SchemaViolation && item.key == key;
   }
 
   @override
@@ -25,7 +26,7 @@ class IsSchemaError extends Matcher {
     Map matchState,
     bool verbose,
   ) {
-    if (item is! SchemaError) {
+    if (item is! SchemaViolation) {
       return mismatchDescription.add('was not a SchemaError');
     }
 
@@ -42,7 +43,7 @@ class IsConstraintError extends Matcher {
 
   @override
   bool matches(item, Map matchState) {
-    return item is ConstraintError && item.key == key;
+    return item is ConstraintViolation && item.key == key;
   }
 
   @override
@@ -59,7 +60,7 @@ class IsConstraintError extends Matcher {
     Map matchState,
     bool verbose,
   ) {
-    if (item is! ConstraintError) {
+    if (item is! ConstraintViolation) {
       return mismatchDescription.add('was not a ConstraintError');
     }
     return mismatchDescription.add(
@@ -79,13 +80,13 @@ class HasSchemaErrors extends Matcher {
   @override
   bool matches(item, Map matchState) {
     final isFail = item is Fail;
-    final isErrors = item is SchemaError;
+    final isErrors = item is SchemaViolation;
     if (!isFail && !isErrors) {
       matchState['reason'] = 'was not a Fail result or a SchemaError';
       return false;
     }
 
-    final schemaError = item is Fail ? item.error : item as SchemaError;
+    final schemaError = item is Fail ? item.error : item as SchemaViolation;
 
     final errors = getErrors(schemaError, []);
 
@@ -129,15 +130,17 @@ class HasSchemaErrors extends Matcher {
   }
 }
 
-List<SchemaError> getErrors(
-    SchemaError error, List<SchemaError> aggregatedErrors) {
+List<SchemaViolation> getErrors(
+    SchemaViolation error, List<SchemaViolation> aggregatedErrors) {
   final extractedErrors = switch (error) {
-    SchemaConstraintsError constraintsError => [constraintsError],
-    ObjectSchemaError propertiesError => propertiesError.errors.values.toList(),
-    ListSchemaError itemsError => itemsError.errors.values.toList(),
-    DiscriminatedSchemaError discriminatedError => [discriminatedError.error],
-    UnknownExceptionSchemaError() => [error],
-    InvalidJsonFormatContraintError() => [error],
+    SchemaConstraintViolation constraintsError => [constraintsError],
+    ObjectSchemaViolation propertiesError =>
+      propertiesError.errors.values.toList(),
+    ListSchemaViolation itemsError => itemsError.errors.values.toList(),
+    DiscriminatedSchemaViolation discriminatedError => [
+        discriminatedError.error
+      ],
+    UnknownSchemaViolation() => [error],
   };
 
   return [...aggregatedErrors, ...extractedErrors];
@@ -158,7 +161,7 @@ class HasConstraintErrors extends Matcher {
 
     final error = item.error;
 
-    if (error is! SchemaConstraintsError) {
+    if (error is! SchemaConstraintViolation) {
       matchState['reason'] = 'was not a SchemaConstraintsError';
       return false;
     }
@@ -256,13 +259,18 @@ Matcher hasConstraintErrors(List<String> names, {required int count}) =>
     HasConstraintErrors(names, count);
 
 extension FailExt<T extends Object> on Fail<T> {
-  List<ConstraintError> get constraintErrors {
-    if (error is! SchemaConstraintsError) {
+  List<ConstraintViolation> get constraintErrors {
+    if (error is! SchemaConstraintViolation) {
       throw ArgumentError('error is not a SchemaError');
     }
-    return (error as SchemaConstraintsError)
+    return (error as SchemaConstraintViolation)
         .constraints
-        .whereType<ConstraintError>()
+        .whereType<ConstraintViolation>()
         .toList();
   }
+}
+
+class MockViolationContext extends ViolationContext {
+  MockViolationContext({Map<String, Object?>? extra, Schema? schema})
+      : super(name: 'mock_context', schema: schema, extra: extra);
 }

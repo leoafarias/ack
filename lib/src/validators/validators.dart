@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:ack/src/helpers.dart';
 import 'package:ack/src/validation/constraint_validator.dart';
 import 'package:ack/src/validation/schema_error.dart';
@@ -24,13 +26,12 @@ extension StringSchemaValidatorExt on StringSchema {
   StringSchema maxLength(int max) =>
       withConstraints([MaxLengthStringValidator(max)]);
 
-  /// {@macro one_of_validator}
-  StringSchema oneOf(List<String> values) =>
-      withConstraints([OneOfStringValidator(values)]);
-
   /// {@macro not_one_of_validator}
   StringSchema notOneOf(List<String> values) =>
       withConstraints([NotOneOfStringValidator(values)]);
+
+  /// {@macro is_json_validator}
+  StringSchema isJson() => withConstraints([const IsJsonStringValidator()]);
 
   /// {@macro enum_validator}
   StringSchema isEnum(List<String> values) =>
@@ -82,8 +83,9 @@ class DateTimeStringValidator extends ConstraintValidator<String>
   bool isValid(String value) => DateTime.tryParse(value) != null;
 
   @override
-  ConstraintError onError(String value) {
-    return buildError(
+  ConstraintViolation buildError(String value, {extra}) {
+    return super.buildError(
+      value,
       extra: {
         'expected_format': 'ISO 8601',
         'example': '2023-01-01T00:00:00.000Z',
@@ -96,7 +98,7 @@ class DateTimeStringValidator extends ConstraintValidator<String>
 
   @override
   String get errorTemplate =>
-      'Invalid date format for {{ value }}. Expected format: {{ extra.expected_format }}. Example: {{ extra.example }}';
+      'Invalid date-time: {{ value }}. Expected: {{ extra.expected_format }} (e.g., {{ extra.example }})';
 }
 
 /// {@template date_validator}
@@ -129,10 +131,11 @@ class DateStringValidator extends ConstraintValidator<String>
   }
 
   @override
-  ConstraintError onError(String value) {
-    return buildError(
-      extra: {'expected_format': 'YYYY-MM-DD', 'example': '2017-07-21'},
-    );
+  ConstraintViolation buildError(String value, {extra}) {
+    return super.buildError(value, extra: {
+      'expected_format': 'YYYY-MM-DD',
+      'example': '2017-07-21',
+    });
   }
 
   @override
@@ -140,7 +143,7 @@ class DateStringValidator extends ConstraintValidator<String>
 
   @override
   String get errorTemplate =>
-      'Invalid date format for {{ value }}. Expected format: {{ extra.expected_format }}. Example: {{ extra.example }}';
+      'Invalid date: {{ value }}. Expected: {{ extra.expected_format }} (e.g., {{ extra.example }})';
 }
 
 /// {@template enum_validator}
@@ -161,8 +164,9 @@ class EnumStringValidator extends ConstraintValidator<String>
   bool isValid(String value) => enumValues.contains(value);
 
   @override
-  ConstraintError onError(String value) {
-    return buildError(
+  ConstraintViolation buildError(String value, {extra}) {
+    return super.buildError(
+      value,
       extra: {
         'closest_match': findClosestStringMatch(value, enumValues),
         'enum_values': enumValues,
@@ -176,7 +180,7 @@ class EnumStringValidator extends ConstraintValidator<String>
 
   @override
   String get errorTemplate =>
-      'Value {{ value }} is not a valid enum value. Did you mean {{ extra.closest_match }}? Must be one of: {{ extra.enum_values }}';
+      'Invalid enum: {{ value }}. Must be: {{ extra.enum_values }} (closest: {{ extra.closest_match }})';
 }
 
 /// {@template email_validator}
@@ -209,43 +213,6 @@ class HexColorStringValidator extends RegexPatternStringValidator {
         );
 }
 
-/// {@template one_of_validator}
-/// Validates that the input string exactly matches one of the allowed values
-///
-/// Uses a regex pattern to match the exact string against the allowed values
-/// Example: For values ['a', 'b', 'c'], pattern will be '^(a|b|c)$'
-/// {@endtemplate}
-class OneOfStringValidator extends RegexPatternStringValidator {
-  /// The allowed values
-  final List<String> values;
-
-  /// {@macro one_of_validator}
-  OneOfStringValidator(this.values)
-      : super(
-          name: 'one_of',
-          pattern: '^(${values.map((e) => RegExp.escape(e)).join('|')})\$',
-          example: values.first,
-        );
-
-  @override
-  bool isValid(String value) => values.contains(value);
-
-  @override
-  ConstraintError onError(String value) {
-    return buildError(
-      extra: {
-        'allowed_values': values,
-        'total_allowed_values': values.length,
-        'closest_match': findClosestStringMatch(value, values),
-      },
-    );
-  }
-
-  @override
-  String get errorTemplate =>
-      'Value {{ value }} is not allowed. Must be one of: {{ allowed_values }}';
-}
-
 /// {@template not_one_of_validator}
 /// Validates that the input string is not one of the disallowed values
 ///
@@ -269,8 +236,9 @@ class NotOneOfStringValidator extends RegexPatternStringValidator {
   bool isValid(String value) => !disallowedValues.contains(value);
 
   @override
-  ConstraintError onError(String value) {
-    return buildError(
+  ConstraintViolation buildError(String value, {extra}) {
+    return super.buildError(
+      value,
       extra: {
         'disallowed_values': disallowedValues,
         'total_disallowed_values': disallowedValues.length,
@@ -280,7 +248,7 @@ class NotOneOfStringValidator extends RegexPatternStringValidator {
 
   @override
   String get errorTemplate =>
-      'Value {{ value }} is not allowed. Must NOT be one of: {{ extra.disallowed_values }}';
+      'Disallowed: {{ value }}. Not: {{ extra.disallowed_values }}';
 }
 
 /// {@template not_empty_validator}
@@ -297,12 +265,41 @@ class NotEmptyStringValidator extends ConstraintValidator<String> {
   bool isValid(String value) => value.isNotEmpty;
 
   @override
-  ConstraintError onError(String value) {
-    return buildError(extra: {'value_length': value.length});
+  ConstraintViolation buildError(String value, {extra}) {
+    return super.buildError(value, extra: {'value_length': value.length});
   }
 
   @override
-  String get errorTemplate => 'String must not be empty';
+  String get errorTemplate => 'Cannot be empty';
+}
+
+/// {@template is_json_validator}
+/// Validates that the input string is a valid JSON string
+///
+/// Equivalent of calling `isJsonValue(value)`
+/// {@endtemplate}
+class IsJsonStringValidator extends ConstraintValidator<String> {
+  /// {@macro is_json_string_validator}
+  const IsJsonStringValidator()
+      : super(name: 'is_json', description: 'Must be a valid JSON string');
+
+  @override
+  bool isValid(String value) {
+    try {
+      if (isJsonValue(value)) {
+        jsonDecode(value);
+
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  String get errorTemplate => 'Invalid JSON: {{ value }}';
 }
 
 /// Base class for regex-based string validators
@@ -326,7 +323,7 @@ class RegexPatternStringValidator extends ConstraintValidator<String>
       throw ArgumentError('Pattern cannot be empty');
     }
     if (!pattern.startsWith('^') || !pattern.endsWith(r'$')) {
-      throw ArgumentError(r'Pattern must start with ^ and end with $');
+      throw ArgumentError(r'Pattern must start with ^ and end with \$');
     }
   }
 
@@ -342,10 +339,12 @@ class RegexPatternStringValidator extends ConstraintValidator<String>
   }
 
   @override
-  ConstraintError onError(String value) {
-    return buildError(
-      extra: {'pattern_name': name, 'pattern': pattern, 'example': example},
-    );
+  ConstraintViolation buildError(String value, {extra}) {
+    return super.buildError(value, extra: {
+      'pattern_name': name,
+      'pattern': pattern,
+      'example': example,
+    });
   }
 
   @override
@@ -356,7 +355,7 @@ class RegexPatternStringValidator extends ConstraintValidator<String>
 
   @override
   String get errorTemplate =>
-      'Invalid {{ extra.pattern_name }} format. The string must match the pattern: {{ extra.pattern }}. Example: {{ extra.example }}';
+      'Invalid {{ extra.pattern_name }}: {{ value }} (e.g., {{ extra.example }})';
 }
 
 /// {@template is_empty_validator}
@@ -373,12 +372,12 @@ class IsEmptyStringValidator extends ConstraintValidator<String> {
   bool isValid(String value) => value.isEmpty;
 
   @override
-  ConstraintError onError(String value) {
-    return buildError(extra: {'value_length': value.length});
+  ConstraintViolation buildError(String value, {extra}) {
+    return super.buildError(value, extra: {'value_length': value.length});
   }
 
   @override
-  String get errorTemplate => 'String must be empty instead of {{ value }}';
+  String get errorTemplate => 'Must be empty, got: {{ value }}';
 }
 
 /// {@template min_length_validator}
@@ -402,8 +401,9 @@ class MinLengthStringValidator extends ConstraintValidator<String>
   bool isValid(String value) => value.length >= min;
 
   @override
-  ConstraintError onError(String value) {
-    return buildError(extra: {'value_length': value.length, 'min': min});
+  ConstraintViolation buildError(String value, {extra}) {
+    return super
+        .buildError(value, extra: {'value_length': value.length, 'min': min});
   }
 
   @override
@@ -411,7 +411,7 @@ class MinLengthStringValidator extends ConstraintValidator<String>
 
   @override
   String get errorTemplate =>
-      'String must be at least {{ extra.min }} characters long instead of {{ extra.value_length }}';
+      'Too short: {{ extra.value_length }}. Min: {{ extra.min }}';
 }
 
 /// {@template max_length_validator}
@@ -436,8 +436,9 @@ class MaxLengthStringValidator extends ConstraintValidator<String>
 
   @override
   @visibleForTesting
-  ConstraintError onError(String value) {
-    return buildError(extra: {'value_length': value.length, 'max': max});
+  ConstraintViolation buildError(String value, {extra}) {
+    return super
+        .buildError(value, extra: {'value_length': value.length, 'max': max});
   }
 
   @override
@@ -445,7 +446,7 @@ class MaxLengthStringValidator extends ConstraintValidator<String>
 
   @override
   String get errorTemplate =>
-      'String must be at most {{ extra.max }} characters long instead of {{ extra.value_length }}';
+      'Too long: {{ extra.value_length }}. Max: {{ extra.max }}';
 }
 
 /// Provides validation methods for [ListSchema].
@@ -497,20 +498,17 @@ class UniqueItemsListValidator<T extends Object>
   bool isValid(List<T> value) => value.duplicates.isEmpty;
 
   @override
-  ConstraintError onError(List<T> value) {
+  ConstraintViolation buildError(List<T> value, {extra}) {
     final nonUniqueValues = value.duplicates;
 
-    return buildError(
-      extra: {'value': value, 'duplicates': nonUniqueValues},
-    );
+    return super.buildError(value, extra: {'duplicates': nonUniqueValues});
   }
 
   @override
   Map<String, Object?> toSchema() => {'uniqueItems': true};
 
   @override
-  String get errorTemplate =>
-      'List should not contain duplicates: These items are repeated: {{ extra.duplicates }}';
+  String get errorTemplate => 'Cannot have duplicates: {{ extra.duplicates }}';
 }
 
 /// {@template min_items_list_validator}
@@ -534,10 +532,9 @@ class MinItemsListValidator<T extends Object>
   bool isValid(List<T> value) => value.length >= min;
 
   @override
-  ConstraintError onError(List<T> value) {
-    return buildError(
-      extra: {'value': value, 'value_length': value.length, 'min': min},
-    );
+  ConstraintViolation buildError(List<T> value, {extra}) {
+    return super
+        .buildError(value, extra: {'value_length': value.length, 'min': min});
   }
 
   @override
@@ -545,7 +542,7 @@ class MinItemsListValidator<T extends Object>
 
   @override
   String get errorTemplate =>
-      'List length {{ extra.value_length }} is less than the minimum required length: {{ extra.min }}';
+      'Too few items: {{ value.length }}. Min: {{ extra.min }}';
 }
 
 /// {@template max_items_list_validator}
@@ -569,10 +566,9 @@ class MaxItemsListValidator<T> extends ConstraintValidator<List<T>>
   bool isValid(List<T> value) => value.length <= max;
 
   @override
-  ConstraintError onError(List<T> value) {
-    return buildError(
-      extra: {'value': value, 'value_length': value.length, 'max': max},
-    );
+  ConstraintViolation buildError(List<T> value, {extra}) {
+    return super
+        .buildError(value, extra: {'value_length': value.length, 'max': max});
   }
 
   @override
@@ -580,7 +576,7 @@ class MaxItemsListValidator<T> extends ConstraintValidator<List<T>>
 
   @override
   String get errorTemplate =>
-      'List length {{ extra.value_length }} is greater than the maximum required length: {{ extra.max }}';
+      'Too many items: {{ extra.value_length }}. Max: {{ extra.max }}';
 }
 
 /// {@template min_num_validator}
@@ -611,10 +607,8 @@ class MinNumValidator<T extends num> extends ConstraintValidator<T>
   bool isValid(num value) => exclusive ? value > min : value >= min;
 
   @override
-  ConstraintError onError(num value) {
-    return buildError(
-      extra: {'value': value, 'min': min, 'exclusive': exclusive},
-    );
+  ConstraintViolation buildError(T value, {extra}) {
+    return super.buildError(value, extra: {'min': min, 'exclusive': exclusive});
   }
 
   @override
@@ -625,8 +619,8 @@ class MinNumValidator<T extends num> extends ConstraintValidator<T>
 
   @override
   String get errorTemplate => exclusive
-      ? 'Value {{ extra.value }} is not greater than the minimum required value of {{ extra.min }}. Please provide a number greater than {{ extra.min }}.'
-      : 'Value {{ extra.value }} is less than the minimum required value of {{ extra.min }}. Please provide a number greater than or equal to {{ extra.min }}.';
+      ? 'Must be > {{ extra.min }}, got: {{ extra.value }}'
+      : 'Too low: {{ extra.value }} < {{ extra.min }}';
 }
 
 /// {@template multiple_of_num_validator}
@@ -648,15 +642,12 @@ class MultipleOfNumValidator<T extends num> extends ConstraintValidator<T>
   bool isValid(num value) => value % multiple == 0;
 
   @override
-  ConstraintError onError(num value) {
-    return buildError(
-      extra: {
-        'value': value,
-        'multiple': multiple,
-        'quotient': value / multiple,
-        'remainder': value % multiple,
-      },
-    );
+  ConstraintViolation buildError(T value, {extra}) {
+    return super.buildError(value, extra: {
+      'multiple': multiple,
+      'quotient': value / multiple,
+      'remainder': value % multiple,
+    });
   }
 
   @override
@@ -664,7 +655,7 @@ class MultipleOfNumValidator<T extends num> extends ConstraintValidator<T>
 
   @override
   String get errorTemplate =>
-      'Value {{ extra.value }} is not a multiple of {{ extra.multiple }}.';
+      'Not multiple of {{ extra.multiple }}: {{ extra.value }}';
 }
 
 /// {@template max_num_validator}
@@ -695,10 +686,8 @@ class MaxNumValidator<T extends num> extends ConstraintValidator<T>
   bool isValid(num value) => exclusive ? value < max : value <= max;
 
   @override
-  ConstraintError onError(num value) {
-    return buildError(
-      extra: {'value': value, 'max': max, 'exclusive': exclusive},
-    );
+  ConstraintViolation buildError(T value, {extra}) {
+    return super.buildError(value, extra: {'max': max, 'exclusive': exclusive});
   }
 
   @override
@@ -709,8 +698,8 @@ class MaxNumValidator<T extends num> extends ConstraintValidator<T>
 
   @override
   String get errorTemplate => exclusive
-      ? 'Value {{ extra.value }} must be strictly less than {{ extra.max }}.'
-      : 'Value {{ extra.value }} exceeds the maximum allowed value of {{ extra.max }}.';
+      ? 'Must be < {{ extra.max }}, got: {{ extra.value }}'
+      : 'Too high: {{ extra.value }} > {{ extra.max }}';
 }
 
 /// {@template range_num_validator}
@@ -746,10 +735,12 @@ class RangeNumValidator<T extends num> extends ConstraintValidator<T>
       exclusive ? value > min && value < max : value >= min && value <= max;
 
   @override
-  ConstraintError onError(num value) {
-    return buildError(
-      extra: {'value': value, 'min': min, 'max': max, 'exclusive': exclusive},
-    );
+  ConstraintViolation buildError(T value, {extra}) {
+    return super.buildError(value, extra: {
+      'min': min,
+      'max': max,
+      'exclusive': exclusive,
+    });
   }
 
   @override
@@ -762,7 +753,7 @@ class RangeNumValidator<T extends num> extends ConstraintValidator<T>
 
   @override
   String get errorTemplate =>
-      'Value {{ extra.value }} must be between {{ extra.min }} and {{ extra.max }} ${exclusive ? "(exclusive)" : ""}';
+      'Out of range: {{ extra.value }} ({{ extra.min }}-{{ extra.max }})';
 }
 
 /// Provides validation methods for [ObjectSchema].
@@ -813,15 +804,16 @@ class MinPropertiesObjectValidator extends ConstraintValidator<MapValue>
   bool isValid(MapValue value) => value.length >= min;
 
   @override
-  ConstraintError onError(MapValue value) {
-    return buildError(extra: {'value': value, 'min': min});
+  ConstraintViolation buildError(MapValue value, {extra}) {
+    return super.buildError(value, extra: {'min': min});
   }
 
   @override
   Map<String, Object?> toSchema() => {'minProperties': min};
 
   @override
-  String get errorTemplate => 'Object must have at least $min properties';
+  String get errorTemplate =>
+      'Too few properties: {{ extra.value_length }}. Min: {{ extra.min }}';
 }
 
 /// {@template object_max_properties_validator}
@@ -845,19 +837,17 @@ class MaxPropertiesObjectValidator extends ConstraintValidator<MapValue>
   bool isValid(MapValue value) => value.length <= max;
 
   @override
-  ConstraintError onError(MapValue value) {
-    return buildError(
-      extra: {'value': value, 'max': max, 'value_length': value.length},
-    );
+  ConstraintViolation buildError(MapValue value, {extra}) {
+    return super
+        .buildError(value, extra: {'max': max, 'value_length': value.length});
   }
 
   @override
   Map<String, Object?> toSchema() => {'maxProperties': max};
 
   @override
-  String get errorTemplate => '''
-Object must have at most {{ extra.max }} properties, but has {{ extra.value_length }}
-''';
+  String get errorTemplate =>
+      'Too many properties: {{ extra.value_length }}. Max: {{ extra.max }}';
 }
 
 /// {@template unallowed_property_constraint_error}
@@ -878,18 +868,17 @@ class UnallowedPropertyConstraintError extends ConstraintValidator<MapValue> {
   bool isValid(MapValue value) => !value.containsKey(key);
 
   @override
-  ConstraintError onError(MapValue value) {
+  ConstraintViolation buildError(MapValue value, {extra}) {
     final propertyValue = value[key];
 
-    return buildError(
-      extra: {'property_key': key, 'property_value': propertyValue},
-    );
+    return super.buildError(value, extra: {
+      'property_key': key,
+      'property_value': propertyValue,
+    });
   }
 
   @override
-  String get errorTemplate => '''
-Unallowed additional property: {{ extra.property_key }} with value {{ extra.property_value }}
-''';
+  String get errorTemplate => 'Unallowed: {{ extra.property_key }}';
 }
 
 /// {@template property_required_constraint_error}
@@ -916,17 +905,13 @@ class PropertyRequiredConstraintError extends ConstraintValidator<MapValue> {
   }
 
   @override
-  ConstraintError onError(MapValue value) {
-    return buildError(
-      extra: {'key': key, 'required_keys': requiredKeys, 'value': value},
-    );
+  ConstraintViolation buildError(MapValue value, {extra}) {
+    return super.buildError(value, extra: {
+      'key': key,
+      'required_keys': requiredKeys,
+    });
   }
 
   @override
-  String get errorTemplate => '''
-Property "$key" is required but was not provided.
-
-Required properties:
-{{ extra.required_keys }}
-''';
+  String get errorTemplate => 'Missing: {{ extra.key }}';
 }

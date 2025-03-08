@@ -2,7 +2,7 @@ import '../helpers.dart';
 import 'schema_error.dart';
 
 class AckException implements Exception {
-  final SchemaError error;
+  final SchemaViolation error;
 
   const AckException(this.error);
 

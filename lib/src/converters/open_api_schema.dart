@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import '../helpers.dart';
@@ -84,12 +85,12 @@ $stopSequence
   String toSchemaString() => prettyJson(toSchema());
 
   Map<String, Object?> parseResponse(String response) {
-    // Check if response is json before encoding
-
     try {
       if (isJsonValue(response)) {
         try {
-          return _schema.validateJson(response).getOrThrow();
+          final jsonValue = jsonDecode(response) as Map<String, Object?>;
+
+          return _schema.validate(jsonValue).getOrThrow();
         } catch (_) {
           log('Failed to parse response as JSON: $response');
           rethrow;
@@ -101,7 +102,9 @@ $stopSequence
         response.indexOf(endDelimeter),
       );
 
-      return _schema.validateJson(jsonString).getOrThrow();
+      final jsonValue = jsonDecode(jsonString) as Map<String, Object?>;
+
+      return _schema.validate(jsonValue).getOrThrow();
     } on FormatException catch (e, stackTrace) {
       Error.throwWithStackTrace(
         OpenApiConverterException.jsonDecodeError(e),
