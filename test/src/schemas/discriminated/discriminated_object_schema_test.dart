@@ -51,7 +51,7 @@ void main() {
 
       expect(result.isFail, isTrue);
       final error = (result as Fail).error;
-      expect(error, isA<NonNullableSchemaViolation>());
+      expect(error, isA<NonNullableSchemaError>());
     });
 
     test('Nullable schema passes on null', () {
@@ -92,7 +92,7 @@ void main() {
 
       expect(result.isFail, isTrue);
       final error = (result as Fail).error;
-      expect(error, isA<InvalidTypeSchemaViolation>());
+      expect(error, isA<InvalidTypeSchemaError>());
     });
 
     test('Valid discriminated object passes validation', () {
@@ -133,8 +133,8 @@ void main() {
         result.isFail,
         isTrue,
       );
-      expect((result as Fail).error, isA<SchemaConstraintViolation>());
-      final error = (result as Fail).error as SchemaConstraintViolation;
+      expect((result as Fail).error, isA<SchemaValidationError>());
+      final error = (result as Fail).error as SchemaValidationError;
       expect(error.getConstraint('discriminator_value'), isNotNull);
     });
 
@@ -156,8 +156,8 @@ void main() {
         result.isFail,
         isTrue,
       );
-      expect((result as Fail).error, isA<SchemaConstraintViolation>());
-      final error = (result as Fail).error as SchemaConstraintViolation;
+      expect((result as Fail).error, isA<SchemaValidationError>());
+      final error = (result as Fail).error as SchemaValidationError;
       expect(error.getConstraint('discriminator_value'), isNotNull);
     });
 
@@ -181,8 +181,8 @@ void main() {
         result.isFail,
         isTrue,
       );
-      expect((result as Fail).error, isA<SchemaConstraintViolation>());
-      final error = (result as Fail).error as SchemaConstraintViolation;
+      expect((result as Fail).error, isA<SchemaValidationError>());
+      final error = (result as Fail).error as SchemaValidationError;
       expect(error.getConstraint('discriminator_schema_structure'), isNotNull);
     });
 
@@ -202,14 +202,14 @@ void main() {
       final result =
           discriminatedSchema.validate({'key': 'a', 'value': 'not an int'});
 
-      final error = (result as Fail).error as NestedSchemaViolation;
+      final error = (result as Fail).error as NestedSchemaError;
 
       // Check that the 'value' property has an error
-      expect(error.violations.containsKey('value'), isTrue);
+      expect(error.errors.any((e) => e.name == 'value'), isTrue);
 
       // Check that it's an invalid type error
-      final valueError = error.violations['value']!;
-      expect(valueError, isA<InvalidTypeSchemaViolation>());
+      final valueError = error.errors[0] as InvalidTypeSchemaError;
+      expect(valueError, isA<InvalidTypeSchemaError>());
     });
   });
 }

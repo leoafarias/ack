@@ -5,7 +5,7 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
   final Schema<V> _itemSchema;
   const ListSchema(
     Schema<V> itemSchema, {
-    super.constraints = const [],
+    super.validators = const [],
     super.nullable,
     super.description,
     super.defaultValue,
@@ -24,20 +24,20 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
 
     if (_nullable && listValue == null) return SchemaResult.unit();
 
-    final itemsViolation = <String, SchemaViolation>{};
+    final itemsViolation = <SchemaError>[];
 
     for (var i = 0; i < listValue!.length; i++) {
       final itemResult = _itemSchema.validate(listValue[i], debugName: '$i');
 
       if (itemResult.isFail) {
-        itemsViolation[i.toString()] = itemResult.getViolation();
+        itemsViolation.add(itemResult.getViolation());
       }
     }
 
     if (itemsViolation.isEmpty) return SchemaResult.ok(listValue);
 
     return SchemaResult.fail(
-      NestedSchemaViolation(violations: itemsViolation, context: context),
+      NestedSchemaError(errors: itemsViolation, context: context),
     );
   }
 
@@ -60,14 +60,14 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
 
   @override
   ListSchema<V> copyWith({
-    List<ConstraintValidator<List<V>>>? constraints,
+    List<ConstraintValidator<List<V>>>? validators,
     bool? nullable,
     String? description,
     List<V>? defaultValue,
   }) {
     return ListSchema(
       _itemSchema,
-      constraints: constraints ?? _validators,
+      validators: validators ?? _validators,
       nullable: nullable ?? _nullable,
       description: description ?? _description,
       defaultValue: defaultValue ?? _defaultValue,
@@ -78,11 +78,11 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
   ListSchema<V> call({
     bool? nullable,
     String? description,
-    List<ConstraintValidator<List<V>>>? constraints,
+    List<ConstraintValidator<List<V>>>? validators,
     List<V>? defaultValue,
   }) {
     return copyWith(
-      constraints: constraints,
+      validators: validators,
       nullable: nullable,
       description: description,
       defaultValue: defaultValue,

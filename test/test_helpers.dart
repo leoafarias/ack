@@ -8,7 +8,7 @@ class IsSchemaError extends Matcher {
 
   @override
   bool matches(item, Map matchState) {
-    return item is SchemaViolation && item.name == key;
+    return item is SchemaError && item.name == key;
   }
 
   @override
@@ -25,7 +25,7 @@ class IsSchemaError extends Matcher {
     Map matchState,
     bool verbose,
   ) {
-    if (item is! SchemaViolation) {
+    if (item is! SchemaError) {
       return mismatchDescription.add('was not a SchemaError');
     }
 
@@ -42,7 +42,7 @@ class IsConstraintViolation extends Matcher {
 
   @override
   bool matches(item, Map matchState) {
-    return item is ConstraintViolation && item.key == key;
+    return item is ValidatorError && item.key == key;
   }
 
   @override
@@ -59,7 +59,7 @@ class IsConstraintViolation extends Matcher {
     Map matchState,
     bool verbose,
   ) {
-    if (item is! ConstraintViolation) {
+    if (item is! ValidatorError) {
       return mismatchDescription.add('was not a ConstraintError');
     }
     return mismatchDescription.add(
@@ -79,13 +79,13 @@ class HasSchemaErrors extends Matcher {
   @override
   bool matches(item, Map matchState) {
     final isFail = item is Fail;
-    final isErrors = item is SchemaViolation;
+    final isErrors = item is SchemaError;
     if (!isFail && !isErrors) {
       matchState['reason'] = 'was not a Fail result or a SchemaError';
       return false;
     }
 
-    final schemaError = item is Fail ? item.error : item as SchemaViolation;
+    final schemaError = item is Fail ? item.error : item as SchemaError;
 
     final errors = getErrors(schemaError, []);
 
@@ -129,16 +129,15 @@ class HasSchemaErrors extends Matcher {
   }
 }
 
-List<SchemaViolation> getErrors(
-    SchemaViolation error, List<SchemaViolation> aggregatedErrors) {
+List<SchemaError> getErrors(
+    SchemaError error, List<SchemaError> aggregatedErrors) {
   final extractedErrors = switch (error) {
-    SchemaConstraintViolation constraintsError => [constraintsError],
-    NestedSchemaViolation propertiesError =>
-      propertiesError.violations.values.toList(),
-    InvalidTypeSchemaViolation() => [error],
-    NonNullableSchemaViolation() => [error],
-    UnknownSchemaViolation() => [error],
-    MockSchemaViolation() => [error],
+    SchemaValidationError constraintsError => [constraintsError],
+    NestedSchemaError propertiesError => propertiesError.errors,
+    InvalidTypeSchemaError() => [error],
+    NonNullableSchemaError() => [error],
+    UnknownSchemaError() => [error],
+    MockSchemaError() => [error],
   };
 
   return [...aggregatedErrors, ...extractedErrors];
@@ -159,12 +158,12 @@ class HasConstraintErrors extends Matcher {
 
     final error = item.error;
 
-    if (error is! SchemaConstraintViolation) {
+    if (error is! SchemaValidationError) {
       matchState['reason'] = 'was not a SchemaConstraintsError';
       return false;
     }
 
-    final errors = error.constraints;
+    final errors = error.validations;
 
     if (errors.length != expectedCount) {
       matchState['reason'] =

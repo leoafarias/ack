@@ -10,59 +10,59 @@ import '../schemas/schema.dart';
 /// Provides validation methods for [StringSchema].
 extension StringSchemaValidatorExt on StringSchema {
   /// {@macro email_validator}
-  StringSchema isEmail() => withConstraints([EmailStringValidator()]);
+  StringSchema isEmail() => withValidators([EmailStringValidator()]);
 
   /// {@macro hex_color_validator}
-  StringSchema isHexColor() => withConstraints([HexColorStringValidator()]);
+  StringSchema isHexColor() => withValidators([HexColorStringValidator()]);
 
   /// {@macro is_empty_validator}
-  StringSchema isEmpty() => withConstraints([const IsEmptyStringValidator()]);
+  StringSchema isEmpty() => withValidators([const IsEmptyStringValidator()]);
 
   /// {@macro min_length_validator}
   StringSchema minLength(int min) =>
-      withConstraints([MinLengthStringValidator(min)]);
+      withValidators([MinLengthStringValidator(min)]);
 
   /// {@macro max_length_validator}
   StringSchema maxLength(int max) =>
-      withConstraints([MaxLengthStringValidator(max)]);
+      withValidators([MaxLengthStringValidator(max)]);
 
   /// {@macro not_one_of_validator}
   StringSchema notOneOf(List<String> values) =>
-      withConstraints([NotOneOfStringValidator(values)]);
+      withValidators([NotOneOfStringValidator(values)]);
 
   /// {@macro is_json_validator}
-  StringSchema isJson() => withConstraints([const IsJsonStringValidator()]);
+  StringSchema isJson() => withValidators([const IsJsonStringValidator()]);
 
   /// {@macro enum_validator}
   StringSchema isEnum(List<String> values) =>
-      withConstraints([EnumStringValidator(values)]);
+      withValidators([EnumStringValidator(values)]);
 
   /// {@macro not_empty_validator}
   StringSchema isNotEmpty() =>
-      withConstraints([const NotEmptyStringValidator()]);
+      withValidators([const NotEmptyStringValidator()]);
 
   /// {@macro date_time_validator}
   StringSchema isDateTime() =>
-      withConstraints([const DateTimeStringValidator()]);
+      withValidators([const DateTimeStringValidator()]);
 
   /// {@macro date_validator}
-  StringSchema isDate() => withConstraints([const DateStringValidator()]);
+  StringSchema isDate() => withValidators([const DateStringValidator()]);
 }
 
 extension NumSchemaValidatorExt<T extends num> on NumSchema<T> {
   /// {@macro min_num_validator}
-  NumSchema<T> min(T min) => withConstraints([MinNumValidator(min)]);
+  NumSchema<T> min(T min) => withValidators([MinNumValidator(min)]);
 
   /// {@macro max_num_validator}
-  NumSchema<T> max(T max) => withConstraints([MaxNumValidator(max)]);
+  NumSchema<T> max(T max) => withValidators([MaxNumValidator(max)]);
 
   /// {@macro range_num_validator}
   NumSchema<T> range(T min, T max) =>
-      withConstraints([RangeNumValidator(min, max)]);
+      withValidators([RangeNumValidator(min, max)]);
 
   /// {@macro multiple_of_num_validator}
   NumSchema<T> multipleOf(T multiple) =>
-      withConstraints([MultipleOfNumValidator(multiple)]);
+      withValidators([MultipleOfNumValidator(multiple)]);
 }
 
 /// {@template date_time_validator}
@@ -83,7 +83,7 @@ class DateTimeStringValidator extends ConstraintValidator<String>
   bool isValid(String value) => DateTime.tryParse(value) != null;
 
   @override
-  ConstraintViolation buildError(String value, {variables}) {
+  ValidatorError buildError(String value, {variables}) {
     return super.buildError(
       value,
       variables: {
@@ -95,11 +95,11 @@ class DateTimeStringValidator extends ConstraintValidator<String>
   }
 
   @override
-  Map<String, Object?> toSchema() => {'format': 'date-time'};
+  Map<String, Object?> topOpenApiSchema() => {'format': 'date-time'};
 
   @override
   String get errorMessage =>
-      'Invalid date-time: {{ value }}. Expected: {{ expected_format }} (e.g., {{ example }})';
+      'The value "{{ value }}" is not a valid ISO 8601 date-time (e.g., {{ example }}).';
 }
 
 /// {@template date_validator}
@@ -132,7 +132,7 @@ class DateStringValidator extends ConstraintValidator<String>
   }
 
   @override
-  ConstraintViolation buildError(String value, {variables}) {
+  ValidatorError buildError(String value, {variables}) {
     return super.buildError(value, variables: {
       'expected_format': 'YYYY-MM-DD',
       'value': value,
@@ -141,11 +141,11 @@ class DateStringValidator extends ConstraintValidator<String>
   }
 
   @override
-  Map<String, Object?> toSchema() => {'format': 'date'};
+  Map<String, Object?> topOpenApiSchema() => {'format': 'date'};
 
   @override
   String get errorMessage =>
-      'Invalid date: {{ value }}. Expected: {{ expected_format }} (e.g., {{ example }})';
+      'The value "{{ value }}" is not a valid date. Expected format: YYYY-MM-DD (e.g., {{ example }}).';
 }
 
 /// {@template enum_validator}
@@ -166,7 +166,7 @@ class EnumStringValidator extends ConstraintValidator<String>
   bool isValid(String value) => enumValues.contains(value);
 
   @override
-  ConstraintViolation buildError(String value, {variables}) {
+  ValidatorError buildError(String value, {variables}) {
     return super.buildError(
       value,
       variables: {
@@ -179,11 +179,11 @@ class EnumStringValidator extends ConstraintValidator<String>
   }
 
   @override
-  Map<String, Object?> toSchema() => {'enum': enumValues};
+  Map<String, Object?> topOpenApiSchema() => {'enum': enumValues};
 
   @override
   String get errorMessage =>
-      'Invalid enum: {{ value }}. Must be: {{ enum_values }} (closest: {{ closest_match }})';
+      'Invalid value "{{ value }}". Allowed values are: {{ enum_values }}. (Closest match: "{{ closest_match }}")';
 }
 
 /// {@template email_validator}
@@ -239,7 +239,7 @@ class NotOneOfStringValidator extends RegexPatternStringValidator {
   bool isValid(String value) => !disallowedValues.contains(value);
 
   @override
-  ConstraintViolation buildError(String value, {variables}) {
+  ValidatorError buildError(String value, {variables}) {
     return super.buildError(
       value,
       variables: {
@@ -252,7 +252,7 @@ class NotOneOfStringValidator extends RegexPatternStringValidator {
 
   @override
   String get errorMessage =>
-      'Disallowed: {{ value }}. Not: {{ disallowed_values }}';
+      'The value "{{ value }}" is not allowed. Disallowed values: {{ disallowed_values }}.';
 }
 
 /// {@template not_empty_validator}
@@ -269,12 +269,12 @@ class NotEmptyStringValidator extends ConstraintValidator<String> {
   bool isValid(String value) => value.isNotEmpty;
 
   @override
-  ConstraintViolation buildError(String value, {variables}) {
+  ValidatorError buildError(String value, {variables}) {
     return super.buildError(value, variables: {'value_length': value.length});
   }
 
   @override
-  String get errorMessage => 'Cannot be empty';
+  String get errorMessage => 'The string must not be empty.';
 }
 
 /// {@template is_json_validator}
@@ -303,12 +303,12 @@ class IsJsonStringValidator extends ConstraintValidator<String> {
   }
 
   @override
-  ConstraintViolation buildError(String value, {variables}) {
+  ValidatorError buildError(String value, {variables}) {
     return super.buildError(value, variables: {'value': value});
   }
 
   @override
-  String get errorMessage => 'Invalid JSON: {{ value }}';
+  String get errorMessage => 'The value "{{ value }}" is not valid JSON.';
 }
 
 /// Base class for regex-based string validators
@@ -348,12 +348,13 @@ class RegexPatternStringValidator extends ConstraintValidator<String>
   }
 
   @override
-  ConstraintViolation buildError(String value, {variables}) {
+  ValidatorError buildError(String value, {variables}) {
     return super.buildError(value, variables: {
       'pattern_name': name,
       'pattern': pattern,
       'example': example,
       'value': value,
+      ...?variables,
     });
   }
 
@@ -361,11 +362,11 @@ class RegexPatternStringValidator extends ConstraintValidator<String>
   Map<String, Object?> toMap() => {'pattern': pattern, 'name': name};
 
   @override
-  Map<String, Object?> toSchema() => {'pattern': pattern, 'name': name};
+  Map<String, Object?> topOpenApiSchema() => {'pattern': pattern, 'name': name};
 
   @override
   String get errorMessage =>
-      'Invalid {{ pattern_name }}: {{ value }} (e.g., {{ example }})';
+      'The value "{{ value }}" does not match the required pattern for {{ pattern_name }}. Expected format: "{{ example }}".';
 }
 
 /// {@template is_empty_validator}
@@ -382,7 +383,7 @@ class IsEmptyStringValidator extends ConstraintValidator<String> {
   bool isValid(String value) => value.isEmpty;
 
   @override
-  ConstraintViolation buildError(String value, {variables}) {
+  ValidatorError buildError(String value, {variables}) {
     return super.buildError(value, variables: {'value': value});
   }
 
@@ -411,19 +412,16 @@ class MinLengthStringValidator extends ConstraintValidator<String>
   bool isValid(String value) => value.length >= min;
 
   @override
-  ConstraintViolation buildError(String value, {variables}) {
-    return super.buildError(
-      value,
-      variables: {'value_length': value.length, 'min': min},
-    );
+  ValidatorError buildError(String value, {variables}) {
+    return super.buildError(value, variables: {'valu': value, 'min': min});
   }
 
   @override
-  Map<String, Object?> toSchema() => {'minLength': min};
+  Map<String, Object?> topOpenApiSchema() => {'minLength': min};
 
   @override
   String get errorMessage =>
-      'Too short: {{ extra.value_length }}. Min: {{ extra.min }}';
+      'The string length ({{ value.length }}) is too short; it must be at least {{ min }} characters.';
 }
 
 /// {@template max_length_validator}
@@ -448,7 +446,7 @@ class MaxLengthStringValidator extends ConstraintValidator<String>
 
   @override
   @visibleForTesting
-  ConstraintViolation buildError(String value, {variables}) {
+  ValidatorError buildError(String value, {variables}) {
     return super.buildError(
       value,
       variables: {'value_length': value.length, 'max': max},
@@ -456,11 +454,11 @@ class MaxLengthStringValidator extends ConstraintValidator<String>
   }
 
   @override
-  Map<String, Object?> toSchema() => {'maxLength': max};
+  Map<String, Object?> topOpenApiSchema() => {'maxLength': max};
 
   @override
   String get errorMessage =>
-      'Too long: {{ extra.value_length }}. Max: {{ extra.max }}';
+      'The string length ({{ value_length }}) exceeds the maximum allowed of {{ max }} characters.';
 }
 
 /// Provides validation methods for [ListSchema].
@@ -472,7 +470,7 @@ extension ListSchemaValidatorsExt<T extends Object> on ListSchema<T> {
   /// final schema = Ack.list(Ack.string).uniqueItems();
   /// ```
   ListSchema<T> uniqueItems() {
-    return withConstraints([UniqueItemsListValidator()]);
+    return withValidators([UniqueItemsListValidator()]);
   }
 
   /// {@macro min_items_list_validator}
@@ -482,7 +480,7 @@ extension ListSchemaValidatorsExt<T extends Object> on ListSchema<T> {
   /// final schema = Ack.list(Ack.string).minItems(2);
   /// ```
   ListSchema<T> minItems(int min) =>
-      withConstraints([MinItemsListValidator(min)]);
+      withValidators([MinItemsListValidator(min)]);
 
   /// {@macro max_items_list_validator}
   ///
@@ -491,7 +489,7 @@ extension ListSchemaValidatorsExt<T extends Object> on ListSchema<T> {
   /// final schema = Ack.list(Ack.string).maxItems(3);
   /// ```
   ListSchema<T> maxItems(int max) =>
-      withConstraints([MaxItemsListValidator(max)]);
+      withValidators([MaxItemsListValidator(max)]);
 }
 
 /// {@template unique_items_list_validator}
@@ -512,17 +510,18 @@ class UniqueItemsListValidator<T extends Object>
   bool isValid(List<T> value) => value.duplicates.isEmpty;
 
   @override
-  ConstraintViolation buildError(List<T> value, {variables}) {
+  ValidatorError buildError(List<T> value, {variables}) {
     final nonUniqueValues = value.duplicates;
 
     return super.buildError(value, variables: {'duplicates': nonUniqueValues});
   }
 
   @override
-  Map<String, Object?> toSchema() => {'uniqueItems': true};
+  Map<String, Object?> topOpenApiSchema() => {'uniqueItems': true};
 
   @override
-  String get errorMessage => 'Cannot have duplicates: {{ extra.duplicates }}';
+  String get errorMessage =>
+      'The list contains duplicate items: {{ duplicates }}. All items must be unique.';
 }
 
 /// {@template min_items_list_validator}
@@ -546,16 +545,16 @@ class MinItemsListValidator<T extends Object>
   bool isValid(List<T> value) => value.length >= min;
 
   @override
-  ConstraintViolation buildError(List<T> value, {variables}) {
+  ValidatorError buildError(List<T> value, {variables}) {
     return super.buildError(value, variables: {'value': value, 'min': min});
   }
 
   @override
-  Map<String, Object?> toSchema() => {'minItems': min};
+  Map<String, Object?> topOpenApiSchema() => {'minItems': min};
 
   @override
   String get errorMessage =>
-      'Too few items: {{ value.length }}. Min: {{ min }}';
+      'The list has only {{ value.length }} items; at least {{ min }} items are required.';
 }
 
 /// {@template max_items_list_validator}
@@ -579,7 +578,7 @@ class MaxItemsListValidator<T> extends ConstraintValidator<List<T>>
   bool isValid(List<T> value) => value.length <= max;
 
   @override
-  ConstraintViolation buildError(List<T> value, {variables}) {
+  ValidatorError buildError(List<T> value, {variables}) {
     return super.buildError(
       value,
       variables: {'value_length': value.length, 'max': max},
@@ -587,11 +586,11 @@ class MaxItemsListValidator<T> extends ConstraintValidator<List<T>>
   }
 
   @override
-  Map<String, Object?> toSchema() => {'maxItems': max};
+  Map<String, Object?> topOpenApiSchema() => {'maxItems': max};
 
   @override
   String get errorMessage =>
-      'Too many items: {{ extra.value_length }}. Max: {{ extra.max }}';
+      'The list contains {{ value_length }} items, which exceeds the allowed maximum of {{ max }}.';
 }
 
 /// {@template min_num_validator}
@@ -617,26 +616,27 @@ class MinNumValidator<T extends num> extends ConstraintValidator<T>
           name: 'min_value',
           description: 'Must be greater than or equal to $min',
         );
-
   @override
   bool isValid(num value) => exclusive ? value > min : value >= min;
 
   @override
-  ConstraintViolation buildError(T value, {variables}) {
-    return super
-        .buildError(value, variables: {'min': min, 'exclusive': exclusive});
+  ValidatorError buildError(T value, {variables}) {
+    return super.buildError(
+      value,
+      variables: {'min': min, 'exclusive': exclusive, 'value': value},
+    );
   }
 
   @override
-  Map<String, Object?> toSchema() => {
+  Map<String, Object?> topOpenApiSchema() => {
         'minimum': min,
         if (exclusive) 'exclusiveMinimum': exclusive,
       };
 
   @override
   String get errorMessage => exclusive
-      ? 'Must be > {{ extra.min }}, got: {{ extra.value }}'
-      : 'Too low: {{ extra.value }} < {{ extra.min }}';
+      ? 'The number {{ value }} is too low; it must be greater than {{ min }}.'
+      : 'The number {{ value }} is too low; it must be at least {{ min }}.';
 }
 
 /// {@template multiple_of_num_validator}
@@ -658,20 +658,21 @@ class MultipleOfNumValidator<T extends num> extends ConstraintValidator<T>
   bool isValid(num value) => value % multiple == 0;
 
   @override
-  ConstraintViolation buildError(T value, {variables}) {
+  ValidatorError buildError(T value, {variables}) {
     return super.buildError(value, variables: {
       'multiple': multiple,
       'quotient': value / multiple,
+      'value': value,
       'remainder': value % multiple,
     });
   }
 
   @override
-  Map<String, Object?> toSchema() => {'multipleOf': multiple};
+  Map<String, Object?> topOpenApiSchema() => {'multipleOf': multiple};
 
   @override
   String get errorMessage =>
-      'Not multiple of {{ extra.multiple }}: {{ extra.value }}';
+      'The number {{ value }} is not a multiple of {{ multiple }}.';
 }
 
 /// {@template max_num_validator}
@@ -702,21 +703,23 @@ class MaxNumValidator<T extends num> extends ConstraintValidator<T>
   bool isValid(num value) => exclusive ? value < max : value <= max;
 
   @override
-  ConstraintViolation buildError(T value, {variables}) {
-    return super
-        .buildError(value, variables: {'max': max, 'exclusive': exclusive});
+  ValidatorError buildError(T value, {variables}) {
+    return super.buildError(
+      value,
+      variables: {'max': max, 'exclusive': exclusive, 'value': value},
+    );
   }
 
   @override
-  Map<String, Object?> toSchema() => {
+  Map<String, Object?> topOpenApiSchema() => {
         'maximum': max,
         if (exclusive) 'exclusiveMaximum': exclusive,
       };
 
   @override
   String get errorMessage => exclusive
-      ? 'Must be < {{ extra.max }}, got: {{ extra.value }}'
-      : 'Too high: {{ extra.value }} > {{ extra.max }}';
+      ? 'The number {{ value }} exceeds the limit; it must be less than {{ max }}.'
+      : 'The number {{ value }} exceeds the maximum allowed of {{ max }}.';
 }
 
 /// {@template range_num_validator}
@@ -752,16 +755,17 @@ class RangeNumValidator<T extends num> extends ConstraintValidator<T>
       exclusive ? value > min && value < max : value >= min && value <= max;
 
   @override
-  ConstraintViolation buildError(T value, {variables}) {
+  ValidatorError buildError(T value, {variables}) {
     return super.buildError(value, variables: {
       'min': min,
       'max': max,
       'exclusive': exclusive,
+      'value': value,
     });
   }
 
   @override
-  Map<String, Object?> toSchema() => {
+  Map<String, Object?> topOpenApiSchema() => {
         'minimum': min,
         'maximum': max,
         if (exclusive) 'exclusiveMinimum': exclusive,
@@ -770,7 +774,7 @@ class RangeNumValidator<T extends num> extends ConstraintValidator<T>
 
   @override
   String get errorMessage =>
-      'Out of range: {{ extra.value }} ({{ extra.min }}-{{ extra.max }})';
+      'The number {{ value }} is outside the allowed range ({{ min }} to {{ max }}).';
 }
 
 /// Provides validation methods for [ObjectSchema].
@@ -784,7 +788,7 @@ extension ObjectSchemaValidatorsExt on ObjectSchema {
   /// }).minProperties(1);
   /// ```
   ObjectSchema minProperties(int min) {
-    return withConstraints([MinPropertiesObjectValidator(min: min)]);
+    return withValidators([MinPropertiesObjectValidator(min: min)]);
   }
 
   /// {@macro object_max_properties_validator}
@@ -796,7 +800,7 @@ extension ObjectSchemaValidatorsExt on ObjectSchema {
   /// }).maxProperties(3);
   /// ```
   ObjectSchema maxProperties(int max) {
-    return withConstraints([MaxPropertiesObjectValidator(max: max)]);
+    return withValidators([MaxPropertiesObjectValidator(max: max)]);
   }
 }
 
@@ -821,16 +825,16 @@ class MinPropertiesObjectValidator extends ConstraintValidator<MapValue>
   bool isValid(MapValue value) => value.length >= min;
 
   @override
-  ConstraintViolation buildError(MapValue value, {variables}) {
+  ValidatorError buildError(MapValue value, {variables}) {
     return super.buildError(value, variables: {'min': min});
   }
 
   @override
-  Map<String, Object?> toSchema() => {'minProperties': min};
+  Map<String, Object?> topOpenApiSchema() => {'minProperties': min};
 
   @override
   String get errorMessage =>
-      'Too few properties: {{ extra.value_length }}. Min: {{ extra.min }}';
+      'The object has {{ value_length }} properties; at least {{ min }} are required.';
 }
 
 /// {@template object_max_properties_validator}
@@ -854,7 +858,7 @@ class MaxPropertiesObjectValidator extends ConstraintValidator<MapValue>
   bool isValid(MapValue value) => value.length <= max;
 
   @override
-  ConstraintViolation buildError(MapValue value, {variables}) {
+  ValidatorError buildError(MapValue value, {variables}) {
     return super.buildError(
       value,
       variables: {'max': max, 'value_length': value.length},
@@ -862,11 +866,11 @@ class MaxPropertiesObjectValidator extends ConstraintValidator<MapValue>
   }
 
   @override
-  Map<String, Object?> toSchema() => {'maxProperties': max};
+  Map<String, Object?> topOpenApiSchema() => {'maxProperties': max};
 
   @override
   String get errorMessage =>
-      'Too many properties: {{ extra.value_length }}. Max: {{ extra.max }}';
+      'The object has {{ value_length }} properties, exceeding the allowed maximum of {{ max }}.';
 }
 
 /// {@template unallowed_property_constraint_error}
@@ -893,7 +897,7 @@ class UnallowedPropertiesConstraintViolation
       : _getUnallowedProperties(value).isEmpty;
 
   @override
-  ConstraintViolation buildError(MapValue value, {variables}) {
+  ValidatorError buildError(MapValue value, {variables}) {
     final unallowedKeys = _getUnallowedProperties(value);
 
     return super.buildError(value, variables: {
@@ -903,7 +907,7 @@ class UnallowedPropertiesConstraintViolation
 
   @override
   String get errorMessage =>
-      'Unallowed properties: {{ extra.unallowed_properties }}';
+      'The object contains unallowed properties: {{ unallowed_properties }}.';
 }
 
 /// {@template property_required_constraint_error}
@@ -927,7 +931,7 @@ class PropertyRequiredConstraintViolation
   }
 
   @override
-  ConstraintViolation buildError(MapValue value, {variables}) {
+  ValidatorError buildError(MapValue value, {variables}) {
     final missingKeys =
         schema.getRequiredProperties().toSet().difference(value.keys.toSet());
 
@@ -939,7 +943,7 @@ class PropertyRequiredConstraintViolation
 
   @override
   String get errorMessage =>
-      'Missing required properties: {{ extra.missing_properties }}';
+      'The object is missing required properties: {{ missing_properties }}.';
 }
 
 /// Validates that schemas in a discriminated object are properly structured.
@@ -985,7 +989,7 @@ class DiscriminatorSchemaStructureViolation
   }
 
   @override
-  ConstraintViolation buildError(Map<String, ObjectSchema> value, {variables}) {
+  ValidatorError buildError(Map<String, ObjectSchema> value, {variables}) {
     final missingDiscriminator = _getSchemasWithMissingDiscriminator(value);
     final notRequiredDiscriminator =
         _getSchemasWithNotRequiredDiscriminator(value);
@@ -999,13 +1003,13 @@ class DiscriminatorSchemaStructureViolation
 
   @override
   String get errorMessage => '''
-Discriminated object schemas must properly define the discriminator key "$discriminatorKey":
-{{#if extra.missing_discriminator.length}}
-- Schemas missing the discriminator property: {{extra.missing_discriminator}}
-{{/if}}
-{{#if extra.discriminator_not_required.length}}
-- Schemas where discriminator is not required: {{extra.discriminator_not_required}}
-{{/if}}
+The discriminator key "{{{discriminator_key}}}" must be present and required in all schemas.
+{{#missing_discriminator}}
+- Missing in: {{{missing_discriminator}}}
+{{/missing_discriminator}}
+{{#discriminator_not_required}}
+- Not marked as required in: {{{discriminator_not_required}}}
+{{/discriminator_not_required}}
 ''';
 }
 
@@ -1036,7 +1040,7 @@ class DiscriminatorValueViolation extends ConstraintValidator<MapValue> {
   }
 
   @override
-  ConstraintViolation buildError(MapValue value, {variables}) {
+  ValidatorError buildError(MapValue value, {variables}) {
     final hasDiscriminator = value.containsKey(discriminatorKey);
     final discriminatorValue =
         hasDiscriminator ? value[discriminatorKey] : null;
@@ -1051,14 +1055,6 @@ class DiscriminatorValueViolation extends ConstraintValidator<MapValue> {
   }
 
   @override
-  String get errorMessage {
-    return '''
-{{#if extra.missing_key}}
-Missing discriminator field "$discriminatorKey" in object.
-{{else}}
-Invalid discriminator value: "{{extra.discriminator_value}}".
-Valid values are: {{extra.valid_values}}.
-{{/if}}
-''';
-  }
+  String get errorMessage =>
+      '{{#missing_key}}The discriminator field "{{{discriminator_key}}}" is missing.{{/missing_key}}{{^missing_key}}The discriminator value "{{{discriminator_value}}}" is invalid. Allowed values: {{{valid_values}}}.{{/missing_key}}';
 }

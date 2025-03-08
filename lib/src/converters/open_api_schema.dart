@@ -185,7 +185,7 @@ JSON _convertSchema(Schema schema) {
 
   return deepMerge(
     schemaMap,
-    _getMergedOpenApiConstraints(schema.getConstraints()),
+    _getMergedOpenApiConstraints(schema.getValidators()),
   );
 }
 
@@ -217,7 +217,7 @@ JSON _getMergedOpenApiConstraints<T extends Object>(
 
   return openApiConstraints.fold<JSON>({}, (previousValue, element) {
     try {
-      final schema = element.toSchema();
+      final schema = element.topOpenApiSchema();
 
       return deepMerge(previousValue, schema);
     } catch (e) {

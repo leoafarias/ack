@@ -70,16 +70,16 @@ sealed class Schema<T extends Object> {
   /// * [nullable]: Whether null values are allowed. Defaults to `false`.
   /// * [description]: A description of the schema. Defaults to an empty string if not provided. Must not be null.
   /// * [strict]: Whether parsing should be strict. Defaults to `false`.
-  /// * [constraints]: A list of constraint validators to apply. Defaults to an empty list.
+  /// * [validators]: A list of constraint validators to apply. Defaults to an empty list.
   const Schema({
     bool nullable = false,
     required String? description,
     required this.type,
-    required List<ConstraintValidator<T>>? constraints,
+    required List<ConstraintValidator<T>>? validators,
     required T? defaultValue,
   })  : _nullable = nullable,
         _description = description ?? '',
-        _validators = constraints ?? const [],
+        _validators = validators ?? const [],
         _defaultValue = defaultValue;
 
   SchemaContext get context => getCurrentSchemaContext();
@@ -89,14 +89,14 @@ sealed class Schema<T extends Object> {
   /// This method is primarily for internal use and testing, after the value has
   /// already been successfully parsed or is known to be of the correct type [T].
   ///
-  /// Returns a list of [ConstraintViolation] objects if any constraints are violated,
+  /// Returns a list of [ValidatorError] objects if any constraints are violated,
   /// otherwise returns an empty list.
   @protected
   @mustCallSuper
-  List<ConstraintViolation> checkValidators(T value) {
+  List<ValidatorError> checkValidators(T value) {
     return [..._validators]
         .map((e) => e.validate(value))
-        .whereType<ConstraintViolation>()
+        .whereType<ValidatorError>()
         .toList();
   }
 
@@ -116,7 +116,7 @@ sealed class Schema<T extends Object> {
   Schema<T> call({
     bool? nullable,
     String? description,
-    List<ConstraintValidator<T>>? constraints,
+    List<ConstraintValidator<T>>? validators,
   });
 
   /// Creates a new [Schema] with the same properties as this one, but with the
@@ -127,11 +127,11 @@ sealed class Schema<T extends Object> {
   Schema<T> copyWith({
     bool? nullable,
     String? description,
-    List<ConstraintValidator<T>>? constraints,
+    List<ConstraintValidator<T>>? validators,
   });
 
   /// Returns the list of constraint validators associated with this schema.
-  List<ConstraintValidator<T>> getConstraints() => _validators;
+  List<ConstraintValidator<T>> getValidators() => _validators;
 
   /// Returns whether this schema allows null values.
   bool getNullableValue() => _nullable;
@@ -150,7 +150,7 @@ sealed class Schema<T extends Object> {
   /// This method provides a non-throwing way to validate values against the schema.
   /// It wraps the validation logic in a `try-catch` block to handle potential
   /// exceptions during validation and returns a [Fail] result with a
-  /// [SchemaViolation.unknownException] if an exception occurs.
+  /// [SchemaError.unknownException] if an exception occurs.
   ///
   /// Use [validateOrThrow] if you prefer to throw an exception on validation failure.
   @protected
@@ -160,15 +160,13 @@ sealed class Schema<T extends Object> {
       if (value == null) {
         return _nullable
             ? SchemaResult.unit()
-            : SchemaResult.fail(
-                NonNullableSchemaViolation(context: context),
-              );
+            : SchemaResult.fail(NonNullableSchemaError(context: context));
       }
 
       final typedValue = tryParse(value);
       if (typedValue == null) {
         return SchemaResult.fail(
-          InvalidTypeSchemaViolation(
+          InvalidTypeSchemaError(
             valueType: value.runtimeType,
             expectedType: T,
             context: context,
@@ -180,8 +178,8 @@ sealed class Schema<T extends Object> {
 
       if (constraintViolations.isNotEmpty) {
         return SchemaResult.fail(
-          SchemaConstraintViolation(
-            constraints: constraintViolations,
+          SchemaValidationError(
+            validations: constraintViolations,
             context: context,
           ),
         );
@@ -190,7 +188,7 @@ sealed class Schema<T extends Object> {
       return SchemaResult.ok(typedValue);
     } catch (e, stackTrace) {
       return SchemaResult.fail(
-        UnknownSchemaViolation(
+        UnknownSchemaError(
           error: e,
           stackTrace: stackTrace,
           context: context,
@@ -204,7 +202,7 @@ sealed class Schema<T extends Object> {
   /// This method provides a non-throwing way to validate values against the schema.
   /// It wraps the validation logic in a `try-catch` block to handle potential
   /// exceptions during validation and returns a [Fail] result with a
-  /// [SchemaViolation.unknownException] if an exception occurs.
+  /// [SchemaError.unknownException] if an exception occurs.
   SchemaResult<T> validate(Object? value, {String? debugName}) {
     return executeWithContext(
       SchemaContext(name: debugName ?? type.name, schema: this, value: value),
@@ -219,7 +217,7 @@ sealed class Schema<T extends Object> {
   Map<String, Object?> toMap() {
     return {
       'type': type.name,
-      'constraints': _validators.map((e) => e.toMap()).toList(),
+      'validators': _validators.map((e) => e.toMap()).toList(),
       'nullable': _nullable,
       'description': _description,
       'defaultValue': _defaultValue,
@@ -241,12 +239,12 @@ sealed class Schema<T extends Object> {
 ///
 /// {@endtemplate}
 mixin SchemaFluentMethods<S extends Schema<T>, T extends Object> on Schema<T> {
-  /// Creates a new schema of the same type with additional [constraints].
+  /// Creates a new schema of the same type with additional [validators].
   ///
   /// The new schema will inherit all properties of the original schema and
-  /// include the provided [constraints] in addition to its existing ones.
-  S withConstraints(List<ConstraintValidator<T>> constraints) =>
-      copyWith(constraints: [..._validators, ...constraints]) as S;
+  /// include the provided [validators] in add ition to its existing ones.
+  S withValidators(List<ConstraintValidator<T>> validators) =>
+      copyWith(validators: [..._validators, ...validators]) as S;
 
   /// Creates a [ListSchema] with this schema as its item schema.
   ///
@@ -262,7 +260,7 @@ mixin SchemaFluentMethods<S extends Schema<T>, T extends Object> on Schema<T> {
   /// Validates the [value] against this schema and throws an [AckViolationException] if validation fails.
   ///
   /// If validation is successful, returns the validated value of type [T].
-  /// If validation fails, throws an [AckViolationException] containing a list of [SchemaViolation] objects.
+  /// If validation fails, throws an [AckViolationException] containing a list of [SchemaError] objects.
   ///
   /// **Note**: `AckException` is assumed to be a custom exception class defined elsewhere,
   /// likely in `ack_base.dart`, to handle schema validation errors. Ensure `AckException`
@@ -284,7 +282,7 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
     bool? nullable,
     bool? strict,
     super.description,
-    super.constraints,
+    super.validators,
     required super.type,
     super.defaultValue,
   })  : _strict = strict ?? false,
@@ -318,7 +316,7 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
   Self Function({
     bool? nullable,
     String? description,
-    List<ConstraintValidator<T>>? constraints,
+    List<ConstraintValidator<T>>? validators,
     bool? strict,
   }) get builder;
 
@@ -352,11 +350,11 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
     bool? nullable,
     String? description,
     bool? strict,
-    List<ConstraintValidator<T>>? constraints,
+    List<ConstraintValidator<T>>? validators,
   }) {
     return copyWith(
       nullable: nullable,
-      constraints: constraints,
+      validators: validators,
       strict: strict,
       description: description,
     );
@@ -365,12 +363,12 @@ sealed class ScalarSchema<Self extends ScalarSchema<Self, T>, T extends Object>
   @override
   Self copyWith({
     bool? nullable,
-    List<ConstraintValidator<T>>? constraints,
+    List<ConstraintValidator<T>>? validators,
     bool? strict,
     String? description,
   }) {
     return builder(
-      constraints: constraints ?? _validators,
+      validators: validators ?? _validators,
       description: description ?? _description,
       nullable: nullable ?? _nullable,
       strict: strict ?? _strict,
@@ -389,7 +387,7 @@ final class UnknownSchema extends Schema<Object> {
       : super(
           type: SchemaType.unknown,
           description: 'Unknown Schema',
-          constraints: const [],
+          validators: const [],
           defaultValue: null,
         );
 
@@ -397,7 +395,7 @@ final class UnknownSchema extends Schema<Object> {
   Schema<Object> call({
     bool? nullable,
     String? description,
-    List<ConstraintValidator<Object>>? constraints,
+    List<ConstraintValidator<Object>>? validators,
   }) {
     throw UnimplementedError();
   }
@@ -405,7 +403,7 @@ final class UnknownSchema extends Schema<Object> {
   @override
   Schema<Object> copyWith({
     bool? nullable,
-    List<ConstraintValidator<Object>>? constraints,
+    List<ConstraintValidator<Object>>? validators,
     String? description,
   }) {
     throw UnimplementedError();

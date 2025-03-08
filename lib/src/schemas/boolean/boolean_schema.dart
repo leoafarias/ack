@@ -22,7 +22,7 @@ final class BooleanSchema extends ScalarSchema<BooleanSchema, bool> {
   /// - [defaultValue] - Default value if none provided
   const BooleanSchema({
     super.nullable,
-    super.constraints,
+    super.validators,
     super.strict,
     super.description,
     super.defaultValue,

@@ -32,7 +32,7 @@ void main() {
     });
 
     test('Fail result provides error access', () {
-      final schemaError = MockSchemaViolation();
+      final schemaError = MockSchemaError();
 
       final result = SchemaResult.fail(schemaError);
 

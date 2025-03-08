@@ -12,14 +12,13 @@ void main() {
 
     test('copyWith changes constraints', () {
       final schema = ListSchema<int>(IntegerSchema(),
-          constraints: [MaxItemsListValidator(5)]);
-      expect(schema.getConstraints().length, equals(1));
-      expect(schema.getConstraints()[0], isA<MaxItemsListValidator>());
+          validators: [MaxItemsListValidator(5)]);
+      expect(schema.getValidators().length, equals(1));
+      expect(schema.getValidators()[0], isA<MaxItemsListValidator>());
 
-      final newSchema =
-          schema.copyWith(constraints: [MinItemsListValidator(1)]);
-      expect(newSchema.getConstraints().length, equals(1));
-      expect(newSchema.getConstraints()[0], isA<MinItemsListValidator>());
+      final newSchema = schema.copyWith(validators: [MinItemsListValidator(1)]);
+      expect(newSchema.getValidators().length, equals(1));
+      expect(newSchema.getValidators()[0], isA<MinItemsListValidator>());
     });
 
     group('ListSchema Basic Validation', () {
@@ -29,7 +28,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<NonNullableSchemaViolation>());
+        expect(error, isA<NonNullableSchemaError>());
       });
 
       test('Nullable schema passes on null', () {
@@ -45,7 +44,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeSchemaViolation>());
+        expect(error, isA<InvalidTypeSchemaError>());
       });
 
       test('Valid list passes with no constraints', () {
@@ -74,11 +73,11 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
-          constraintsError.constraints.any((e) => e.key == 'unique_items'),
+          constraintsError.validations.any((e) => e.key == 'unique_items'),
           isTrue,
         );
       });
@@ -104,11 +103,11 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
-          constraintsError.constraints.any((e) => e.key == 'min_items'),
+          constraintsError.validations.any((e) => e.key == 'min_items'),
           isTrue,
         );
       });
@@ -134,11 +133,11 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
-          constraintsError.constraints.any((e) => e.key == 'max_items'),
+          constraintsError.validations.any((e) => e.key == 'max_items'),
           isTrue,
         );
       });

@@ -2,12 +2,12 @@ import '../helpers.dart';
 import 'schema_error.dart';
 
 class AckViolationException implements Exception {
-  final SchemaViolation violation;
+  final SchemaError violation;
 
   const AckViolationException(this.violation);
 
   @Deprecated('Use violation instead')
-  SchemaViolation get error => violation;
+  SchemaError get error => violation;
 
   Map<String, dynamic> toMap() {
     return {'violation': violation.toMap()};

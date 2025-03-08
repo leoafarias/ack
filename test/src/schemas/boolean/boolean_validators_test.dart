@@ -25,7 +25,7 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeSchemaViolation>());
+        expect(error, isA<InvalidTypeSchemaError>());
       });
 
       test('String with whitespace " true " fails validation', () {
@@ -35,7 +35,7 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeSchemaViolation>());
+        expect(error, isA<InvalidTypeSchemaError>());
       });
     });
 
@@ -46,7 +46,7 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeSchemaViolation>());
+        expect(error, isA<InvalidTypeSchemaError>());
       });
 
       test('Passing an object returns invalid type error', () {
@@ -55,7 +55,7 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeSchemaViolation>());
+        expect(error, isA<InvalidTypeSchemaError>());
       });
     });
   });

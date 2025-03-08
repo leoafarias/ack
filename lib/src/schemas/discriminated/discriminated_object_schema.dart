@@ -9,7 +9,7 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
     super.nullable,
     required String discriminatorKey,
     required Map<String, ObjectSchema> schemas,
-    super.constraints,
+    super.validators,
     super.description,
     super.defaultValue,
   })  : _discriminatorKey = discriminatorKey,
@@ -44,12 +44,12 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
           .validate(_schemas),
       DiscriminatorValueViolation(_discriminatorKey, _schemas)
           .validate(mapValue!),
-    ].whereType<ConstraintViolation>();
+    ].whereType<ValidatorError>();
 
     if (violations.isNotEmpty) {
       return SchemaResult.fail(
-        SchemaConstraintViolation(
-          constraints: violations.toList(),
+        SchemaValidationError(
+          validations: violations.toList(),
           context: context,
         ),
       );
@@ -68,11 +68,11 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
     String? description,
     String? discriminatorKey,
     Map<String, ObjectSchema>? schemas,
-    List<ConstraintValidator<MapValue>>? constraints,
+    List<ConstraintValidator<MapValue>>? validators,
     MapValue? defaultValue,
   }) {
     return copyWith(
-      constraints: constraints,
+      validators: validators,
       discriminatorKey: discriminatorKey,
       schemas: schemas,
       nullable: nullable,
@@ -83,7 +83,7 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
 
   @override
   DiscriminatedObjectSchema copyWith({
-    List<ConstraintValidator<MapValue>>? constraints,
+    List<ConstraintValidator<MapValue>>? validators,
     String? discriminatorKey,
     Map<String, ObjectSchema>? schemas,
     bool? nullable,
@@ -94,7 +94,7 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
       nullable: nullable ?? _nullable,
       discriminatorKey: discriminatorKey ?? _discriminatorKey,
       schemas: schemas ?? _schemas,
-      constraints: constraints ?? _validators,
+      validators: validators ?? _validators,
       description: description ?? _description,
       defaultValue: defaultValue ?? _defaultValue,
     );

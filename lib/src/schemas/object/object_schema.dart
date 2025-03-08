@@ -12,7 +12,7 @@ final class ObjectSchema extends Schema<MapValue>
   ObjectSchema(
     this._properties, {
     bool additionalProperties = false,
-    super.constraints,
+    super.validators,
     super.description,
     List<String> required = const [],
     super.nullable,
@@ -43,7 +43,7 @@ final class ObjectSchema extends Schema<MapValue>
     List<String>? required,
     bool? nullable,
     String? description,
-    List<ConstraintValidator<MapValue>>? constraints,
+    List<ConstraintValidator<MapValue>>? validators,
     MapValue? defaultValue,
   }) {
     // if property SchemaValue is of SchemaMap, we need to merge them
@@ -60,7 +60,7 @@ final class ObjectSchema extends Schema<MapValue>
           prop._properties,
           additionalProperties: prop._additionalProperties,
           required: prop._required,
-          constraints: prop._validators,
+          validators: prop._validators,
         );
       } else {
         mergedProperties[key] = prop;
@@ -73,7 +73,7 @@ final class ObjectSchema extends Schema<MapValue>
       additionalProperties: additionalProperties,
       required: requiredProperties,
       properties: mergedProperties,
-      constraints: [..._validators, ...?constraints],
+      validators: [..._validators, ...?validators],
       nullable: nullable,
       description: description,
       defaultValue: defaultValue,
@@ -87,7 +87,7 @@ final class ObjectSchema extends Schema<MapValue>
   bool getAllowsAdditionalProperties() => _additionalProperties;
 
   @override
-  List<ConstraintViolation> checkValidators(MapValue value) {
+  List<ValidatorError> checkValidators(MapValue value) {
     final extraValidation = [
       UnallowedPropertiesConstraintViolation(this),
       PropertyRequiredConstraintViolation(this),
@@ -97,7 +97,7 @@ final class ObjectSchema extends Schema<MapValue>
       ...super.checkValidators(value),
       ...extraValidation
           .map((v) => v.validate(value))
-          .whereType<ConstraintViolation>(),
+          .whereType<ValidatorError>(),
     ];
   }
 
@@ -111,7 +111,7 @@ final class ObjectSchema extends Schema<MapValue>
 
     if (_nullable && resultValue == null) return SchemaResult.unit();
 
-    final violations = <String, SchemaViolation>{};
+    final violations = <SchemaError>[];
 
     for (final entry in _properties.entries) {
       final propKey = entry.key;
@@ -122,14 +122,14 @@ final class ObjectSchema extends Schema<MapValue>
       final propResult = propSchema.validate(propValue, debugName: propKey);
 
       if (propResult.isFail) {
-        violations[propKey] = propResult.getViolation();
+        violations.add(propResult.getViolation());
       }
     }
 
     if (violations.isEmpty) return SchemaResult.ok(resultValue!);
 
     return SchemaResult.fail(
-      NestedSchemaViolation(violations: violations, context: context),
+      NestedSchemaError(errors: violations, context: context),
     );
   }
 
@@ -151,7 +151,7 @@ final class ObjectSchema extends Schema<MapValue>
     bool? additionalProperties,
     List<String>? required,
     Map<String, Schema>? properties,
-    List<ConstraintValidator<MapValue>>? constraints,
+    List<ConstraintValidator<MapValue>>? validators,
   }) {
     return extend(
       properties ?? _properties,
@@ -159,7 +159,7 @@ final class ObjectSchema extends Schema<MapValue>
       required: required,
       nullable: nullable,
       description: description,
-      constraints: constraints,
+      validators: validators,
     );
   }
 
@@ -168,7 +168,7 @@ final class ObjectSchema extends Schema<MapValue>
     bool? additionalProperties,
     List<String>? required,
     Map<String, Schema>? properties,
-    List<ConstraintValidator<MapValue>>? constraints,
+    List<ConstraintValidator<MapValue>>? validators,
     bool? nullable,
     String? description,
     MapValue? defaultValue,
@@ -176,7 +176,7 @@ final class ObjectSchema extends Schema<MapValue>
     return ObjectSchema(
       properties ?? _properties,
       additionalProperties: additionalProperties ?? _additionalProperties,
-      constraints: constraints ?? _validators,
+      validators: validators ?? _validators,
       description: description ?? _description,
       required: required ?? _required,
       nullable: nullable ?? _nullable,

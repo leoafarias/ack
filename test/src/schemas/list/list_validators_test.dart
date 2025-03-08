@@ -37,9 +37,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final constraintsError =
-            (result as Fail).error as SchemaConstraintViolation;
+            (result as Fail).error as SchemaValidationError;
         expect(
-          constraintsError.constraints.any((e) => e.key == 'unique_items'),
+          constraintsError.validations.any((e) => e.key == 'unique_items'),
           isTrue,
         );
       });
@@ -75,9 +75,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final constraintsError =
-            (result as Fail).error as SchemaConstraintViolation;
+            (result as Fail).error as SchemaValidationError;
         expect(
-          constraintsError.constraints.any((e) => e.key == 'min_items'),
+          constraintsError.validations.any((e) => e.key == 'min_items'),
           isTrue,
         );
       });
@@ -109,9 +109,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final constraintsError =
-            (result as Fail).error as SchemaConstraintViolation;
+            (result as Fail).error as SchemaValidationError;
         expect(
-          constraintsError.constraints.any((e) => e.key == 'max_items'),
+          constraintsError.validations.any((e) => e.key == 'max_items'),
           isTrue,
         );
       });

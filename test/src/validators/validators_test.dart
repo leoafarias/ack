@@ -22,11 +22,11 @@ void main() {
       expect(result.isFail, isTrue);
 
       final error = (result as Fail).error;
-      expect(error, isA<SchemaConstraintViolation>());
+      expect(error, isA<SchemaValidationError>());
 
-      final constraintsError = error as SchemaConstraintViolation;
+      final constraintsError = error as SchemaValidationError;
       expect(
-        constraintsError.constraints.any((e) => e.key == 'min_items'),
+        constraintsError.validations.any((e) => e.key == 'min_items'),
         isTrue,
       );
     });

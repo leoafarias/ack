@@ -10,15 +10,15 @@ void main() {
       expect(result.isOk, isTrue);
     });
 
-    test('copyWith changes constraints', () {
-      final schema = StringSchema(constraints: [MaxLengthStringValidator(5)]);
-      expect(schema.getConstraints().length, equals(1));
-      expect(schema.getConstraints()[0], isA<MaxLengthStringValidator>());
+    test('copyWith changes validators', () {
+      final schema = StringSchema(validators: [MaxLengthStringValidator(5)]);
+      expect(schema.getValidators().length, equals(1));
+      expect(schema.getValidators()[0], isA<MaxLengthStringValidator>());
 
       final newSchema =
-          schema.copyWith(constraints: [MinLengthStringValidator(10)]);
-      expect(newSchema.getConstraints().length, equals(1));
-      expect(newSchema.getConstraints()[0], isA<MinLengthStringValidator>());
+          schema.copyWith(validators: [MinLengthStringValidator(10)]);
+      expect(newSchema.getValidators().length, equals(1));
+      expect(newSchema.getValidators()[0], isA<MinLengthStringValidator>());
     });
 
     group('StringSchema Basic Validation', () {
@@ -28,7 +28,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<NonNullableSchemaViolation>());
+        expect(error, isA<NonNullableSchemaError>());
       });
 
       test('Nullable schema passes on null', () {
@@ -47,7 +47,7 @@ void main() {
         expect(strictResult.isFail, isTrue);
 
         final error = (strictResult as Fail).error;
-        expect(error, isA<InvalidTypeSchemaViolation>());
+        expect(error, isA<InvalidTypeSchemaError>());
       });
 
       test('Valid string passes with no constraints', () {
@@ -81,9 +81,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
           constraintsError.getConstraint('email'),
           isNotNull,
@@ -116,9 +116,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
           constraintsError.getConstraint('hex_color'),
           isNotNull,
@@ -145,9 +145,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
           constraintsError.getConstraint('is_empty'),
           isNotNull,
@@ -178,9 +178,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
           constraintsError.getConstraint('min_length'),
           isNotNull,
@@ -211,9 +211,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
           constraintsError.getConstraint('max_length'),
           isNotNull,
@@ -242,9 +242,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
           constraintsError.getConstraint('not_one_of'),
           isNotNull,
@@ -271,9 +271,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
           constraintsError.getConstraint('not_empty'),
           isNotNull,
@@ -302,9 +302,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
           constraintsError.getConstraint('date_time'),
           isNotNull,
@@ -334,11 +334,11 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'date'),
+          constraintsError.validations.any((c) => c.key == 'date'),
           isTrue,
         );
       });
@@ -367,11 +367,11 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintViolation>());
+        expect(error, isA<SchemaValidationError>());
 
-        final constraintsError = error as SchemaConstraintViolation;
+        final constraintsError = error as SchemaValidationError;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'enum'),
+          constraintsError.validations.any((c) => c.key == 'enum'),
           isTrue,
         );
       });

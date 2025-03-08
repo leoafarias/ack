@@ -12,10 +12,10 @@ void main() {
 
     test('copyWith changes constraints', () {
       final schema = BooleanSchema();
-      expect(schema.getConstraints().length, equals(0));
+      expect(schema.getValidators().length, equals(0));
 
-      final newSchema = schema.copyWith(constraints: []);
-      expect(newSchema.getConstraints().length, equals(0));
+      final newSchema = schema.copyWith(validators: []);
+      expect(newSchema.getValidators().length, equals(0));
     });
 
     group('BooleanSchema Basic Validation', () {
@@ -25,9 +25,9 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<NonNullableSchemaViolation>());
+        expect(error, isA<NonNullableSchemaError>());
 
-        final constraintsError = error as NonNullableSchemaViolation;
+        final constraintsError = error as NonNullableSchemaError;
         expect(
           constraintsError.key == 'non_nullable',
           isTrue,
@@ -47,7 +47,7 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeSchemaViolation>());
+        expect(error, isA<InvalidTypeSchemaError>());
       });
 
       test('Valid boolean passes with no constraints', () {
@@ -79,7 +79,7 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeSchemaViolation>());
+        expect(error, isA<InvalidTypeSchemaError>());
       });
     });
   });

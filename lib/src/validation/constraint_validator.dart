@@ -13,8 +13,8 @@ abstract class ConstraintValidator<T extends Object> {
   String get errorMessage;
 
   @protected
-  ConstraintViolation buildError(T value, {Map<String, Object?>? variables}) {
-    return ConstraintViolation(
+  ValidatorError buildError(T value, {Map<String, Object?>? variables}) {
+    return ValidatorError(
       key: name,
       message: errorMessage,
       variables: variables,
@@ -24,7 +24,7 @@ abstract class ConstraintValidator<T extends Object> {
   @protected
   bool isValid(T value);
 
-  ConstraintViolation? validate(T value) =>
+  ValidatorError? validate(T value) =>
       isValid(value) ? null : buildError(value);
 
   Map<String, Object?> toMap() {
@@ -38,5 +38,5 @@ abstract class ConstraintValidator<T extends Object> {
 }
 
 mixin OpenAPiSpecOutput<T extends Object> on ConstraintValidator<T> {
-  Map<String, Object?> toSchema();
+  Map<String, Object?> topOpenApiSchema();
 }

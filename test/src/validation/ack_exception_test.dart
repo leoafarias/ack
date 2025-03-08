@@ -10,17 +10,17 @@ class _MockSchemaContext extends SchemaContext {
 void main() {
   group('AckException', () {
     test('toMap() returns error map', () {
-      final constraint1Violation = ConstraintViolation(
+      final constraint1Violation = ValidatorError(
         key: 'custom_constraint1',
         message: 'Custom constraint',
         variables: {'key1': 'value1'},
       );
-      final constraint2Violation = ConstraintViolation(
+      final constraint2Violation = ValidatorError(
         key: 'custom_constraint2',
         message: 'Custom constraint 2',
         variables: {'key2': 'value2'},
       );
-      final constraint3Violation = ConstraintViolation(
+      final constraint3Violation = ValidatorError(
         key: 'custom_constraint3',
         message: 'Custom constraint 3',
         variables: {'key3': 'value3'},
@@ -31,8 +31,8 @@ void main() {
         constraint3Violation,
       ];
 
-      final schemaError = SchemaConstraintViolation(
-        constraints: constraintErrors,
+      final schemaError = SchemaValidationError(
+        validations: constraintErrors,
         context: _MockSchemaContext(),
       );
       final exception = AckViolationException(schemaError);
@@ -46,7 +46,7 @@ void main() {
       expect(errorMap['key'], 'constraints');
 
       // Verify the constraints are included
-      final constraintsList = schemaError.constraints;
+      final constraintsList = schemaError.validations;
       expect(constraintsList.length, 3);
       expect(constraintsList[0].key, 'custom_constraint1');
       expect(constraintsList[1].key, 'custom_constraint2');
@@ -54,13 +54,13 @@ void main() {
     });
 
     test('toString() includes error details', () {
-      final constraintError = ConstraintViolation(
+      final constraintError = ValidatorError(
         key: 'custom_constraint',
         message: 'Custom constraint',
         variables: {'key': 'value'},
       );
-      final schemaError = SchemaConstraintViolation(
-        constraints: [constraintError],
+      final schemaError = SchemaValidationError(
+        validations: [constraintError],
         context: _MockSchemaContext(),
       );
       final exception = AckViolationException(schemaError);

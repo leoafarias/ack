@@ -24,8 +24,8 @@ void main() {
       expect(result.isFail, isTrue);
 
       final schemaError = (result as Fail).error;
-      expect(schemaError, isA<NonNullableSchemaViolation>());
-      final constraintsError = schemaError as NonNullableSchemaViolation;
+      expect(schemaError, isA<NonNullableSchemaError>());
+      final constraintsError = schemaError as NonNullableSchemaError;
       expect(
         constraintsError.key == 'non_nullable',
         isTrue,
@@ -48,8 +48,8 @@ void main() {
       expect(result.isFail, isTrue);
 
       final schemaError = (result as Fail).error;
-      expect(schemaError, isA<InvalidTypeSchemaViolation>());
-      final constraintsError = schemaError as InvalidTypeSchemaViolation;
+      expect(schemaError, isA<InvalidTypeSchemaError>());
+      final constraintsError = schemaError as InvalidTypeSchemaError;
       expect(
         constraintsError.key == 'invalid_type',
         isTrue,
@@ -127,7 +127,7 @@ void main() {
         extensionSchema.getProperties(),
         additionalProperties: extensionSchema.getAllowsAdditionalProperties(),
         required: extensionSchema.getRequiredProperties(),
-        constraints: extensionSchema.getConstraints(),
+        validators: extensionSchema.getValidators(),
       );
 
       // Verify merged schema properties
@@ -189,12 +189,10 @@ void main() {
       final invalidResult = mergedSchema.validate(invalidObject);
       expect(invalidResult.isFail, isTrue);
 
-      final objectError =
-          (invalidResult as Fail).error as NestedSchemaViolation;
-      expect(objectError.violations.containsKey('user'), isTrue);
+      final objectError = (invalidResult as Fail).error as NestedSchemaError;
+      expect(objectError.errors.any((e) => e.name == 'user'), isTrue);
 
-      final userError =
-          objectError.violations['user'] as SchemaConstraintViolation;
+      final userError = objectError.errors[0] as SchemaValidationError;
 
       expect(userError.getConstraint('required_properties'), isNotNull);
 
