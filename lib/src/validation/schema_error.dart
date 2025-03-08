@@ -151,7 +151,6 @@ final class SchemaValidationError extends SchemaError {
 {{/validations}}
 ''',
           variables: {
-            'schemaName': context.name,
             'validations': validations.map((e) => e.toMap()).toList(),
           },
         );
