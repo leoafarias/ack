@@ -17,7 +17,7 @@ mixin ErrorBase {
   String get template;
 
   /// Renders the message with all variables.
-  String get message => Template(template, data: variables).render();
+  String get message => render();
 
   late final render = Template(template, data: variables).render;
 
@@ -137,7 +137,7 @@ final class SchemaValidationError extends SchemaError {
           value: context.value,
           message: '''
 {{#each validations}}
-  {{key}}: {{message}}
+{{message}}
 {{/each}}
 ''',
           variables: {

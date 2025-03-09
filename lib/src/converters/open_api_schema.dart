@@ -88,7 +88,7 @@ $stopSequence
 
   Map<String, Object?> parseResponse(String response) {
     try {
-      if (isJsonValue(response)) {
+      if (looksLikeJson(response)) {
         try {
           final jsonValue = jsonDecode(response) as Map<String, Object?>;
 

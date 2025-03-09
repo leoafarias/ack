@@ -182,8 +182,11 @@ class EnumStringValidator extends ConstraintValidator<String>
   Map<String, Object?> topOpenApiSchema() => {'enum': enumValues};
 
   @override
-  String get errorMessage =>
-      'Invalid value "{{ value }}". Allowed values are: {{ enum_values }}. (Closest match: "{{ closest_match }}")';
+  String get errorMessage {
+    return '''
+ Invalid value "{{ value }}". Allowed values are: {{ enum_values }}. (Closest match: "{{ closest_match }}")
+''';
+  }
 }
 
 /// {@template email_validator}
@@ -290,7 +293,7 @@ class IsJsonStringValidator extends ConstraintValidator<String> {
   @override
   bool isValid(String value) {
     try {
-      if (isJsonValue(value)) {
+      if (looksLikeJson(value)) {
         jsonDecode(value);
 
         return true;
@@ -413,7 +416,7 @@ class MinLengthStringValidator extends ConstraintValidator<String>
 
   @override
   ValidatorError buildError(String value, {variables}) {
-    return super.buildError(value, variables: {'valu': value, 'min': min});
+    return super.buildError(value, variables: {'value': value, 'min': min});
   }
 
   @override
@@ -447,10 +450,7 @@ class MaxLengthStringValidator extends ConstraintValidator<String>
   @override
   @visibleForTesting
   ValidatorError buildError(String value, {variables}) {
-    return super.buildError(
-      value,
-      variables: {'value_length': value.length, 'max': max},
-    );
+    return super.buildError(value, variables: {'value': value, 'max': max});
   }
 
   @override
@@ -458,7 +458,7 @@ class MaxLengthStringValidator extends ConstraintValidator<String>
 
   @override
   String get errorMessage =>
-      'The string length ({{ value_length }}) exceeds the maximum allowed of {{ max }} characters.';
+      'The string length ({{ value.length }}) exceeds the maximum allowed of {{ max }} characters.';
 }
 
 /// Provides validation methods for [ListSchema].

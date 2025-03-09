@@ -2,8 +2,9 @@ class Template {
   final String _content;
   final Map<String, Object?> _data;
 
-  const Template(this._content, {Map<String, Object?>? data})
-      : _data = data ?? const {};
+  const Template(String content, {Map<String, Object?>? data})
+      : _content = content,
+        _data = data ?? const {};
 
   /// Orchestrates both loop parsing and variable replacement
   String _renderTemplate(String template, Map<String, Object?> data) {
@@ -162,7 +163,9 @@ class Template {
       customRenderedData[entry.key] = customRendered;
     }
 
-    return _renderTemplate(_content, customRenderedData);
+    final rendered = _renderTemplate(_content, customRenderedData);
+
+    return rendered.trim();
   }
 }
 

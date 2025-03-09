@@ -31,11 +31,13 @@ void main() {
       );
     });
 
-    // Test error message
     test('error message is correct', () {
       final validator = MinItemsListValidator(3);
       final error = validator.buildError([1, 2]);
-      expect(error.message, 'Too few items: 2. Min: 3');
+      expect(
+        error.message,
+        'The list has only 2 items; at least 3 items are required.',
+      );
     });
   });
 }

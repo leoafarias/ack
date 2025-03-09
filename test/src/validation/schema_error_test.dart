@@ -79,7 +79,6 @@ void main() {
     test('Simple string validation error messages', () {
       final schema = Ack.string.minLength(5).maxLength(10);
 
-      // Test too short
       var result = schema.validate('abc');
       expect(result.isFail, isTrue);
       var error = result.getViolation();
@@ -88,14 +87,13 @@ void main() {
           contains(
               'The string length (3) is too short; it must be at least 5 characters.'));
 
-      // Test too long
       result = schema.validate('abcdefghijk');
       expect(result.isFail, isTrue);
       error = result.getViolation();
       expect(
           error.message,
           contains(
-              'The string length (11) is too long; it must be at most 10 characters.'));
+              'The string length (11) exceeds the maximum allowed of 10 characters.'));
     });
 
     test('Enum validation error messages', () {
@@ -107,7 +105,7 @@ void main() {
       expect(
           error.message,
           contains(
-              'The value "yellow" is not an allowed value. Allowed values: [red, green, blue].'));
+              'Invalid value "yellow". Allowed values are: [red, green, blue]. (Closest match: "N/A")'));
     });
 
     test('Date validation error messages', () {
@@ -116,7 +114,10 @@ void main() {
       var result = schema.validate('2023-13-45');
       expect(result.isFail, isTrue);
       var error = result.getViolation();
-      expect(error.message, contains('Must be a valid date time string'));
+      expect(
+          error.message,
+          contains(
+              'The value "2023-13-45" is not a valid date. Expected format: YYYY-MM-DD (e.g., 2017-07-21).'));
     });
 
     test('Object validation error messages', () {
@@ -147,7 +148,7 @@ void main() {
       expect(
           error.message,
           contains(
-              'The value -1 is too low; it must be greater than or equal to 0.'));
+              'The value -1 is less than the minimum allowed value of 0.'));
     });
 
     test('List validation error messages', () {
@@ -213,11 +214,11 @@ void main() {
       expect(
           result.getViolation().message,
           contains(
-              'The value -5 is too low; it must be greater than or equal to 0.'));
+              'The value -5 is less than the minimum allowed value of 0.'));
       expect(
           result.getViolation().message,
           contains(
-              'The value "blue" is not an allowed value. Allowed values: [light, dark].'));
+              'Invalid value "blue". Allowed values are: [light, dark]. (Closest match: "dark")'));
     });
   });
 }

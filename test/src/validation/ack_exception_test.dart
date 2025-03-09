@@ -43,7 +43,7 @@ void main() {
 
       // Check the structure of the error
       final errorMap = map['violation'] as Map<String, dynamic>;
-      expect(errorMap['key'], 'constraints');
+      expect(errorMap['key'], 'validation');
 
       // Verify the constraints are included
       final constraintsList = schemaError.validations;
