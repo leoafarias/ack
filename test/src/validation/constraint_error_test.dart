@@ -12,11 +12,13 @@ void main() {
 
       final map = error.toMap();
 
-      expect(map, {
-        'message': 'Test constraint failed',
-        'key': 'test_constraint',
-        'variables': {'key': 'value'},
-      });
+      expect(
+          map,
+          equals({
+            'key': 'test_constraint',
+            'message': 'Test constraint failed',
+            'variables': {'key': 'value'},
+          }));
     });
 
     test('toString() returns formatted string', () {

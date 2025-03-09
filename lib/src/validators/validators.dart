@@ -172,7 +172,6 @@ class EnumStringValidator extends ConstraintValidator<String>
       variables: {
         'closest_match': findClosestStringMatch(value, enumValues),
         'enum_values': enumValues,
-        'total_allowed_values': enumValues.length,
         'value': value,
       },
     );

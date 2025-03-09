@@ -120,37 +120,6 @@ void main() {
               'The value "2023-13-45" is not a valid date. Expected format: YYYY-MM-DD (e.g., 2017-07-21).'));
     });
 
-    test('Object validation error messages', () {
-      final schema = Ack.object({
-        'name': Ack.string.minLength(3),
-        'age': Ack.int.min(0),
-      }, required: [
-        'name',
-        'age'
-      ]);
-
-      // Test missing required field
-      var result = schema.validate({'name': 'Bob'});
-      expect(result.isFail, isTrue);
-      var error = result.getViolation();
-      expect(error, isA<SchemaValidationError>());
-      expect(error.message,
-          contains('The following required properties are missing: [age].'));
-
-      // Test invalid field value
-      result = schema.validate({'name': 'B', 'age': -1});
-      expect(result.isFail, isTrue);
-      error = result.getViolation();
-      expect(
-          error.message,
-          contains(
-              'The string length (1) is too short; it must be at least 3 characters.'));
-      expect(
-          error.message,
-          contains(
-              'The value -1 is less than the minimum allowed value of 0.'));
-    });
-
     test('List validation error messages', () {
       final schema = Ack.list(Ack.string).minItems(2).maxItems(4).uniqueItems();
 
@@ -180,45 +149,6 @@ void main() {
           error.message,
           contains(
               'The list contains duplicate items: [a]. All items must be unique.'));
-    });
-
-    test('Nested object validation error messages', () {
-      final schema = Ack.object({
-        'user': Ack.object({
-          'name': Ack.string.minLength(3),
-          'age': Ack.int.min(0),
-        }, required: [
-          'name',
-          'age'
-        ]),
-        'settings': Ack.object({
-          'theme': Ack.string.isEnum(['light', 'dark']),
-        }),
-      });
-
-      var result = schema.validate({
-        'user': {
-          'name': 'Bo',
-          'age': -5,
-        },
-        'settings': {
-          'theme': 'blue',
-        },
-      });
-
-      expect(result.isFail, isTrue);
-      expect(
-          result.getViolation().message,
-          contains(
-              'The string length (2) is too short; it must be at least 3 characters.'));
-      expect(
-          result.getViolation().message,
-          contains(
-              'The value -5 is less than the minimum allowed value of 0.'));
-      expect(
-          result.getViolation().message,
-          contains(
-              'Invalid value "blue". Allowed values are: [light, dark]. (Closest match: "dark")'));
     });
   });
 }

@@ -175,8 +175,9 @@ final class NestedSchemaError extends SchemaError {
           schema: context.schema,
           value: context.value,
           message: '''
+{{name}}
 {{#each errors}}
-  {{name}}: {{message}}
+{{name}}: {{message}}
 {{/each}}
 ''',
           variables: {'errors': errors.map((e) => e.toMap()).toList()},

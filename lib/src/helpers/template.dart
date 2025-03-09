@@ -163,9 +163,7 @@ class Template {
       customRenderedData[entry.key] = customRendered;
     }
 
-    final rendered = _renderTemplate(_content, customRenderedData);
-
-    return rendered.trim();
+    return _renderTemplate(_content, customRenderedData);
   }
 }
 
