@@ -24,10 +24,10 @@ void main() {
       expect(result.isFail, isTrue);
 
       final schemaError = (result as Fail).error;
-      expect(schemaError, isA<NonNullableSchemaError>());
-      final constraintsError = schemaError as NonNullableSchemaError;
+      expect(schemaError, isA<SchemaConstraintError>());
+      final constraintsError = schemaError as SchemaConstraintError;
       expect(
-        constraintsError.key == 'non_nullable',
+        constraintsError.getConstraint('non_nullable') != null,
         isTrue,
       );
     });
@@ -48,10 +48,10 @@ void main() {
       expect(result.isFail, isTrue);
 
       final schemaError = (result as Fail).error;
-      expect(schemaError, isA<InvalidTypeSchemaError>());
-      final constraintsError = schemaError as InvalidTypeSchemaError;
+      expect(schemaError, isA<SchemaConstraintError>());
+      final constraintsError = schemaError as SchemaConstraintError;
       expect(
-        constraintsError.key == 'invalid_type',
+        constraintsError.getConstraint('invalid_type') != null,
         isTrue,
       );
     });
@@ -192,7 +192,7 @@ void main() {
       final objectError = (invalidResult as Fail).error as NestedSchemaError;
       expect(objectError.errors.any((e) => e.name == 'user'), isTrue);
 
-      final userError = objectError.errors[0] as SchemaValidationError;
+      final userError = objectError.errors[0] as SchemaConstraintError;
 
       expect(userError.getConstraint('required_properties'), isNotNull);
 

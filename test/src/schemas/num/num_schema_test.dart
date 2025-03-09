@@ -90,9 +90,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.validations.first.key == 'min_value',
           isTrue,
@@ -126,9 +126,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('max_value'),
           isNotNull,
@@ -166,9 +166,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('range'),
           isNotNull,
@@ -198,9 +198,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('multiple_of'),
           isNotNull,
@@ -297,9 +297,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('min_value'),
           isNotNull,
@@ -356,9 +356,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.validations.any((c) => c.key == 'range'),
           isTrue,
@@ -388,9 +388,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('multiple_of'),
           isNotNull,

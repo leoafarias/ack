@@ -43,7 +43,7 @@ extension StringSchemaValidatorExt on StringSchema {
 
   /// {@macro date_time_validator}
   StringSchema isDateTime() =>
-      withValidators([const DateTimeStringValidator()]);
+      withValidators([const StringDateTimeValidator()]);
 
   /// {@macro date_validator}
   StringSchema isDate() => withValidators([const DateStringValidator()]);
@@ -70,10 +70,10 @@ extension NumSchemaValidatorExt<T extends num> on NumSchema<T> {
 ///
 /// Equivalent of calling `DateTime.tryParse(value) != null`
 /// {@endtemplate}
-class DateTimeStringValidator extends ConstraintValidator<String>
+class StringDateTimeValidator extends ConstraintValidator<String>
     with OpenAPiSpecOutput<String> {
   /// {@macro date_time_validator}
-  const DateTimeStringValidator()
+  const StringDateTimeValidator()
       : super(
           name: 'date_time',
           description: 'Must be a valid date time string',
@@ -83,23 +83,16 @@ class DateTimeStringValidator extends ConstraintValidator<String>
   bool isValid(String value) => DateTime.tryParse(value) != null;
 
   @override
-  ValidatorError buildError(String value, {variables}) {
-    return super.buildError(
-      value,
-      variables: {
-        'expected_format': 'ISO 8601',
-        'value': value,
-        'example': '2023-01-01T00:00:00.000Z',
-      },
+  ConstraintError buildError(String value) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The value "$value" is not a valid date time. Expected format: ISO 8601 (e.g., {{ example }}).',
     );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'format': 'date-time'};
-
-  @override
-  String get errorMessage =>
-      'The value "{{ value }}" is not a valid ISO 8601 date-time (e.g., {{ example }}).';
 }
 
 /// {@template date_validator}
@@ -132,20 +125,16 @@ class DateStringValidator extends ConstraintValidator<String>
   }
 
   @override
-  ValidatorError buildError(String value, {variables}) {
-    return super.buildError(value, variables: {
-      'expected_format': 'YYYY-MM-DD',
-      'value': value,
-      'example': '2017-07-21',
-    });
+  ConstraintError buildError(String value) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The value "$value" is not a valid date. Expected format: YYYY-MM-DD (e.g., 2017-07-21).',
+    );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'format': 'date'};
-
-  @override
-  String get errorMessage =>
-      'The value "{{ value }}" is not a valid date. Expected format: YYYY-MM-DD (e.g., {{ example }}).';
 }
 
 /// {@template enum_validator}
@@ -166,26 +155,20 @@ class EnumStringValidator extends ConstraintValidator<String>
   bool isValid(String value) => enumValues.contains(value);
 
   @override
-  ValidatorError buildError(String value, {variables}) {
-    return super.buildError(
-      value,
-      variables: {
-        'closest_match': findClosestStringMatch(value, enumValues),
-        'enum_values': enumValues,
-        'value': value,
-      },
+  ConstraintError buildError(String value) {
+    final closestMatch = findClosestStringMatch(value, enumValues);
+    final closestMatchMessage =
+        closestMatch.isTruthy ? '(Closest match: "${closestMatch!}")' : '';
+
+    return ConstraintError(
+      key: name,
+      message:
+          'Invalid value "$value". Allowed values are: $enumValues. $closestMatchMessage',
     );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'enum': enumValues};
-
-  @override
-  String get errorMessage {
-    return '''
- Invalid value "{{ value }}". Allowed values are: {{ enum_values }}. (Closest match: "{{ closest_match }}")
-''';
-  }
 }
 
 /// {@template email_validator}
@@ -241,14 +224,11 @@ class NotOneOfStringValidator extends RegexPatternStringValidator {
   bool isValid(String value) => !disallowedValues.contains(value);
 
   @override
-  ValidatorError buildError(String value, {variables}) {
-    return super.buildError(
-      value,
-      variables: {
-        'disallowed_values': disallowedValues,
-        'total_disallowed_values': disallowedValues.length,
-        'value': value,
-      },
+  ConstraintError buildError(String value) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The value "$value" is not allowed. Disallowed values: $disallowedValues.',
     );
   }
 
@@ -271,12 +251,12 @@ class NotEmptyStringValidator extends ConstraintValidator<String> {
   bool isValid(String value) => value.isNotEmpty;
 
   @override
-  ValidatorError buildError(String value, {variables}) {
-    return super.buildError(value, variables: {'value_length': value.length});
+  ConstraintError buildError(String value) {
+    return ConstraintError(
+      key: name,
+      message: 'The string must not be empty.',
+    );
   }
-
-  @override
-  String get errorMessage => 'The string must not be empty.';
 }
 
 /// {@template is_json_validator}
@@ -305,12 +285,12 @@ class IsJsonStringValidator extends ConstraintValidator<String> {
   }
 
   @override
-  ValidatorError buildError(String value, {variables}) {
-    return super.buildError(value, variables: {'value': value});
+  ConstraintError buildError(String value) {
+    return ConstraintError(
+      key: name,
+      message: 'The value "$value" is not valid JSON.',
+    );
   }
-
-  @override
-  String get errorMessage => 'The value "{{ value }}" is not valid JSON.';
 }
 
 /// Base class for regex-based string validators
@@ -350,14 +330,12 @@ class RegexPatternStringValidator extends ConstraintValidator<String>
   }
 
   @override
-  ValidatorError buildError(String value, {variables}) {
-    return super.buildError(value, variables: {
-      'pattern_name': name,
-      'pattern': pattern,
-      'example': example,
-      'value': value,
-      ...?variables,
-    });
+  ConstraintError buildError(String value) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The value "$value" does not match the required pattern for $name. Expected format: "$example".',
+    );
   }
 
   @override
@@ -365,10 +343,6 @@ class RegexPatternStringValidator extends ConstraintValidator<String>
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'pattern': pattern, 'name': name};
-
-  @override
-  String get errorMessage =>
-      'The value "{{ value }}" does not match the required pattern for {{ pattern_name }}. Expected format: "{{ example }}".';
 }
 
 /// {@template is_empty_validator}
@@ -385,12 +359,12 @@ class IsEmptyStringValidator extends ConstraintValidator<String> {
   bool isValid(String value) => value.isEmpty;
 
   @override
-  ValidatorError buildError(String value, {variables}) {
-    return super.buildError(value, variables: {'value': value});
+  ConstraintError buildError(String value) {
+    return ConstraintError(
+      key: name,
+      message: 'The string must be empty. Got: "$value"',
+    );
   }
-
-  @override
-  String get errorMessage => 'Must be empty, got: {{ value.length }}';
 }
 
 /// {@template min_length_validator}
@@ -414,16 +388,16 @@ class MinLengthStringValidator extends ConstraintValidator<String>
   bool isValid(String value) => value.length >= min;
 
   @override
-  ValidatorError buildError(String value, {variables}) {
-    return super.buildError(value, variables: {'value': value, 'min': min});
+  ConstraintError buildError(String value) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The string length (${value.length}) is too short; it must be at least ($min) characters.',
+    );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'minLength': min};
-
-  @override
-  String get errorMessage =>
-      'The string length ({{ value.length }}) is too short; it must be at least {{ min }} characters.';
 }
 
 /// {@template max_length_validator}
@@ -448,16 +422,16 @@ class MaxLengthStringValidator extends ConstraintValidator<String>
 
   @override
   @visibleForTesting
-  ValidatorError buildError(String value, {variables}) {
-    return super.buildError(value, variables: {'value': value, 'max': max});
+  ConstraintError buildError(String value) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The string length (${value.length}) exceeds the maximum allowed of ($max) characters.',
+    );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'maxLength': max};
-
-  @override
-  String get errorMessage =>
-      'The string length ({{ value.length }}) exceeds the maximum allowed of {{ max }} characters.';
 }
 
 /// Provides validation methods for [ListSchema].
@@ -509,18 +483,18 @@ class UniqueItemsListValidator<T extends Object>
   bool isValid(List<T> value) => value.duplicates.isEmpty;
 
   @override
-  ValidatorError buildError(List<T> value, {variables}) {
+  ConstraintError buildError(List<T> value, {variables}) {
     final nonUniqueValues = value.duplicates;
 
-    return super.buildError(value, variables: {'duplicates': nonUniqueValues});
+    return ConstraintError(
+      key: name,
+      message:
+          'The list contains duplicate items: $nonUniqueValues. All items must be unique.',
+    );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'uniqueItems': true};
-
-  @override
-  String get errorMessage =>
-      'The list contains duplicate items: {{ duplicates }}. All items must be unique.';
 }
 
 /// {@template min_items_list_validator}
@@ -544,16 +518,16 @@ class MinItemsListValidator<T extends Object>
   bool isValid(List<T> value) => value.length >= min;
 
   @override
-  ValidatorError buildError(List<T> value, {variables}) {
-    return super.buildError(value, variables: {'value': value, 'min': min});
+  ConstraintError buildError(List<T> value, {variables}) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The list has only ${value.length} items; at least $min items are required.',
+    );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'minItems': min};
-
-  @override
-  String get errorMessage =>
-      'The list has only {{ value.length }} items; at least {{ min }} items are required.';
 }
 
 /// {@template max_items_list_validator}
@@ -577,19 +551,16 @@ class MaxItemsListValidator<T> extends ConstraintValidator<List<T>>
   bool isValid(List<T> value) => value.length <= max;
 
   @override
-  ValidatorError buildError(List<T> value, {variables}) {
-    return super.buildError(
-      value,
-      variables: {'value_length': value.length, 'max': max},
+  ConstraintError buildError(List<T> value, {variables}) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The list contains ${value.length} items, which exceeds the allowed maximum of $max.',
     );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'maxItems': max};
-
-  @override
-  String get errorMessage =>
-      'The list contains {{ value_length }} items, which exceeds the allowed maximum of {{ max }}.';
 }
 
 /// {@template min_num_validator}
@@ -619,10 +590,12 @@ class MinNumValidator<T extends num> extends ConstraintValidator<T>
   bool isValid(num value) => exclusive ? value > min : value >= min;
 
   @override
-  ValidatorError buildError(T value, {variables}) {
-    return super.buildError(
-      value,
-      variables: {'min': min, 'exclusive': exclusive, 'value': value},
+  ConstraintError buildError(T value, {variables}) {
+    return ConstraintError(
+      key: name,
+      message: exclusive
+          ? 'The number ($value) is too low; it must be greater than ($min).'
+          : 'The number ($value) is too low; it must be at least ($min).',
     );
   }
 
@@ -631,11 +604,6 @@ class MinNumValidator<T extends num> extends ConstraintValidator<T>
         'minimum': min,
         if (exclusive) 'exclusiveMinimum': exclusive,
       };
-
-  @override
-  String get errorMessage => exclusive
-      ? 'The number {{ value }} is too low; it must be greater than {{ min }}.'
-      : 'The number {{ value }} is too low; it must be at least {{ min }}.';
 }
 
 /// {@template multiple_of_num_validator}
@@ -657,21 +625,16 @@ class MultipleOfNumValidator<T extends num> extends ConstraintValidator<T>
   bool isValid(num value) => value % multiple == 0;
 
   @override
-  ValidatorError buildError(T value, {variables}) {
-    return super.buildError(value, variables: {
-      'multiple': multiple,
-      'quotient': value / multiple,
-      'value': value,
-      'remainder': value % multiple,
-    });
+  ConstraintError buildError(T value, {variables}) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The number ($value) is not a multiple of ($multiple). The quotient is (${value / multiple}), the remainder is (${value % multiple}).',
+    );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'multipleOf': multiple};
-
-  @override
-  String get errorMessage =>
-      'The number {{ value }} is not a multiple of {{ multiple }}.';
 }
 
 /// {@template max_num_validator}
@@ -702,10 +665,12 @@ class MaxNumValidator<T extends num> extends ConstraintValidator<T>
   bool isValid(num value) => exclusive ? value < max : value <= max;
 
   @override
-  ValidatorError buildError(T value, {variables}) {
-    return super.buildError(
-      value,
-      variables: {'max': max, 'exclusive': exclusive, 'value': value},
+  ConstraintError buildError(T value, {variables}) {
+    return ConstraintError(
+      key: name,
+      message: exclusive
+          ? 'The number ($value) exceeds the limit; it must be less than ($max).'
+          : 'The number ($value) exceeds the maximum allowed of ($max).',
     );
   }
 
@@ -714,11 +679,6 @@ class MaxNumValidator<T extends num> extends ConstraintValidator<T>
         'maximum': max,
         if (exclusive) 'exclusiveMaximum': exclusive,
       };
-
-  @override
-  String get errorMessage => exclusive
-      ? 'The number {{ value }} exceeds the limit; it must be less than {{ max }}.'
-      : 'The number {{ value }} exceeds the maximum allowed of {{ max }}.';
 }
 
 /// {@template range_num_validator}
@@ -754,13 +714,12 @@ class RangeNumValidator<T extends num> extends ConstraintValidator<T>
       exclusive ? value > min && value < max : value >= min && value <= max;
 
   @override
-  ValidatorError buildError(T value, {variables}) {
-    return super.buildError(value, variables: {
-      'min': min,
-      'max': max,
-      'exclusive': exclusive,
-      'value': value,
-    });
+  ConstraintError buildError(T value, {variables}) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The number ($value) is outside the allowed range ($min to $max).',
+    );
   }
 
   @override
@@ -770,10 +729,6 @@ class RangeNumValidator<T extends num> extends ConstraintValidator<T>
         if (exclusive) 'exclusiveMinimum': exclusive,
         if (exclusive) 'exclusiveMaximum': exclusive,
       };
-
-  @override
-  String get errorMessage =>
-      'The number {{ value }} is outside the allowed range ({{ min }} to {{ max }}).';
 }
 
 /// Provides validation methods for [ObjectSchema].
@@ -824,16 +779,16 @@ class MinPropertiesObjectValidator extends ConstraintValidator<MapValue>
   bool isValid(MapValue value) => value.length >= min;
 
   @override
-  ValidatorError buildError(MapValue value, {variables}) {
-    return super.buildError(value, variables: {'min': min});
+  ConstraintError buildError(MapValue value, {variables}) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The object has ${value.length} properties, which is less than the required minimum of $min.',
+    );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'minProperties': min};
-
-  @override
-  String get errorMessage =>
-      'The object has {{ value_length }} properties; at least {{ min }} are required.';
 }
 
 /// {@template object_max_properties_validator}
@@ -857,19 +812,16 @@ class MaxPropertiesObjectValidator extends ConstraintValidator<MapValue>
   bool isValid(MapValue value) => value.length <= max;
 
   @override
-  ValidatorError buildError(MapValue value, {variables}) {
-    return super.buildError(
-      value,
-      variables: {'max': max, 'value_length': value.length},
+  ConstraintError buildError(MapValue value, {variables}) {
+    return ConstraintError(
+      key: name,
+      message:
+          'The object has ${value.length} properties, exceeding the allowed maximum of $max.',
     );
   }
 
   @override
   Map<String, Object?> topOpenApiSchema() => {'maxProperties': max};
-
-  @override
-  String get errorMessage =>
-      'The object has {{ value_length }} properties, exceeding the allowed maximum of {{ max }}.';
 }
 
 /// {@template unallowed_property_constraint_error}
@@ -896,17 +848,14 @@ class UnallowedPropertiesConstraintViolation
       : _getUnallowedProperties(value).isEmpty;
 
   @override
-  ValidatorError buildError(MapValue value, {variables}) {
+  ConstraintError buildError(MapValue value, {variables}) {
     final unallowedKeys = _getUnallowedProperties(value);
 
-    return super.buildError(value, variables: {
-      'unallowed_properties': unallowedKeys,
-    });
+    return ConstraintError(
+      key: name,
+      message: 'Unallowed properties: $unallowedKeys.',
+    );
   }
-
-  @override
-  String get errorMessage =>
-      'The object contains unallowed properties: {{ unallowed_properties }}.';
 }
 
 /// {@template property_required_constraint_error}
@@ -930,19 +879,15 @@ class PropertyRequiredConstraintViolation
   }
 
   @override
-  ValidatorError buildError(MapValue value, {variables}) {
+  ConstraintError buildError(MapValue value, {variables}) {
     final missingKeys =
         schema.getRequiredProperties().toSet().difference(value.keys.toSet());
 
-    return super.buildError(value, variables: {
-      'missing_properties': missingKeys.toList(),
-      'required_properties': schema.getRequiredProperties(),
-    });
+    return ConstraintError(
+      key: name,
+      message: 'Missing required properties: $missingKeys.',
+    );
   }
-
-  @override
-  String get errorMessage =>
-      'The object is missing required properties: {{ missing_properties }}.';
 }
 
 /// Validates that schemas in a discriminated object are properly structured.
@@ -988,28 +933,19 @@ class DiscriminatorSchemaStructureViolation
   }
 
   @override
-  ValidatorError buildError(Map<String, ObjectSchema> value, {variables}) {
-    final missingDiscriminator = _getSchemasWithMissingDiscriminator(value);
-    final notRequiredDiscriminator =
-        _getSchemasWithNotRequiredDiscriminator(value);
+  ConstraintError buildError(Map<String, ObjectSchema> value, {variables}) {
+    final missing = _getSchemasWithMissingDiscriminator(value);
+    final notRequired = _getSchemasWithNotRequiredDiscriminator(value);
 
-    return super.buildError(value, variables: {
-      'discriminator_key': discriminatorKey,
-      'missing_discriminator': missingDiscriminator,
-      'discriminator_not_required': notRequiredDiscriminator,
-    });
+    return ConstraintError(
+      key: name,
+      message: '''
+The discriminator key "$discriminatorKey" must be present and required in all schemas.
+${missing.isNotEmpty ? '- Missing in: $missing\n' : ''}
+${notRequired.isNotEmpty ? '- Not marked as required in: $notRequired' : ''}
+''',
+    );
   }
-
-  @override
-  String get errorMessage => '''
-The discriminator key "{{{discriminator_key}}}" must be present and required in all schemas.
-{{#missing_discriminator}}
-- Missing in: {{{missing_discriminator}}}
-{{/missing_discriminator}}
-{{#discriminator_not_required}}
-- Not marked as required in: {{{discriminator_not_required}}}
-{{/discriminator_not_required}}
-''';
 }
 
 /// Validates that a value has a valid discriminator that matches a known schema.
@@ -1039,21 +975,14 @@ class DiscriminatorValueViolation extends ConstraintValidator<MapValue> {
   }
 
   @override
-  ValidatorError buildError(MapValue value, {variables}) {
-    final hasDiscriminator = value.containsKey(discriminatorKey);
-    final discriminatorValue =
-        hasDiscriminator ? value[discriminatorKey] : null;
+  ConstraintError buildError(MapValue value, {variables}) {
+    final discriminatorValue = value[discriminatorKey];
     final validSchemaKeys = schemas.keys.toList();
 
-    return super.buildError(value, variables: {
-      'discriminator_key': discriminatorKey,
-      'missing_key': !hasDiscriminator,
-      'discriminator_value': discriminatorValue,
-      'valid_values': validSchemaKeys,
-    });
-  }
+    final message = discriminatorValue != null
+        ? 'The discriminator value "$discriminatorValue" is invalid. Allowed values: $validSchemaKeys.'
+        : 'The discriminator field "$discriminatorKey" is missing.';
 
-  @override
-  String get errorMessage =>
-      '{{#missing_key}}The discriminator field "{{{discriminator_key}}}" is missing.{{/missing_key}}{{^missing_key}}The discriminator value "{{{discriminator_value}}}" is invalid. Allowed values: {{{valid_values}}}.{{/missing_key}}';
+    return ConstraintError(key: name, message: message);
+  }
 }

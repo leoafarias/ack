@@ -133,8 +133,8 @@ void main() {
         result.isFail,
         isTrue,
       );
-      expect((result as Fail).error, isA<SchemaValidationError>());
-      final error = (result as Fail).error as SchemaValidationError;
+      expect((result as Fail).error, isA<SchemaConstraintError>());
+      final error = (result as Fail).error as SchemaConstraintError;
       expect(error.getConstraint('discriminator_value'), isNotNull);
     });
 
@@ -156,8 +156,8 @@ void main() {
         result.isFail,
         isTrue,
       );
-      expect((result as Fail).error, isA<SchemaValidationError>());
-      final error = (result as Fail).error as SchemaValidationError;
+      expect((result as Fail).error, isA<SchemaConstraintError>());
+      final error = (result as Fail).error as SchemaConstraintError;
       expect(error.getConstraint('discriminator_value'), isNotNull);
     });
 
@@ -181,8 +181,8 @@ void main() {
         result.isFail,
         isTrue,
       );
-      expect((result as Fail).error, isA<SchemaValidationError>());
-      final error = (result as Fail).error as SchemaValidationError;
+      expect((result as Fail).error, isA<SchemaConstraintError>());
+      final error = (result as Fail).error as SchemaConstraintError;
       expect(error.getConstraint('discriminator_schema_structure'), isNotNull);
     });
 

@@ -81,11 +81,11 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
-          constraintsError.getConstraint('email'),
+          constraintsError.getConstraint<EmailStringValidator>(),
           isNotNull,
         );
       });
@@ -116,9 +116,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('hex_color'),
           isNotNull,
@@ -145,9 +145,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('is_empty'),
           isNotNull,
@@ -178,9 +178,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('min_length'),
           isNotNull,
@@ -211,9 +211,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('max_length'),
           isNotNull,
@@ -242,9 +242,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('not_one_of'),
           isNotNull,
@@ -271,9 +271,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('not_empty'),
           isNotNull,
@@ -282,7 +282,7 @@ void main() {
     });
 
     group('DateTimeValidator', () {
-      final validator = DateTimeStringValidator();
+      final validator = StringDateTimeValidator();
 
       test('Valid ISO 8601 datetime passes validation', () {
         expect(validator.isValid('2023-01-01T00:00:00.000Z'), isTrue);
@@ -302,9 +302,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.getConstraint('date_time'),
           isNotNull,
@@ -334,9 +334,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.validations.any((c) => c.key == 'date'),
           isTrue,
@@ -367,9 +367,9 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaValidationError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as SchemaValidationError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
           constraintsError.validations.any((c) => c.key == 'enum'),
           isTrue,

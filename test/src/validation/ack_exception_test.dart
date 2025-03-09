@@ -10,17 +10,17 @@ class _MockSchemaContext extends SchemaContext {
 void main() {
   group('AckException', () {
     test('toMap() returns error map', () {
-      final constraint1Violation = ValidatorError(
+      final constraint1Violation = ConstraintError(
         key: 'custom_constraint1',
         message: 'Custom constraint',
         variables: {'key1': 'value1'},
       );
-      final constraint2Violation = ValidatorError(
+      final constraint2Violation = ConstraintError(
         key: 'custom_constraint2',
         message: 'Custom constraint 2',
         variables: {'key2': 'value2'},
       );
-      final constraint3Violation = ValidatorError(
+      final constraint3Violation = ConstraintError(
         key: 'custom_constraint3',
         message: 'Custom constraint 3',
         variables: {'key3': 'value3'},
@@ -31,7 +31,7 @@ void main() {
         constraint3Violation,
       ];
 
-      final schemaError = SchemaValidationError(
+      final schemaError = SchemaConstraintError(
         validations: constraintErrors,
         context: _MockSchemaContext(),
       );
@@ -39,10 +39,10 @@ void main() {
       final map = exception.toMap();
 
       // Now checks a single 'error' field instead of 'errors' list
-      expect(map.containsKey('violation'), isTrue);
+      expect(map.containsKey('constraints'), isTrue);
 
       // Check the structure of the error
-      final errorMap = map['violation'] as Map<String, dynamic>;
+      final errorMap = map['constraints'] as Map<String, dynamic>;
       expect(errorMap['key'], 'validation');
 
       // Verify the constraints are included
@@ -54,12 +54,12 @@ void main() {
     });
 
     test('toString() includes error details', () {
-      final constraintError = ValidatorError(
+      final constraintError = ConstraintError(
         key: 'custom_constraint',
         message: 'Custom constraint',
         variables: {'key': 'value'},
       );
-      final schemaError = SchemaValidationError(
+      final schemaError = SchemaConstraintError(
         validations: [constraintError],
         context: _MockSchemaContext(),
       );

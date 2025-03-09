@@ -87,7 +87,7 @@ final class ObjectSchema extends Schema<MapValue>
   bool getAllowsAdditionalProperties() => _additionalProperties;
 
   @override
-  List<ValidatorError> checkValidators(MapValue value) {
+  List<ConstraintError> checkValidators(MapValue value) {
     final extraValidation = [
       UnallowedPropertiesConstraintViolation(this),
       PropertyRequiredConstraintViolation(this),
@@ -97,7 +97,7 @@ final class ObjectSchema extends Schema<MapValue>
       ...super.checkValidators(value),
       ...extraValidation
           .map((v) => v.validate(value))
-          .whereType<ValidatorError>(),
+          .whereType<ConstraintError>(),
     ];
   }
 

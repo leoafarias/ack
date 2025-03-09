@@ -44,11 +44,11 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
           .validate(_schemas),
       DiscriminatorValueViolation(_discriminatorKey, _schemas)
           .validate(mapValue!),
-    ].whereType<ValidatorError>();
+    ].whereType<ConstraintError>();
 
     if (violations.isNotEmpty) {
       return SchemaResult.fail(
-        SchemaValidationError(
+        SchemaConstraintError(
           validations: violations.toList(),
           context: context,
         ),

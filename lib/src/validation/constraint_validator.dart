@@ -10,21 +10,13 @@ abstract class ConstraintValidator<T extends Object> {
 
   const ConstraintValidator({required this.name, required this.description});
 
-  String get errorMessage;
-
   @protected
-  ValidatorError buildError(T value, {Map<String, Object?>? variables}) {
-    return ValidatorError(
-      key: name,
-      message: errorMessage,
-      variables: variables,
-    );
-  }
+  ConstraintError buildError(T value);
 
   @protected
   bool isValid(T value);
 
-  ValidatorError? validate(T value) =>
+  ConstraintError? validate(T value) =>
       isValid(value) ? null : buildError(value);
 
   Map<String, Object?> toMap() {

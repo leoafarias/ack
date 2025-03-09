@@ -196,7 +196,7 @@ void main() {
     });
 
     group('DateTimeValidator', () {
-      final validator = DateTimeStringValidator();
+      final validator = StringDateTimeValidator();
 
       test('Valid datetime strings pass validation', () {
         expect(validator.isValid('2023-01-01T00:00:00.000Z'), isTrue);

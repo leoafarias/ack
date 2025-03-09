@@ -42,7 +42,7 @@ class IsConstraintViolation extends Matcher {
 
   @override
   bool matches(item, Map matchState) {
-    return item is ValidatorError && item.key == key;
+    return item is ConstraintError && item.key == key;
   }
 
   @override
@@ -59,7 +59,7 @@ class IsConstraintViolation extends Matcher {
     Map matchState,
     bool verbose,
   ) {
-    if (item is! ValidatorError) {
+    if (item is! ConstraintError) {
       return mismatchDescription.add('was not a ConstraintError');
     }
     return mismatchDescription.add(
@@ -132,7 +132,7 @@ class HasSchemaErrors extends Matcher {
 List<SchemaError> getErrors(
     SchemaError error, List<SchemaError> aggregatedErrors) {
   final extractedErrors = switch (error) {
-    SchemaValidationError constraintsError => [constraintsError],
+    SchemaConstraintError constraintsError => [constraintsError],
     NestedSchemaError propertiesError => propertiesError.errors,
     InvalidTypeSchemaError() => [error],
     NonNullableSchemaError() => [error],
@@ -158,7 +158,7 @@ class HasConstraintErrors extends Matcher {
 
     final error = item.error;
 
-    if (error is! SchemaValidationError) {
+    if (error is! SchemaConstraintError) {
       matchState['reason'] = 'was not a SchemaConstraintsError';
       return false;
     }

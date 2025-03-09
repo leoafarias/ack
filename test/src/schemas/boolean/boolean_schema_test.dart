@@ -25,11 +25,11 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<NonNullableSchemaError>());
+        expect(error, isA<SchemaConstraintError>());
 
-        final constraintsError = error as NonNullableSchemaError;
+        final constraintsError = error as SchemaConstraintError;
         expect(
-          constraintsError.key == 'non_nullable',
+          constraintsError.isNonNullable,
           isTrue,
         );
       });
@@ -47,7 +47,13 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeSchemaError>());
+        expect(error, isA<SchemaConstraintError>());
+
+        final constraintsError = error as SchemaConstraintError;
+        expect(
+          constraintsError.isInvalidType,
+          isTrue,
+        );
       });
 
       test('Valid boolean passes with no constraints', () {
@@ -79,7 +85,13 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeSchemaError>());
+        expect(error, isA<SchemaConstraintError>());
+
+        final constraintsError = error as SchemaConstraintError;
+        expect(
+          constraintsError.isInvalidType,
+          isTrue,
+        );
       });
     });
   });

@@ -2,9 +2,9 @@ import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('$ValidatorError', () {
+  group('$ConstraintError', () {
     test('toMap() returns correct structure', () {
-      final error = ValidatorError(
+      final error = ConstraintError(
         key: 'test_constraint',
         message: 'Test constraint failed',
         variables: {'key': 'value'},
@@ -22,7 +22,7 @@ void main() {
     });
 
     test('toString() returns formatted string', () {
-      final error = ValidatorError(
+      final error = ConstraintError(
         key: 'test_constraint',
         message: 'Test constraint failed',
         variables: {'key': 'value'},
@@ -32,7 +32,7 @@ void main() {
 
       expect(
         errorString,
-        contains('$ValidatorError'),
+        contains('$ConstraintError'),
       );
       expect(
         errorString,

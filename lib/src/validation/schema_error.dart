@@ -1,5 +1,4 @@
 import 'package:ack/src/helpers.dart';
-import 'package:ack/src/helpers/template.dart';
 import 'package:meta/meta.dart';
 
 import '../context.dart';
@@ -10,38 +9,7 @@ mixin ErrorBase {
   /// The unique identifier for this error type.
   String get key;
 
-  /// Variables used to render the message template.
-  Map<String, Object?>? get variables;
-
-  /// The message template.
-  String get template;
-
-  /// Renders the message with all variables.
-  String get message => render();
-
-  late final render = Template(template, data: variables).render;
-
-  /// Converts the error to a map representation.
-  Map<String, Object?> toMap() {
-    final map = <String, Object?>{'key': key, 'message': message};
-
-    final vars = variables;
-    if (vars != null && vars.isNotEmpty) {
-      map['variables'] = vars;
-    }
-
-    return map;
-  }
-
-  /// Retrieves a variable by key with type checking.
-  T getVariable<T>(String key) {
-    final value = variables?[key];
-    if (value == null) {
-      throw ArgumentError('Variable $key not found');
-    }
-
-    return value as T;
-  }
+  String get message;
 
   @override
   String toString() => '$runtimeType: $key: $message';
@@ -52,33 +20,23 @@ sealed class SchemaError extends SchemaContext with ErrorBase {
   final String key;
 
   @override
-  final Map<String, Object?> variables;
-
-  @override
-  late final String template;
+  final String message;
 
   SchemaError({
     required super.name,
     required super.schema,
     required super.value,
-    required String message,
+    required this.message,
     required this.key,
-    this.variables = const {},
-  }) : template = message;
+  });
 
-  @override
   Map<String, Object?> toMap() {
-    return {
-      ...super.toMap(),
-      'schema': schema.toMap(),
-      'value': value,
-      'name': name,
-    };
+    return {'schema': schema.toMap(), 'value': value, 'name': name};
   }
 
   @override
   String toString() =>
-      '$runtimeType: name: $key, alias: $name, schema: ${schema.runtimeType}, value: ${value ?? 'N/A'}, message: $message, variables: $variables';
+      '$runtimeType: name: $key, alias: $name, schema: ${schema.runtimeType}, value: ${value ?? 'N/A'}, message: $message';
 }
 
 final class UnknownSchemaError extends SchemaError {
@@ -93,45 +51,20 @@ final class UnknownSchemaError extends SchemaError {
           name: context.name,
           schema: context.schema,
           value: context.value,
-          message: 'Unknown schema error: {{error}} \n{{stackTrace}}',
-          variables: {
-            'error': error.toString(),
-            'stackTrace': stackTrace.toString(),
-          },
+          message: 'Unknown schema error: $error \n$stackTrace',
         );
 
   @override
   String toString() => '$error \n$stackTrace';
 }
 
-final class InvalidTypeSchemaError extends SchemaError {
-  final Type valueType;
-  final Type expectedType;
-  InvalidTypeSchemaError({
-    required this.valueType,
-    required this.expectedType,
-    required SchemaContext context,
-  }) : super(
-          key: 'invalid_type',
-          name: context.name,
-          schema: context.schema,
-          value: context.value,
-          message:
-              'Invalid type of {{ valueType }}, expected {{ expectedType }}',
-          variables: {
-            'valueType': valueType.toString(),
-            'expectedType': expectedType.toString(),
-          },
-        );
-}
-
-final class SchemaValidationError extends SchemaError {
-  final List<ValidatorError> validations;
-  SchemaValidationError({
+final class SchemaConstraintError extends SchemaError {
+  final List<ConstraintError> validations;
+  SchemaConstraintError({
     required this.validations,
     required SchemaContext context,
   }) : super(
-          key: 'validation',
+          key: 'constraints',
           name: context.name,
           schema: context.schema,
           value: context.value,
@@ -140,29 +73,15 @@ final class SchemaValidationError extends SchemaError {
 {{message}}
 {{/each}}
 ''',
-          variables: {
-            'validations': validations.map((e) => e.toMap()).toList(),
-          },
         );
 
-  ValidatorError? getConstraint(String key) {
-    return validations.firstWhereOrNull((e) => e.key == key);
+  bool get isInvalidType => validations.any((e) => e is InvalidTypeSchemaError);
+
+  bool get isNonNullable => validations.any((e) => e is NonNullableSchemaError);
+
+  ConstraintError? getConstraint<T extends ConstraintError>() {
+    return validations.firstWhereOrNull((e) => e is T);
   }
-}
-
-final class NonNullableSchemaError extends SchemaError {
-  NonNullableSchemaError({required SchemaContext context})
-      : super(
-          key: 'non_nullable',
-          name: context.name,
-          schema: context.schema,
-          value: context.value,
-          message: 'Non nullable value is null on {{schemaName}}',
-          variables: {
-            'schemaName': context.name,
-            'value': context.value?.toString() ?? 'N/A',
-          },
-        );
 }
 
 final class NestedSchemaError extends SchemaError {
@@ -174,32 +93,38 @@ final class NestedSchemaError extends SchemaError {
           name: context.name,
           schema: context.schema,
           value: context.value,
-          message: '''
-{{name}}
-{{#each errors}}
-{{name}}: {{message}}
-{{/each}}
-''',
-          variables: {'errors': errors.map((e) => e.toMap()).toList()},
+          message: errors.map((e) => '${e.name}: ${e.message}').join('\n'),
         ) {
     assert(schema is ObjectSchema || schema is ListSchema,
         'NestedSchemaError must be used with ObjectSchema or ListSchema');
   }
 }
 
-final class ValidatorError with ErrorBase {
-  @override
-  final Map<String, Object?>? variables;
-  @override
-  late final String template;
+final class InvalidTypeSchemaError extends ConstraintError {
+  final Type valueType;
+  final Type expectedType;
+  InvalidTypeSchemaError({
+    required this.valueType,
+    required this.expectedType,
+  }) : super(
+          key: 'invalid_type',
+          message: 'Invalid type of $valueType, expected $expectedType',
+        );
+}
+
+final class NonNullableSchemaError extends ConstraintError {
+  NonNullableSchemaError()
+      : super(key: 'non_nullable', message: 'Value cannot be null');
+}
+
+final class ConstraintError with ErrorBase {
   @override
   final String key;
 
-  ValidatorError({
-    required this.key,
-    required String message,
-    this.variables,
-  }) : template = message;
+  @override
+  final String message;
+
+  ConstraintError({required this.key, required this.message});
 }
 
 @visibleForTesting
@@ -207,7 +132,6 @@ class MockSchemaError extends SchemaError {
   MockSchemaError({
     SchemaContext context = const MockContext(),
     super.message = 'mock_message',
-    super.variables,
   }) : super(
           key: 'mock_error',
           name: context.name,

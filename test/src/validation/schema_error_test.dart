@@ -14,7 +14,6 @@ void main() {
         final error = InvalidTypeSchemaError(
           valueType: String,
           expectedType: int,
-          context: _MockSchemaContext(),
         );
 
         final message = error.render(
@@ -27,20 +26,20 @@ void main() {
     });
 
     group('SchemaConstraintsError', () {
-      final constraintError1 = ValidatorError(
+      final constraintError1 = ConstraintError(
         key: 'custom_constraint',
         message: 'Custom constraint',
         variables: {},
       );
 
-      final constraintError2 = ValidatorError(
+      final constraintError2 = ConstraintError(
         key: 'custom_constraint2',
         message: 'Custom constraint 2',
         variables: {},
       );
 
       test('single constraint error', () {
-        final error = SchemaValidationError(
+        final error = SchemaConstraintError(
           validations: [constraintError1],
           context: _MockSchemaContext(),
         );
@@ -50,7 +49,7 @@ void main() {
       });
 
       test('multiple constraint errors', () {
-        final error = SchemaValidationError(
+        final error = SchemaConstraintError(
           validations: [constraintError1, constraintError2],
           context: _MockSchemaContext(),
         );
@@ -61,9 +60,7 @@ void main() {
     });
 
     test('toString() returns formatted string', () {
-      final error = NonNullableSchemaError(
-        context: _MockSchemaContext(),
-      );
+      final error = NonNullableSchemaError();
       expect(
         error.toString(),
         contains('$NonNullableSchemaError'),

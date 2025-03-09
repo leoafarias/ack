@@ -89,14 +89,14 @@ sealed class Schema<T extends Object> {
   /// This method is primarily for internal use and testing, after the value has
   /// already been successfully parsed or is known to be of the correct type [T].
   ///
-  /// Returns a list of [ValidatorError] objects if any constraints are violated,
+  /// Returns a list of [ConstraintError] objects if any constraints are violated,
   /// otherwise returns an empty list.
   @protected
   @mustCallSuper
-  List<ValidatorError> checkValidators(T value) {
+  List<ConstraintError> checkValidators(T value) {
     return [..._validators]
         .map((e) => e.validate(value))
-        .whereType<ValidatorError>()
+        .whereType<ConstraintError>()
         .toList();
   }
 
@@ -160,15 +160,22 @@ sealed class Schema<T extends Object> {
       if (value == null) {
         return _nullable
             ? SchemaResult.unit()
-            : SchemaResult.fail(NonNullableSchemaError(context: context));
+            : SchemaResult.fail(SchemaConstraintError(
+                validations: [NonNullableSchemaError()],
+                context: context,
+              ));
       }
 
       final typedValue = tryParse(value);
       if (typedValue == null) {
         return SchemaResult.fail(
-          InvalidTypeSchemaError(
-            valueType: value.runtimeType,
-            expectedType: T,
+          SchemaConstraintError(
+            validations: [
+              InvalidTypeSchemaError(
+                valueType: value.runtimeType,
+                expectedType: T,
+              ),
+            ],
             context: context,
           ),
         );
@@ -178,7 +185,7 @@ sealed class Schema<T extends Object> {
 
       if (constraintViolations.isNotEmpty) {
         return SchemaResult.fail(
-          SchemaValidationError(
+          SchemaConstraintError(
             validations: constraintViolations,
             context: context,
           ),
