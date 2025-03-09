@@ -110,8 +110,8 @@ void main() {
       expect(resultError.errors.any((e) => e.name == 'value'), isTrue);
 
       // Check that it's an invalid type error
-      final valueError = resultError.errors[0] as InvalidTypeSchemaError;
-      expect(valueError, isA<InvalidTypeSchemaError>());
+      final valueError = resultError.errors[0] as InvalidTypeConstraint;
+      expect(valueError, isA<InvalidTypeConstraint>());
     });
   });
 }

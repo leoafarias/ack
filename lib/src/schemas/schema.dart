@@ -161,7 +161,7 @@ sealed class Schema<T extends Object> {
         return _nullable
             ? SchemaResult.unit()
             : SchemaResult.fail(SchemaConstraintsError(
-                constraints: [NonNullableSchemaError()],
+                constraints: [NonNullableConstraint()],
                 context: context,
               ));
       }
@@ -171,7 +171,7 @@ sealed class Schema<T extends Object> {
         return SchemaResult.fail(
           SchemaConstraintsError(
             constraints: [
-              InvalidTypeSchemaError(
+              InvalidTypeConstraint(
                 valueType: value.runtimeType,
                 expectedType: T,
               ),

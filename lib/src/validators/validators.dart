@@ -6,18 +6,21 @@ import 'package:meta/meta.dart';
 
 import '../schemas/schema.dart';
 
-final class InvalidTypeConstraint extends Constraint<Object> {
+final class InvalidTypeSchemaError extends ConstraintError {
   final Type valueType;
   final Type expectedType;
-  InvalidTypeConstraint({
+  InvalidTypeSchemaError({
     required this.valueType,
     required this.expectedType,
-  }) : super(key: 'invalid_type', description: 'Type should be $expectedType');
+  }) : super(
+          key: 'invalid_type',
+          message: 'Invalid type of $valueType, expected $expectedType',
+        );
 }
 
-final class NonNullableConstraint extends Constraint<Object> {
-  NonNullableConstraint()
-      : super(key: 'non_nullable', description: 'Value cannot be null');
+final class NonNullableSchemaError extends ConstraintError {
+  NonNullableSchemaError()
+      : super(key: 'non_nullable', message: 'Value cannot be null');
 }
 
 /// {@template date_time_validator}
@@ -25,10 +28,10 @@ final class NonNullableConstraint extends Constraint<Object> {
 ///
 /// Equivalent of calling `DateTime.tryParse(value) != null`
 /// {@endtemplate}
-class StringDateTimeConstraint extends Constraint<String>
-    with Validator<String>, OpenApiSpec<String> {
+class StringDateTimeValidator extends Constraint<String>
+    with OpenApiSpec<String> {
   /// {@macro date_time_validator}
-  const StringDateTimeConstraint()
+  const StringDateTimeValidator()
       : super(
           key: 'string_date_time',
           description: 'Must be a valid date time string',
@@ -43,7 +46,6 @@ class StringDateTimeConstraint extends Constraint<String>
       key: key,
       message:
           'The value "$value" is not a valid date time. Expected format: ISO 8601 (e.g., {{ example }}).',
-      constraint: this,
     );
   }
 
@@ -56,10 +58,9 @@ class StringDateTimeConstraint extends Constraint<String>
 ///
 /// For example: `2017-07-21`
 /// {@endtemplate}
-class StringDateConstraint extends Constraint<String>
-    with Validator<String>, OpenApiSpec<String> {
+class StringDateValidator extends Constraint<String> with OpenApiSpec<String> {
   /// {@macro date_validator}
-  const StringDateConstraint()
+  const StringDateValidator()
       : super(
           key: 'string_date',
           description: 'Must be a valid date string in YYYY-MM-DD format',
@@ -88,7 +89,6 @@ class StringDateConstraint extends Constraint<String>
       key: key,
       message:
           'The value "$value" is not a valid date. Expected format: YYYY-MM-DD (e.g., 2017-07-21).',
-      constraint: this,
     );
   }
 
@@ -101,13 +101,12 @@ class StringDateConstraint extends Constraint<String>
 ///
 /// Equivalent of calling `enumValues.contains(value)`
 /// {@endtemplate}
-class StringEnumConstraint extends Constraint<String>
-    with Validator<String>, OpenApiSpec<String> {
+class StringEnumValidator extends Constraint<String> with OpenApiSpec<String> {
   /// The allowed enum values
   final List<String> enumValues;
 
   /// {@macro enum_validator}
-  const StringEnumConstraint(this.enumValues)
+  const StringEnumValidator(this.enumValues)
       : super(key: 'string_enum', description: 'Must be one of: $enumValues}');
 
   @override
@@ -123,7 +122,6 @@ class StringEnumConstraint extends Constraint<String>
       key: key,
       message:
           'Invalid value "$value". Allowed values are: $enumValues. $closestMatchMessage',
-      constraint: this,
     );
   }
 
@@ -136,11 +134,11 @@ class StringEnumConstraint extends Constraint<String>
 ///
 /// Uses regex pattern: `^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`
 /// {@endtemplate}
-class StringEmailConstraint extends StringRegexConstraint {
+class StringEmailValidator extends StringRegexValidator {
   /// {@macro email_validator}
-  StringEmailConstraint()
+  StringEmailValidator()
       : super(
-          key: 'string_email',
+          name: 'string_email',
           pattern: r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$',
           example: 'example@domain.com',
         );
@@ -151,11 +149,11 @@ class StringEmailConstraint extends StringRegexConstraint {
 ///
 /// Uses regex pattern: `^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$`
 /// {@endtemplate}
-class StringHexColorValidator extends StringRegexConstraint {
+class StringHexColorValidator extends StringRegexValidator {
   /// {@macro hex_color_validator}
   StringHexColorValidator()
       : super(
-          key: 'string_hex_color',
+          name: 'string_hex_color',
           example: '#f0f0f0',
           pattern: r'^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$',
         );
@@ -167,14 +165,14 @@ class StringHexColorValidator extends StringRegexConstraint {
 /// Uses a regex pattern to match the exact string against the disallowed values
 /// Example: For values ['a', 'b', 'c'], pattern will be '^(?!a|b|c).*$'
 /// {@endtemplate}
-class StringNotOneOfValidator extends StringRegexConstraint {
+class StringNotOneOfValidator extends StringRegexValidator {
   /// The disallowed values
   final List<String> disallowedValues;
 
   /// {@macro not_one_of_validator}
   StringNotOneOfValidator(this.disallowedValues)
       : super(
-          key: 'string_not_one_of',
+          name: 'string_not_one_of',
           pattern:
               '^(?!${disallowedValues.map((e) => RegExp.escape(e)).join('|')}).*\$',
           example: 'Any value except: $disallowedValues',
@@ -189,7 +187,6 @@ class StringNotOneOfValidator extends StringRegexConstraint {
       key: key,
       message:
           'The value "$value" is not allowed. Disallowed values: $disallowedValues.',
-      constraint: this,
     );
   }
 }
@@ -199,8 +196,7 @@ class StringNotOneOfValidator extends StringRegexConstraint {
 ///
 /// Equivalent of calling `value.isNotEmpty`
 /// {@endtemplate}
-class StringNotEmptyValidator extends Constraint<String>
-    with Validator<String> {
+class StringNotEmptyValidator extends Constraint<String> {
   /// {@macro not_empty_validator}
   const StringNotEmptyValidator()
       : super(key: 'string_not_empty', description: 'String cannot be empty');
@@ -213,7 +209,6 @@ class StringNotEmptyValidator extends Constraint<String>
     return ConstraintError(
       key: key,
       message: 'The string must not be empty.',
-      constraint: this,
     );
   }
 }
@@ -223,7 +218,7 @@ class StringNotEmptyValidator extends Constraint<String>
 ///
 /// Equivalent of calling `isJsonValue(value)`
 /// {@endtemplate}
-class StringJsonValidator extends Constraint<String> with Validator<String> {
+class StringJsonValidator extends Constraint<String> {
   /// {@macro is_json_string_validator}
   const StringJsonValidator()
       : super(key: 'string_json', description: 'Must be a valid JSON string');
@@ -248,14 +243,12 @@ class StringJsonValidator extends Constraint<String> with Validator<String> {
     return ConstraintError(
       key: key,
       message: 'The value "$value" is not valid JSON.',
-      constraint: this,
     );
   }
 }
 
 /// Base class for regex-based string validators
-class StringRegexConstraint extends Constraint<String>
-    with Validator<String>, OpenApiSpec<String> {
+class StringRegexValidator extends Constraint<String> with OpenApiSpec<String> {
   /// The regex pattern to match
   final String pattern;
 
@@ -263,11 +256,11 @@ class StringRegexConstraint extends Constraint<String>
   final String example;
 
   /// {@macro regex_pattern_string_validator}
-  StringRegexConstraint({
+  StringRegexValidator({
     required super.key,
     required this.pattern,
     required this.example,
-  }) : super(description: 'Must match the pattern: $key  . Example $example') {
+  }) : super(description: 'Must match the pattern: $name. Example $example') {
     // Assert that string is not empty
     // and taht it starts with ^ and ends with $ for a complete match
     if (pattern.isEmpty) {
@@ -295,7 +288,6 @@ class StringRegexConstraint extends Constraint<String>
       key: key,
       message:
           'The value "$value" does not match the required pattern for $key. Expected format: "$example".',
-      constraint: this,
     );
   }
 
@@ -311,9 +303,9 @@ class StringRegexConstraint extends Constraint<String>
 ///
 /// Equivalent of calling `value.isEmpty`
 /// {@endtemplate}
-class StringEmptyConstraint extends Constraint<String> with Validator<String> {
+class StringEmptyValidator extends Constraint<String> {
   /// {@macro is_empty_validator}
-  const StringEmptyConstraint()
+  const StringEmptyValidator()
       : super(key: 'string_empty', description: 'String must be empty');
 
   @override
@@ -324,7 +316,6 @@ class StringEmptyConstraint extends Constraint<String> with Validator<String> {
     return ConstraintError(
       key: key,
       message: 'The string must be empty. Got: "$value"',
-      constraint: this,
     );
   }
 }
@@ -334,13 +325,13 @@ class StringEmptyConstraint extends Constraint<String> with Validator<String> {
 ///
 /// Equivalent of calling `value.length >= min`
 /// {@endtemplate}
-class StringMinLengthConstraint extends Constraint<String>
-    with Validator<String>, OpenApiSpec<String> {
+class StringMinLengthValidator extends Constraint<String>
+    with OpenApiSpec<String> {
   /// The minimum length
   final int min;
 
   /// {@macro min_length_validator}
-  const StringMinLengthConstraint(this.min)
+  const StringMinLengthValidator(this.min)
       : super(
           key: 'string_min_length',
           description: 'String must be at least $min characters long',
@@ -355,7 +346,6 @@ class StringMinLengthConstraint extends Constraint<String>
       key: key,
       message:
           'The string length (${value.length}) is too short; it must be at least ($min) characters.',
-      constraint: this,
     );
   }
 
@@ -368,13 +358,13 @@ class StringMinLengthConstraint extends Constraint<String>
 ///
 /// Equivalent of calling `value.length <= max`
 /// {@endtemplate}
-class StringMaxLengthConstraint extends Constraint<String>
-    with Validator<String>, OpenApiSpec<String> {
+class StringMaxLengthValidator extends Constraint<String>
+    with OpenApiSpec<String> {
   /// The maximum length
   final int max;
 
   /// {@macro max_length_validator}
-  const StringMaxLengthConstraint(this.max)
+  const StringMaxLengthValidator(this.max)
       : super(
           key: 'string_max_length',
           description: 'String must be at most $max characters long',
@@ -390,7 +380,6 @@ class StringMaxLengthConstraint extends Constraint<String>
       key: key,
       message:
           'The string length (${value.length}) exceeds the maximum allowed of ($max) characters.',
-      constraint: this,
     );
   }
 
@@ -403,10 +392,10 @@ class StringMaxLengthConstraint extends Constraint<String>
 ///
 /// Equivalent of calling `list.toSet().length == list.length`
 /// {@endtemplate}
-class ListUniqueItemsConstraint<T extends Object> extends Constraint<List<T>>
-    with Validator<List<T>>, OpenApiSpec<List<T>> {
+class UniqueItemsListValidator<T extends Object> extends Constraint<List<T>>
+    with OpenApiSpec<List<T>> {
   /// {@macro unique_items_list_validator}
-  const ListUniqueItemsConstraint()
+  const UniqueItemsListValidator()
       : super(
           key: 'list_unique_items',
           description: 'List items must be unique',
@@ -423,7 +412,6 @@ class ListUniqueItemsConstraint<T extends Object> extends Constraint<List<T>>
       key: key,
       message:
           'The list contains duplicate items: $nonUniqueValues. All items must be unique.',
-      constraint: this,
     );
   }
 
@@ -436,13 +424,13 @@ class ListUniqueItemsConstraint<T extends Object> extends Constraint<List<T>>
 ///
 /// Equivalent of calling `list.length >= min`
 /// {@endtemplate}
-class ListMinItemsConstraint<T extends Object> extends Constraint<List<T>>
-    with Validator<List<T>>, OpenApiSpec<List<T>> {
+class ListMinItemsValidator<T extends Object> extends Constraint<List<T>>
+    with OpenApiSpec<List<T>> {
   /// The minimum number of items
   final int min;
 
   /// {@macro min_items_list_validator}
-  const ListMinItemsConstraint(this.min)
+  const ListMinItemsValidator(this.min)
       : super(
           key: 'list_min_items',
           description: 'List must have at least $min items',
@@ -457,7 +445,6 @@ class ListMinItemsConstraint<T extends Object> extends Constraint<List<T>>
       key: key,
       message:
           'The list has only ${value.length} items; at least $min items are required.',
-      constraint: this,
     );
   }
 
@@ -470,13 +457,13 @@ class ListMinItemsConstraint<T extends Object> extends Constraint<List<T>>
 ///
 /// Equivalent of calling `list.length <= max`
 /// {@endtemplate}
-class ListMaxItemsConstraint<T> extends Constraint<List<T>>
-    with Validator<List<T>>, OpenApiSpec<List<T>> {
+class ListMaxItemsValidator<T> extends Constraint<List<T>>
+    with OpenApiSpec<List<T>> {
   /// The maximum number of items
   final int max;
 
   /// {@macro max_items_list_validator}
-  const ListMaxItemsConstraint(this.max)
+  const ListMaxItemsValidator(this.max)
       : super(
           key: 'list_max_items',
           description: 'List must have at most $max items',
@@ -491,7 +478,6 @@ class ListMaxItemsConstraint<T> extends Constraint<List<T>>
       key: key,
       message:
           'The list contains ${value.length} items, which exceeds the allowed maximum of $max.',
-      constraint: this,
     );
   }
 
@@ -507,8 +493,8 @@ class ListMaxItemsConstraint<T> extends Constraint<List<T>>
 /// - If false (default), values greater than or equal to min are valid
 /// - If true, only values strictly greater than min are valid
 /// {@endtemplate}
-class NumberMinConstraint<T extends num> extends Constraint<T>
-    with Validator<T>, OpenApiSpec<T> {
+class NumberMinValidator<T extends num> extends Constraint<T>
+    with OpenApiSpec<T> {
   /// The minimum value
   final T min;
 
@@ -516,7 +502,7 @@ class NumberMinConstraint<T extends num> extends Constraint<T>
   final bool exclusive;
 
   /// {@macro min_num_validator}
-  const NumberMinConstraint(this.min, {bool? exclusive})
+  const NumberMinValidator(this.min, {bool? exclusive})
       : exclusive = exclusive ?? false,
         super(
           key: 'number_min',
@@ -532,7 +518,6 @@ class NumberMinConstraint<T extends num> extends Constraint<T>
       message: exclusive
           ? 'The number ($value) is too low; it must be greater than ($min).'
           : 'The number ($value) is too low; it must be at least ($min).',
-      constraint: this,
     );
   }
 
@@ -546,13 +531,13 @@ class NumberMinConstraint<T extends num> extends Constraint<T>
 /// {@template multiple_of_num_validator}
 /// Validates that the input number is a multiple of a given value.
 /// {@endtemplate}
-class NumberMultipleOfConstraint<T extends num> extends Constraint<T>
-    with Validator<T>, OpenApiSpec<T> {
+class NumberMultipleOfValidator<T extends num> extends Constraint<T>
+    with OpenApiSpec<T> {
   /// The multiple
   final T multiple;
 
   /// {@macro multiple_of_num_validator}
-  const NumberMultipleOfConstraint(this.multiple)
+  const NumberMultipleOfValidator(this.multiple)
       : super(
           key: 'number_multiple_of',
           description: 'Must be a multiple of $multiple',
@@ -567,7 +552,6 @@ class NumberMultipleOfConstraint<T extends num> extends Constraint<T>
       key: key,
       message:
           'The number ($value) is not a multiple of ($multiple). The quotient is (${value / multiple}), the remainder is (${value % multiple}).',
-      constraint: this,
     );
   }
 
@@ -583,8 +567,8 @@ class NumberMultipleOfConstraint<T extends num> extends Constraint<T>
 /// - If true (default), only values strictly less than max are valid
 /// - If false, values less than or equal to max are valid
 /// {@endtemplate}
-class NumberMaxConstraint<T extends num> extends Constraint<T>
-    with Validator<T>, OpenApiSpec<T> {
+class NumberMaxValidator<T extends num> extends Constraint<T>
+    with OpenApiSpec<T> {
   /// The maximum value
   final T max;
 
@@ -592,7 +576,7 @@ class NumberMaxConstraint<T extends num> extends Constraint<T>
   final bool exclusive;
 
   /// {@macro max_num_validator}
-  const NumberMaxConstraint(this.max, {bool? exclusive})
+  const NumberMaxValidator(this.max, {bool? exclusive})
       : exclusive = exclusive ?? false,
         super(
           key: 'number_max',
@@ -609,7 +593,6 @@ class NumberMaxConstraint<T extends num> extends Constraint<T>
       message: exclusive
           ? 'The number ($value) exceeds the limit; it must be less than ($max).'
           : 'The number ($value) exceeds the maximum allowed of ($max).',
-      constraint: this,
     );
   }
 
@@ -630,7 +613,7 @@ class NumberMaxConstraint<T extends num> extends Constraint<T>
 /// - If false, values between min and max (inclusive) are valid
 /// {@endtemplate}
 class NumberRangeValidator<T extends num> extends Constraint<T>
-    with Validator<T>, OpenApiSpec<T> {
+    with OpenApiSpec<T> {
   /// The minimum value
   final T min;
 
@@ -658,7 +641,6 @@ class NumberRangeValidator<T extends num> extends Constraint<T>
       key: key,
       message:
           'The number ($value) is outside the allowed range ($min to $max).',
-      constraint: this,
     );
   }
 
@@ -677,7 +659,7 @@ class NumberRangeValidator<T extends num> extends Constraint<T>
 /// Equivalent of calling `map.length >= min`
 /// {@endtemplate}
 class ObjectMinPropertiesValidator extends Constraint<MapValue>
-    with Validator<MapValue>, OpenApiSpec<MapValue> {
+    with OpenApiSpec<MapValue> {
   /// The minimum number of properties required
   final int min;
 
@@ -697,7 +679,6 @@ class ObjectMinPropertiesValidator extends Constraint<MapValue>
       key: key,
       message:
           'The object has ${value.length} properties, which is less than the required minimum of $min.',
-      constraint: this,
     );
   }
 
@@ -711,7 +692,7 @@ class ObjectMinPropertiesValidator extends Constraint<MapValue>
 /// Equivalent of calling `map.length <= max`
 /// {@endtemplate}
 class ObjectMaxPropertiesValidator extends Constraint<MapValue>
-    with Validator<MapValue>, OpenApiSpec<MapValue> {
+    with OpenApiSpec<MapValue> {
   /// The maximum number of properties allowed
   final int max;
 
@@ -731,7 +712,6 @@ class ObjectMaxPropertiesValidator extends Constraint<MapValue>
       key: key,
       message:
           'The object has ${value.length} properties, exceeding the allowed maximum of $max.',
-      constraint: this,
     );
   }
 
@@ -742,8 +722,7 @@ class ObjectMaxPropertiesValidator extends Constraint<MapValue>
 /// {@template unallowed_property_constraint_error}
 /// Validator that checks if a [Map] has unallowed properties
 /// {@endtemplate}
-class ObjectNoAdditionalPropertiesValidator extends Constraint<MapValue>
-    with Validator<MapValue> {
+class ObjectNoAdditionalPropertiesValidator extends Constraint<MapValue> {
   final ObjectSchema schema;
 
   /// {@macro unallowed_property_constraint_error}
@@ -769,7 +748,6 @@ class ObjectNoAdditionalPropertiesValidator extends Constraint<MapValue>
     return ConstraintError(
       key: key,
       message: 'Unallowed properties: $unallowedKeys.',
-      constraint: this,
     );
   }
 }
@@ -777,8 +755,7 @@ class ObjectNoAdditionalPropertiesValidator extends Constraint<MapValue>
 /// {@template property_required_constraint_error}
 /// Validator that checks if a [Map] has required properties
 /// {@endtemplate}
-class ObjectRequiredPropertiesValidator extends Constraint<MapValue>
-    with Validator<MapValue> {
+class ObjectRequiredPropertiesValidator extends Constraint<MapValue> {
   /// The list of required keys
   final ObjectSchema schema;
 
@@ -802,7 +779,6 @@ class ObjectRequiredPropertiesValidator extends Constraint<MapValue>
     return ConstraintError(
       key: key,
       message: 'Missing required properties: $missingKeys.',
-      constraint: this,
     );
   }
 }
@@ -810,8 +786,7 @@ class ObjectRequiredPropertiesValidator extends Constraint<MapValue>
 /// Validates that schemas in a discriminated object are properly structured.
 /// Each schema must include the discriminator key as a required property.
 class ObjectDiscriminatorStructureValidator
-    extends Constraint<Map<String, ObjectSchema>>
-    with Validator<Map<String, ObjectSchema>> {
+    extends Constraint<Map<String, ObjectSchema>> {
   final String discriminatorKey;
 
   ObjectDiscriminatorStructureValidator(this.discriminatorKey)
@@ -857,7 +832,6 @@ class ObjectDiscriminatorStructureValidator
 
     return ConstraintError(
       key: key,
-      constraint: this,
       message: '''
 The discriminator key "$discriminatorKey" must be present and required in all schemas.
 ${missing.isNotEmpty ? '- Missing in: $missing\n' : ''}
@@ -868,8 +842,7 @@ ${notRequired.isNotEmpty ? '- Not marked as required in: $notRequired' : ''}
 }
 
 /// Validates that a value has a valid discriminator that matches a known schema.
-class ObjectDiscriminatorValueValidator extends Constraint<MapValue>
-    with Validator<MapValue> {
+class ObjectDiscriminatorValueValidator extends Constraint<MapValue> {
   final String discriminatorKey;
   final Map<String, ObjectSchema> schemas;
 
@@ -903,6 +876,6 @@ class ObjectDiscriminatorValueValidator extends Constraint<MapValue>
         ? 'The discriminator value "$discriminatorValue" is invalid. Allowed values: $validSchemaKeys.'
         : 'The discriminator field "$discriminatorKey" is missing.';
 
-    return ConstraintError(key: key, message: message, constraint: this);
+    return ConstraintError(key: key, message: message);
   }
 }

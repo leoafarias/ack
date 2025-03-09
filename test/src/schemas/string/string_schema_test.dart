@@ -11,14 +11,14 @@ void main() {
     });
 
     test('copyWith changes validators', () {
-      final schema = StringSchema(constraints: [StringMaxLengthValidator(5)]);
+      final schema = StringSchema(constraints: [StringMaxLengthConstraint(5)]);
       expect(schema.getConstraints().length, equals(1));
-      expect(schema.getConstraints()[0], isA<StringMaxLengthValidator>());
+      expect(schema.getConstraints()[0], isA<StringMaxLengthConstraint>());
 
       final newSchema =
-          schema.copyWith(constraints: [StringMinLengthValidator(10)]);
+          schema.copyWith(constraints: [StringMinLengthConstraint(10)]);
       expect(newSchema.getConstraints().length, equals(1));
-      expect(newSchema.getConstraints()[0], isA<StringMinLengthValidator>());
+      expect(newSchema.getConstraints()[0], isA<StringMinLengthConstraint>());
     });
 
     group('StringSchema Basic Validation', () {
@@ -28,7 +28,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<NonNullableSchemaError>());
+        expect(error, isA<NonNullableConstraint>());
       });
 
       test('Nullable schema passes on null', () {
@@ -47,7 +47,7 @@ void main() {
         expect(strictResult.isFail, isTrue);
 
         final error = (strictResult as Fail).error;
-        expect(error, isA<InvalidTypeSchemaError>());
+        expect(error, isA<InvalidTypeConstraint>());
       });
 
       test('Valid string passes with no constraints', () {
@@ -58,7 +58,7 @@ void main() {
     });
 
     group('EmailValidator', () {
-      final validator = StringEmailValidator();
+      final validator = StringEmailConstraint();
 
       test('Valid emails pass validation', () {
         expect(validator.isValid('test@example.com'), isTrue);
@@ -127,7 +127,7 @@ void main() {
     });
 
     group('IsEmptyValidator', () {
-      final validator = StringEmptyValidator();
+      final validator = StringEmptyConstraint();
 
       test('Empty string passes validation', () {
         expect(validator.isValid(''), isTrue);
@@ -156,7 +156,7 @@ void main() {
     });
 
     group('MinLengthValidator', () {
-      final validator = StringMinLengthValidator(3);
+      final validator = StringMinLengthConstraint(3);
 
       test('String longer than min length passes validation', () {
         expect(validator.isValid('abcd'), isTrue);
@@ -189,7 +189,7 @@ void main() {
     });
 
     group('MaxLengthValidator', () {
-      final validator = StringMaxLengthValidator(3);
+      final validator = StringMaxLengthConstraint(3);
 
       test('String shorter than max length passes validation', () {
         expect(validator.isValid('ab'), isTrue);
@@ -282,7 +282,7 @@ void main() {
     });
 
     group('DateTimeValidator', () {
-      final validator = StringDateTimeValidator();
+      final validator = StringDateTimeConstraint();
 
       test('Valid ISO 8601 datetime passes validation', () {
         expect(validator.isValid('2023-01-01T00:00:00.000Z'), isTrue);
@@ -313,7 +313,7 @@ void main() {
     });
 
     group('DateValidator', () {
-      final validator = StringDateValidator();
+      final validator = StringDateConstraint();
 
       test('Valid date string passes validation', () {
         expect(validator.isValid('2023-01-01'), isTrue);
@@ -345,7 +345,8 @@ void main() {
     });
 
     group('EnumValidator', () {
-      final validator = StringEnumValidator(['DRAFT', 'PUBLISHED', 'ARCHIVED']);
+      final validator =
+          StringEnumConstraint(['DRAFT', 'PUBLISHED', 'ARCHIVED']);
 
       test('Valid enum value passes validation', () {
         expect(validator.isValid('DRAFT'), isTrue);

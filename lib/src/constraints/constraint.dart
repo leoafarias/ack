@@ -4,14 +4,14 @@ import '../helpers.dart';
 import '../validation/schema_error.dart';
 
 abstract class Constraint<T extends Object> {
-  final String name;
+  final String key;
 
   final String description;
 
-  const Constraint({required this.name, required this.description});
+  const Constraint({required this.key, required this.description});
 
   Map<String, Object?> toMap() {
-    return {'name': name, 'description': description};
+    return {'key': key, 'description': description};
   }
 
   String toJson() => prettyJson(toMap());
@@ -20,8 +20,7 @@ abstract class Constraint<T extends Object> {
   String toString() => toJson();
 }
 
-class ConstraintError<C extends Constraint<T>, T extends Object>
-    with ErrorBase {
+final class ConstraintError<C extends Constraint> with ErrorBase {
   @override
   final String key;
 
@@ -30,12 +29,15 @@ class ConstraintError<C extends Constraint<T>, T extends Object>
   @override
   final String message;
 
-  ConstraintError(
-      {required this.key, required this.message, required this.constraint});
+  ConstraintError({
+    required this.key,
+    required this.message,
+    required this.constraint,
+  });
 
   @override
   Map<String, Object?> toMap() {
-    return {'key': key, 'message': message};
+    return {'key': key, 'message': message, 'constraint': constraint.toMap()};
   }
 
   @override

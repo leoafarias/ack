@@ -40,7 +40,7 @@ final class Ack {
   }
 
   static StringSchema enumString(List<String> values) {
-    return StringSchema(constraints: [StringEnumValidator(values)]);
+    return StringSchema(constraints: [StringEnumConstraint(values)]);
   }
 
   static StringSchema enumValues(List<Enum> values) {

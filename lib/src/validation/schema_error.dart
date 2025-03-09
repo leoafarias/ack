@@ -76,9 +76,11 @@ final class SchemaConstraintsError extends SchemaError {
           message: constraints.map((e) => '${e.key}: ${e.message}').join('\n'),
         );
 
-  bool get isInvalidType => constraints.any((e) => e is InvalidTypeSchemaError);
+  bool get isInvalidType =>
+      constraints.any((e) => e is ConstraintError<InvalidTypeConstraint>);
 
-  bool get isNonNullable => constraints.any((e) => e is NonNullableSchemaError);
+  bool get isNonNullable =>
+      constraints.any((e) => e is ConstraintError<NonNullableConstraint>);
 
   ConstraintError? getConstraint(String key) {
     return constraints.firstWhereOrNull((e) => e.key == key);

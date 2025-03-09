@@ -51,7 +51,7 @@ void main() {
 
       expect(result.isFail, isTrue);
       final error = (result as Fail).error;
-      expect(error, isA<NonNullableSchemaError>());
+      expect(error, isA<NonNullableConstraint>());
     });
 
     test('Nullable schema passes on null', () {
@@ -92,7 +92,7 @@ void main() {
 
       expect(result.isFail, isTrue);
       final error = (result as Fail).error;
-      expect(error, isA<InvalidTypeSchemaError>());
+      expect(error, isA<InvalidTypeConstraint>());
     });
 
     test('Valid discriminated object passes validation', () {
@@ -208,8 +208,8 @@ void main() {
       expect(error.errors.any((e) => e.name == 'value'), isTrue);
 
       // Check that it's an invalid type error
-      final valueError = error.errors[0] as InvalidTypeSchemaError;
-      expect(valueError, isA<InvalidTypeSchemaError>());
+      final valueError = error.errors[0] as InvalidTypeConstraint;
+      expect(valueError, isA<InvalidTypeConstraint>());
     });
   });
 }

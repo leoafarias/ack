@@ -12,14 +12,14 @@ void main() {
 
     test('copyWith changes constraints', () {
       final schema = ListSchema<int>(IntegerSchema(),
-          constraints: [ListMaxItemsValidator(5)]);
+          constraints: [ListMaxItemsConstraint(5)]);
       expect(schema.getConstraints().length, equals(1));
-      expect(schema.getConstraints()[0], isA<ListMaxItemsValidator>());
+      expect(schema.getConstraints()[0], isA<ListMaxItemsConstraint>());
 
       final newSchema =
-          schema.copyWith(constraints: [ListMinItemsValidator(1)]);
+          schema.copyWith(constraints: [ListMinItemsConstraint(1)]);
       expect(newSchema.getConstraints().length, equals(1));
-      expect(newSchema.getConstraints()[0], isA<ListMinItemsValidator>());
+      expect(newSchema.getConstraints()[0], isA<ListMinItemsConstraint>());
     });
 
     group('ListSchema Basic Validation', () {
@@ -29,7 +29,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<NonNullableSchemaError>());
+        expect(error, isA<NonNullableConstraint>());
       });
 
       test('Nullable schema passes on null', () {
@@ -45,7 +45,7 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeSchemaError>());
+        expect(error, isA<InvalidTypeConstraint>());
       });
 
       test('Valid list passes with no constraints', () {
@@ -57,12 +57,12 @@ void main() {
 
     group('UniqueItemsValidator', () {
       test('Unique list passes validation', () {
-        final validator = UniqueItemsListValidator<int>();
+        final validator = ListUniqueItemsConstraint<int>();
         expect(validator.isValid([1, 2, 3]), isTrue);
       });
 
       test('Non-unique list fails validation', () {
-        final validator = UniqueItemsListValidator<int>();
+        final validator = ListUniqueItemsConstraint<int>();
         expect(validator.isValid([1, 2, 2, 3]), isFalse);
       });
 
@@ -86,13 +86,13 @@ void main() {
 
     group('MinItemsValidator', () {
       test('List with length >= min passes validation', () {
-        final validator = ListMinItemsValidator(3);
+        final validator = ListMinItemsConstraint(3);
         expect(validator.isValid([1, 2, 3]), isTrue);
         expect(validator.isValid([1, 2, 3, 4]), isTrue);
       });
 
       test('List with length < min fails validation', () {
-        final validator = ListMinItemsValidator(3);
+        final validator = ListMinItemsConstraint(3);
         expect(validator.isValid([1, 2]), isFalse);
       });
 
@@ -116,13 +116,13 @@ void main() {
 
     group('MaxItemsValidator', () {
       test('List with length <= max passes validation', () {
-        final validator = ListMaxItemsValidator(3);
+        final validator = ListMaxItemsConstraint(3);
         expect(validator.isValid([1, 2]), isTrue);
         expect(validator.isValid([1, 2, 3]), isTrue);
       });
 
       test('List with length > max fails validation', () {
-        final validator = ListMaxItemsValidator(3);
+        final validator = ListMaxItemsConstraint(3);
         expect(validator.isValid([1, 2, 3, 4]), isFalse);
       });
 

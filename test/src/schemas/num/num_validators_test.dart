@@ -7,13 +7,13 @@ void main() {
   group('Number Validators', () {
     group('MinValueValidator', () {
       test('Values above min pass validation', () {
-        final validator = NumberMinValidator(5);
+        final validator = NumberMinConstraint(5);
         expect(validator.isValid(6), isTrue);
         expect(validator.isValid(5), isTrue);
       });
 
       test('Values below min fail validation', () {
-        final validator = NumberMinValidator(5);
+        final validator = NumberMinConstraint(5);
         expect(validator.isValid(4), isFalse);
       });
 
@@ -29,13 +29,13 @@ void main() {
 
     group('MaxValueValidator', () {
       test('Values below max pass validation', () {
-        final validator = NumberMaxValidator(5);
+        final validator = NumberMaxConstraint(5);
         expect(validator.isValid(4), isTrue);
         expect(validator.isValid(5), isTrue);
       });
 
       test('Values above max fail validation', () {
-        final validator = NumberMaxValidator(5);
+        final validator = NumberMaxConstraint(5);
         expect(validator.isValid(6), isFalse);
       });
     });

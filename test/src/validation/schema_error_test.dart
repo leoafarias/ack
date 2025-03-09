@@ -42,10 +42,10 @@ void main() {
     });
 
     test('toString() returns formatted string', () {
-      final error = NonNullableSchemaError();
+      final error = NonNullableConstraint();
       expect(
         error.toString(),
-        contains('$NonNullableSchemaError'),
+        contains('$NonNullableConstraint'),
       );
       expect(
         error.toString(),

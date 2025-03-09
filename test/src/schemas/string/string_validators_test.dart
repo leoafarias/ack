@@ -6,7 +6,7 @@ import '../../../test_helpers.dart';
 void main() {
   group('String Validators', () {
     group('EmailValidator', () {
-      final validator = StringEmailValidator();
+      final validator = StringEmailConstraint();
 
       test('Valid emails pass validation', () {
         expect(validator.isValid('test@example.com'), isTrue);
@@ -57,7 +57,7 @@ void main() {
     });
 
     group('IsEmptyValidator', () {
-      final validator = StringEmptyValidator();
+      final validator = StringEmptyConstraint();
 
       test('Empty string passes validation', () {
         expect(validator.isValid(''), isTrue);
@@ -79,7 +79,7 @@ void main() {
     });
 
     group('MinLengthValidator', () {
-      final validator = StringMinLengthValidator(3);
+      final validator = StringMinLengthConstraint(3);
 
       test('Strings meeting minimum length pass validation', () {
         expect(validator.isValid('abc'), isTrue);
@@ -103,7 +103,7 @@ void main() {
     });
 
     group('MaxLengthValidator', () {
-      final validator = StringMaxLengthValidator(3);
+      final validator = StringMaxLengthConstraint(3);
 
       test('Strings within maximum length pass validation', () {
         expect(validator.isValid(''), isTrue);
@@ -150,7 +150,7 @@ void main() {
     });
 
     group('EnumValidator', () {
-      final validator = StringEnumValidator(['red', 'green', 'blue']);
+      final validator = StringEnumConstraint(['red', 'green', 'blue']);
 
       test('Strings in enum pass validation', () {
         expect(validator.isValid('red'), isTrue);
@@ -196,7 +196,7 @@ void main() {
     });
 
     group('DateTimeValidator', () {
-      final validator = StringDateTimeValidator();
+      final validator = StringDateTimeConstraint();
 
       test('Valid datetime strings pass validation', () {
         expect(validator.isValid('2023-01-01T00:00:00.000Z'), isTrue);
