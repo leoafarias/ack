@@ -5,7 +5,7 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
   final Schema<V> _itemSchema;
   const ListSchema(
     Schema<V> itemSchema, {
-    super.validators = const [],
+    super.constraints = const [],
     super.nullable,
     super.description,
     super.defaultValue,
@@ -30,14 +30,14 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
       final itemResult = _itemSchema.validate(listValue[i], debugName: '$i');
 
       if (itemResult.isFail) {
-        itemsViolation.add(itemResult.getViolation());
+        itemsViolation.add(itemResult.getError());
       }
     }
 
     if (itemsViolation.isEmpty) return SchemaResult.ok(listValue);
 
     return SchemaResult.fail(
-      NestedSchemaError(errors: itemsViolation, context: context),
+      SchemaNestedError(errors: itemsViolation, context: context),
     );
   }
 
@@ -60,14 +60,14 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
 
   @override
   ListSchema<V> copyWith({
-    List<ConstraintValidator<List<V>>>? validators,
+    List<Validator<List<V>>>? constraints,
     bool? nullable,
     String? description,
     List<V>? defaultValue,
   }) {
     return ListSchema(
       _itemSchema,
-      validators: validators ?? _validators,
+      constraints: constraints ?? _constraints,
       nullable: nullable ?? _nullable,
       description: description ?? _description,
       defaultValue: defaultValue ?? _defaultValue,
@@ -78,11 +78,11 @@ final class ListSchema<V extends Object> extends Schema<List<V>>
   ListSchema<V> call({
     bool? nullable,
     String? description,
-    List<ConstraintValidator<List<V>>>? validators,
+    List<Validator<List<V>>>? constraints,
     List<V>? defaultValue,
   }) {
     return copyWith(
-      validators: validators,
+      constraints: constraints,
       nullable: nullable,
       description: description,
       defaultValue: defaultValue,

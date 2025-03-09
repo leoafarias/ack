@@ -37,33 +37,33 @@ void main() {
         expect(result.isFail, isTrue);
 
         final constraintsError =
-            (result as Fail).error as SchemaConstraintError;
+            (result as Fail).error as SchemaConstraintsError;
         expect(
-          constraintsError.validations.any((e) => e.key == 'unique_items'),
-          isTrue,
+          constraintsError.getConstraint('list_unique_items'),
+          isNotNull,
         );
       });
     });
 
     group('MinItemsValidator', () {
       test('List with length >= min passes validation', () {
-        final validator = MinItemsListValidator<int>(3);
+        final validator = ListMinItemsValidator<int>(3);
         expect(validator.isValid([1, 2, 3]), isTrue);
         expect(validator.isValid([1, 2, 3, 4]), isTrue);
       });
 
       test('List with exactly min items passes validation', () {
-        final validator = MinItemsListValidator<int>(3);
+        final validator = ListMinItemsValidator<int>(3);
         expect(validator.isValid([1, 2, 3]), isTrue);
       });
 
       test('List with length < min fails validation', () {
-        final validator = MinItemsListValidator<int>(3);
+        final validator = ListMinItemsValidator<int>(3);
         expect(validator.isValid([1, 2]), isFalse);
       });
 
       test('Empty list fails validation for minItems', () {
-        final validator = MinItemsListValidator<int>(1);
+        final validator = ListMinItemsValidator<int>(1);
         expect(validator.isValid([]), isFalse);
       });
 
@@ -75,29 +75,29 @@ void main() {
         expect(result.isFail, isTrue);
 
         final constraintsError =
-            (result as Fail).error as SchemaConstraintError;
+            (result as Fail).error as SchemaConstraintsError;
         expect(
-          constraintsError.validations.any((e) => e.key == 'min_items'),
-          isTrue,
+          constraintsError.getConstraint('list_min_items'),
+          isNotNull,
         );
       });
     });
 
     group('MaxItemsValidator', () {
       test('List with length <= max passes validation', () {
-        final validator = MaxItemsListValidator<int>(3);
+        final validator = ListMaxItemsValidator<int>(3);
         expect(validator.isValid([]), isTrue);
         expect(validator.isValid([1, 2]), isTrue);
         expect(validator.isValid([1, 2, 3]), isTrue);
       });
 
       test('List with exactly max items passes validation', () {
-        final validator = MaxItemsListValidator<int>(3);
+        final validator = ListMaxItemsValidator<int>(3);
         expect(validator.isValid([1, 2, 3]), isTrue);
       });
 
       test('List with length > max fails validation', () {
-        final validator = MaxItemsListValidator<int>(3);
+        final validator = ListMaxItemsValidator<int>(3);
         expect(validator.isValid([1, 2, 3, 4]), isFalse);
       });
 
@@ -109,10 +109,10 @@ void main() {
         expect(result.isFail, isTrue);
 
         final constraintsError =
-            (result as Fail).error as SchemaConstraintError;
+            (result as Fail).error as SchemaConstraintsError;
         expect(
-          constraintsError.validations.any((e) => e.key == 'max_items'),
-          isTrue,
+          constraintsError.getConstraint('list_max_items'),
+          isNotNull,
         );
       });
     });

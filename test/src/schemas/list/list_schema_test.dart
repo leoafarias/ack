@@ -12,13 +12,14 @@ void main() {
 
     test('copyWith changes constraints', () {
       final schema = ListSchema<int>(IntegerSchema(),
-          validators: [MaxItemsListValidator(5)]);
-      expect(schema.getValidators().length, equals(1));
-      expect(schema.getValidators()[0], isA<MaxItemsListValidator>());
+          constraints: [ListMaxItemsValidator(5)]);
+      expect(schema.getConstraints().length, equals(1));
+      expect(schema.getConstraints()[0], isA<ListMaxItemsValidator>());
 
-      final newSchema = schema.copyWith(validators: [MinItemsListValidator(1)]);
-      expect(newSchema.getValidators().length, equals(1));
-      expect(newSchema.getValidators()[0], isA<MinItemsListValidator>());
+      final newSchema =
+          schema.copyWith(constraints: [ListMinItemsValidator(1)]);
+      expect(newSchema.getConstraints().length, equals(1));
+      expect(newSchema.getConstraints()[0], isA<ListMinItemsValidator>());
     });
 
     group('ListSchema Basic Validation', () {
@@ -73,25 +74,25 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintError>());
+        expect(error, isA<SchemaConstraintsError>());
 
-        final constraintsError = error as SchemaConstraintError;
+        final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.validations.any((e) => e.key == 'unique_items'),
-          isTrue,
+          constraintsError.getConstraint('list_unique_items'),
+          isNotNull,
         );
       });
     });
 
     group('MinItemsValidator', () {
       test('List with length >= min passes validation', () {
-        final validator = MinItemsListValidator(3);
+        final validator = ListMinItemsValidator(3);
         expect(validator.isValid([1, 2, 3]), isTrue);
         expect(validator.isValid([1, 2, 3, 4]), isTrue);
       });
 
       test('List with length < min fails validation', () {
-        final validator = MinItemsListValidator(3);
+        final validator = ListMinItemsValidator(3);
         expect(validator.isValid([1, 2]), isFalse);
       });
 
@@ -103,25 +104,25 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintError>());
+        expect(error, isA<SchemaConstraintsError>());
 
-        final constraintsError = error as SchemaConstraintError;
+        final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.validations.any((e) => e.key == 'min_items'),
-          isTrue,
+          constraintsError.getConstraint('list_min_items'),
+          isNotNull,
         );
       });
     });
 
     group('MaxItemsValidator', () {
       test('List with length <= max passes validation', () {
-        final validator = MaxItemsListValidator(3);
+        final validator = ListMaxItemsValidator(3);
         expect(validator.isValid([1, 2]), isTrue);
         expect(validator.isValid([1, 2, 3]), isTrue);
       });
 
       test('List with length > max fails validation', () {
-        final validator = MaxItemsListValidator(3);
+        final validator = ListMaxItemsValidator(3);
         expect(validator.isValid([1, 2, 3, 4]), isFalse);
       });
 
@@ -133,12 +134,12 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintError>());
+        expect(error, isA<SchemaConstraintsError>());
 
-        final constraintsError = error as SchemaConstraintError;
+        final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.validations.any((e) => e.key == 'max_items'),
-          isTrue,
+          constraintsError.getConstraint('list_max_items'),
+          isNotNull,
         );
       });
     });

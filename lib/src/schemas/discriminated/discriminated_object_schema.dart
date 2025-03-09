@@ -9,7 +9,7 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
     super.nullable,
     required String discriminatorKey,
     required Map<String, ObjectSchema> schemas,
-    super.validators,
+    super.constraints,
     super.description,
     super.defaultValue,
   })  : _discriminatorKey = discriminatorKey,
@@ -40,16 +40,16 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
     if (_nullable && mapValue == null) return SchemaResult.unit();
 
     final violations = [
-      DiscriminatorSchemaStructureViolation(_discriminatorKey)
+      ObjectDiscriminatorStructureValidator(_discriminatorKey)
           .validate(_schemas),
-      DiscriminatorValueViolation(_discriminatorKey, _schemas)
+      ObjectDiscriminatorValueValidator(_discriminatorKey, _schemas)
           .validate(mapValue!),
     ].whereType<ConstraintError>();
 
     if (violations.isNotEmpty) {
       return SchemaResult.fail(
-        SchemaConstraintError(
-          validations: violations.toList(),
+        SchemaConstraintsError(
+          constraints: violations.toList(),
           context: context,
         ),
       );
@@ -68,11 +68,11 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
     String? description,
     String? discriminatorKey,
     Map<String, ObjectSchema>? schemas,
-    List<ConstraintValidator<MapValue>>? validators,
+    List<Validator<MapValue>>? constraints,
     MapValue? defaultValue,
   }) {
     return copyWith(
-      validators: validators,
+      constraints: constraints,
       discriminatorKey: discriminatorKey,
       schemas: schemas,
       nullable: nullable,
@@ -83,7 +83,7 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
 
   @override
   DiscriminatedObjectSchema copyWith({
-    List<ConstraintValidator<MapValue>>? validators,
+    List<Validator<MapValue>>? constraints,
     String? discriminatorKey,
     Map<String, ObjectSchema>? schemas,
     bool? nullable,
@@ -94,7 +94,7 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
       nullable: nullable ?? _nullable,
       discriminatorKey: discriminatorKey ?? _discriminatorKey,
       schemas: schemas ?? _schemas,
-      validators: validators ?? _validators,
+      constraints: constraints ?? _constraints,
       description: description ?? _description,
       defaultValue: defaultValue ?? _defaultValue,
     );

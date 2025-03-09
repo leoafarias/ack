@@ -6,7 +6,7 @@ final class StringSchema extends ScalarSchema<StringSchema, String> {
 
   const StringSchema({
     super.nullable,
-    super.validators,
+    super.constraints,
     super.strict,
     super.description,
     super.defaultValue,

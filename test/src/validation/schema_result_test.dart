@@ -32,7 +32,7 @@ void main() {
     });
 
     test('Fail result provides error access', () {
-      final schemaError = MockSchemaError();
+      final schemaError = SchemaMockError();
 
       final result = SchemaResult.fail(schemaError);
 
@@ -44,7 +44,7 @@ void main() {
         onFail: (error) => expect(error, schemaError),
       );
 
-      expect(result.getViolation(), schemaError);
+      expect(result.getError(), schemaError);
       expect(result.getOrNull(), isNull);
       expect(result.getOrElse(() => 'default'), 'default');
       expect(() => result.getOrThrow(), throwsA(isA<AckViolationException>()));
@@ -59,7 +59,7 @@ void main() {
     test('getErrors throws on Ok result', () {
       final result = SchemaResult.ok('test');
       expect(
-        () => result.getViolation(),
+        () => result.getError(),
         throwsA(isA<Exception>()),
       );
     });

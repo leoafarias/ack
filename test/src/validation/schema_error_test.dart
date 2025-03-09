@@ -9,53 +9,35 @@ class _MockSchemaContext extends SchemaContext {
 
 void main() {
   group('SchemaError', () {
-    group('InvalidTypeConstraintError', () {
-      test('renderMessage() with custom renderer', () {
-        final error = InvalidTypeSchemaError(
-          valueType: String,
-          expectedType: int,
-        );
-
-        final message = error.render(
-          customRenderer: (key, value) => '<value>$value</value>',
-        );
-
-        expect(message,
-            'Invalid type of <value>String</value>, expected <value>int</value>');
-      });
-    });
-
     group('SchemaConstraintsError', () {
       final constraintError1 = ConstraintError(
         key: 'custom_constraint',
         message: 'Custom constraint',
-        variables: {},
       );
 
       final constraintError2 = ConstraintError(
         key: 'custom_constraint2',
         message: 'Custom constraint 2',
-        variables: {},
       );
 
       test('single constraint error', () {
-        final error = SchemaConstraintError(
-          validations: [constraintError1],
+        final error = SchemaConstraintsError(
+          constraints: [constraintError1],
           context: _MockSchemaContext(),
         );
 
-        expect(error.validations.length, 1);
-        expect(error.validations.first, constraintError1);
+        expect(error.constraints.length, 1);
+        expect(error.constraints.first, constraintError1);
       });
 
       test('multiple constraint errors', () {
-        final error = SchemaConstraintError(
-          validations: [constraintError1, constraintError2],
+        final error = SchemaConstraintsError(
+          constraints: [constraintError1, constraintError2],
           context: _MockSchemaContext(),
         );
 
-        expect(error.validations.length, 2);
-        expect(error.validations, [constraintError1, constraintError2]);
+        expect(error.constraints.length, 2);
+        expect(error.constraints, [constraintError1, constraintError2]);
       });
     });
 
@@ -78,7 +60,7 @@ void main() {
 
       var result = schema.validate('abc');
       expect(result.isFail, isTrue);
-      var error = result.getViolation();
+      var error = result.getError();
       expect(
           error.message,
           contains(
@@ -86,7 +68,7 @@ void main() {
 
       result = schema.validate('abcdefghijk');
       expect(result.isFail, isTrue);
-      error = result.getViolation();
+      error = result.getError();
       expect(
           error.message,
           contains(
@@ -98,7 +80,7 @@ void main() {
 
       var result = schema.validate('yellow');
       expect(result.isFail, isTrue);
-      var error = result.getViolation();
+      var error = result.getError();
       expect(
           error.message,
           contains(
@@ -110,7 +92,7 @@ void main() {
 
       var result = schema.validate('2023-13-45');
       expect(result.isFail, isTrue);
-      var error = result.getViolation();
+      var error = result.getError();
       expect(
           error.message,
           contains(
@@ -123,7 +105,7 @@ void main() {
       // Test too few items
       var result = schema.validate(['a']);
       expect(result.isFail, isTrue);
-      var error = result.getViolation();
+      var error = result.getError();
       expect(
           error.message,
           contains(
@@ -132,7 +114,7 @@ void main() {
       // Test too many items
       result = schema.validate(['a', 'b', 'c', 'd', 'e']);
       expect(result.isFail, isTrue);
-      error = result.getViolation();
+      error = result.getError();
       expect(
           error.message,
           contains(
@@ -141,7 +123,7 @@ void main() {
       // Test duplicate items
       result = schema.validate(['a', 'b', 'a']);
       expect(result.isFail, isTrue);
-      error = result.getViolation();
+      error = result.getError();
       expect(
           error.message,
           contains(

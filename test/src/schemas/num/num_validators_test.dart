@@ -7,13 +7,13 @@ void main() {
   group('Number Validators', () {
     group('MinValueValidator', () {
       test('Values above min pass validation', () {
-        final validator = MinNumValidator(5);
+        final validator = NumberMinValidator(5);
         expect(validator.isValid(6), isTrue);
         expect(validator.isValid(5), isTrue);
       });
 
       test('Values below min fail validation', () {
-        final validator = MinNumValidator(5);
+        final validator = NumberMinValidator(5);
         expect(validator.isValid(4), isFalse);
       });
 
@@ -23,33 +23,33 @@ void main() {
 
         final result = schema.validate(6);
         expect(result.isFail, isTrue);
-        expect(result, hasOneConstraintViolation('max_value'));
+        expect(result, hasOneConstraintViolation('number_max'));
       });
     });
 
     group('MaxValueValidator', () {
       test('Values below max pass validation', () {
-        final validator = MaxNumValidator(5);
+        final validator = NumberMaxValidator(5);
         expect(validator.isValid(4), isTrue);
         expect(validator.isValid(5), isTrue);
       });
 
       test('Values above max fail validation', () {
-        final validator = MaxNumValidator(5);
+        final validator = NumberMaxValidator(5);
         expect(validator.isValid(6), isFalse);
       });
     });
 
     group('RangeValidator', () {
       test('Values in range pass validation', () {
-        final validator = RangeNumValidator(1, 5);
+        final validator = NumberRangeValidator(1, 5);
         expect(validator.isValid(1), isTrue);
         expect(validator.isValid(3), isTrue);
         expect(validator.isValid(5), isTrue);
       });
 
       test('Values outside range fail validation', () {
-        final validator = RangeNumValidator(1, 5);
+        final validator = NumberRangeValidator(1, 5);
         expect(validator.isValid(0), isFalse);
         expect(validator.isValid(6), isFalse);
         expect(validator.isValid(1), isTrue);
@@ -62,7 +62,7 @@ void main() {
         expect(result.isOk, isTrue);
 
         final result2 = schema.validate(6);
-        expect(result2, hasOneConstraintViolation('range'));
+        expect(result2, hasOneConstraintViolation('number_range'));
       });
     });
   });

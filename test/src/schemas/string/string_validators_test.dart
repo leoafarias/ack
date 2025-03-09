@@ -6,7 +6,7 @@ import '../../../test_helpers.dart';
 void main() {
   group('String Validators', () {
     group('EmailValidator', () {
-      final validator = EmailStringValidator();
+      final validator = StringEmailValidator();
 
       test('Valid emails pass validation', () {
         expect(validator.isValid('test@example.com'), isTrue);
@@ -26,12 +26,12 @@ void main() {
         expect(schema.validate('test@example.com').isOk, isTrue);
 
         final result = schema.validate('not-an-email');
-        expect(result, hasOneConstraintViolation('email'));
+        expect(result, hasOneConstraintViolation('string_email'));
       });
     });
 
     group('HexColorValidator', () {
-      final validator = HexColorStringValidator();
+      final validator = StringHexColorValidator();
 
       test('Valid hex colors pass validation', () {
         expect(validator.isValid('#fff'), isTrue);
@@ -52,12 +52,12 @@ void main() {
         expect(schema.validate('#00ff55').isOk, isTrue);
 
         final result = schema.validate('not-a-color');
-        expect(result, hasOneConstraintViolation('hex_color'));
+        expect(result, hasOneConstraintViolation('string_hex_color'));
       });
     });
 
     group('IsEmptyValidator', () {
-      final validator = IsEmptyStringValidator();
+      final validator = StringEmptyValidator();
 
       test('Empty string passes validation', () {
         expect(validator.isValid(''), isTrue);
@@ -74,12 +74,12 @@ void main() {
         expect(schema.validate('').isOk, isTrue);
 
         final result = schema.validate('not empty');
-        expect(result, hasOneConstraintViolation('is_empty'));
+        expect(result, hasOneConstraintViolation('string_empty'));
       });
     });
 
     group('MinLengthValidator', () {
-      final validator = MinLengthStringValidator(3);
+      final validator = StringMinLengthValidator(3);
 
       test('Strings meeting minimum length pass validation', () {
         expect(validator.isValid('abc'), isTrue);
@@ -98,12 +98,12 @@ void main() {
         expect(schema.validate('abc').isOk, isTrue);
 
         final result = schema.validate('ab');
-        expect(result, hasOneConstraintViolation('min_length'));
+        expect(result, hasOneConstraintViolation('string_min_length'));
       });
     });
 
     group('MaxLengthValidator', () {
-      final validator = MaxLengthStringValidator(3);
+      final validator = StringMaxLengthValidator(3);
 
       test('Strings within maximum length pass validation', () {
         expect(validator.isValid(''), isTrue);
@@ -122,12 +122,12 @@ void main() {
         expect(schema.validate('abc').isOk, isTrue);
 
         final result = schema.validate('abcd');
-        expect(result, hasOneConstraintViolation('max_length'));
+        expect(result, hasOneConstraintViolation('string_max_length'));
       });
     });
 
     group('NotOneOfValidator', () {
-      final validator = NotOneOfStringValidator(['apple', 'banana']);
+      final validator = StringNotOneOfValidator(['apple', 'banana']);
 
       test('Strings not in disallowed values pass validation', () {
         expect(validator.isValid('orange'), isTrue);
@@ -145,12 +145,12 @@ void main() {
         expect(schema.validate('orange').isOk, isTrue);
 
         final result = schema.validate('apple');
-        expect(result, hasOneConstraintViolation('not_one_of'));
+        expect(result, hasOneConstraintViolation('string_not_one_of'));
       });
     });
 
     group('EnumValidator', () {
-      final validator = EnumStringValidator(['red', 'green', 'blue']);
+      final validator = StringEnumValidator(['red', 'green', 'blue']);
 
       test('Strings in enum pass validation', () {
         expect(validator.isValid('red'), isTrue);
@@ -169,12 +169,12 @@ void main() {
         expect(schema.validate('red').isOk, isTrue);
 
         final result = schema.validate('yellow');
-        expect(result, hasOneConstraintViolation('enum'));
+        expect(result, hasOneConstraintViolation('string_enum'));
       });
     });
 
     group('NotEmptyValidator', () {
-      final validator = NotEmptyStringValidator();
+      final validator = StringNotEmptyValidator();
 
       test('Non-empty strings pass validation', () {
         expect(validator.isValid('hello'), isTrue);
@@ -191,7 +191,7 @@ void main() {
         expect(schema.validate('hello').isOk, isTrue);
 
         final result = schema.validate('');
-        expect(result, hasOneConstraintViolation('not_empty'));
+        expect(result, hasOneConstraintViolation('string_not_empty'));
       });
     });
 
@@ -215,7 +215,7 @@ void main() {
         expect(schema.validate('2023-01-01T00:00:00.000Z').isOk, isTrue);
 
         final result = schema.validate('not a datetime');
-        expect(result, hasOneConstraintViolation('date_time'));
+        expect(result, hasOneConstraintViolation('string_date_time'));
       });
     });
   });

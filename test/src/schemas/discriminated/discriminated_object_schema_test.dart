@@ -133,8 +133,8 @@ void main() {
         result.isFail,
         isTrue,
       );
-      expect((result as Fail).error, isA<SchemaConstraintError>());
-      final error = (result as Fail).error as SchemaConstraintError;
+      expect((result as Fail).error, isA<SchemaConstraintsError>());
+      final error = (result as Fail).error as SchemaConstraintsError;
       expect(error.getConstraint('discriminator_value'), isNotNull);
     });
 
@@ -156,8 +156,8 @@ void main() {
         result.isFail,
         isTrue,
       );
-      expect((result as Fail).error, isA<SchemaConstraintError>());
-      final error = (result as Fail).error as SchemaConstraintError;
+      expect((result as Fail).error, isA<SchemaConstraintsError>());
+      final error = (result as Fail).error as SchemaConstraintsError;
       expect(error.getConstraint('discriminator_value'), isNotNull);
     });
 
@@ -181,8 +181,8 @@ void main() {
         result.isFail,
         isTrue,
       );
-      expect((result as Fail).error, isA<SchemaConstraintError>());
-      final error = (result as Fail).error as SchemaConstraintError;
+      expect((result as Fail).error, isA<SchemaConstraintsError>());
+      final error = (result as Fail).error as SchemaConstraintsError;
       expect(error.getConstraint('discriminator_schema_structure'), isNotNull);
     });
 
@@ -202,7 +202,7 @@ void main() {
       final result =
           discriminatedSchema.validate({'key': 'a', 'value': 'not an int'});
 
-      final error = (result as Fail).error as NestedSchemaError;
+      final error = (result as Fail).error as SchemaNestedError;
 
       // Check that the 'value' property has an error
       expect(error.errors.any((e) => e.name == 'value'), isTrue);

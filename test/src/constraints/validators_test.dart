@@ -4,13 +4,13 @@ import 'package:test/test.dart';
 void main() {
   group('MinItemsListValidator', () {
     test('List with length >= min passes validation', () {
-      final validator = MinItemsListValidator(3);
+      final validator = ListMinItemsValidator(3);
       expect(validator.isValid([1, 2, 3]), isTrue);
       expect(validator.isValid([1, 2, 3, 4]), isTrue);
     });
 
     test('List with length < min fails validation', () {
-      final validator = MinItemsListValidator(3);
+      final validator = ListMinItemsValidator(3);
       expect(validator.isValid([1, 2]), isFalse);
     });
 
@@ -22,17 +22,17 @@ void main() {
       expect(result.isFail, isTrue);
 
       final error = (result as Fail).error;
-      expect(error, isA<SchemaConstraintError>());
+      expect(error, isA<SchemaConstraintsError>());
 
-      final constraintsError = error as SchemaConstraintError;
+      final constraintsError = error as SchemaConstraintsError;
       expect(
-        constraintsError.validations.any((e) => e.key == 'min_items'),
+        constraintsError.constraints.any((e) => e.key == 'list_min_items'),
         isTrue,
       );
     });
 
     test('error message is correct', () {
-      final validator = MinItemsListValidator(3);
+      final validator = ListMinItemsValidator(3);
       final error = validator.buildError([1, 2]);
       expect(
         error.message,

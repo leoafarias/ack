@@ -13,7 +13,7 @@ void main() {
 
   group('PropertyRequiredConstraintViolation', () {
     test('validates required property correctly', () {
-      final validator = PropertyRequiredConstraintViolation(
+      final validator = ObjectRequiredPropertiesValidator(
           schema.copyWith(required: ['name']));
 
       expect(
@@ -37,7 +37,7 @@ void main() {
 
     test('handles empty required keys list', () {
       final validator =
-          PropertyRequiredConstraintViolation(schema.copyWith(required: []));
+          ObjectRequiredPropertiesValidator(schema.copyWith(required: []));
 
       expect(
         validator.isValid({'email': 'test@test.com'}),
@@ -47,7 +47,7 @@ void main() {
     });
 
     test('handles single required key', () {
-      final validator = PropertyRequiredConstraintViolation(
+      final validator = ObjectRequiredPropertiesValidator(
           schema.copyWith(required: ['name']));
 
       expect(
@@ -64,7 +64,7 @@ void main() {
     });
 
     test('validates null values correctly', () {
-      final validator = PropertyRequiredConstraintViolation(
+      final validator = ObjectRequiredPropertiesValidator(
           schema.copyWith(required: ['name']));
 
       expect(

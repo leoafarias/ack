@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('ConstraintValidator', () {
     test('toMap() returns name and description', () {
-      final validator = NotEmptyStringValidator();
+      final validator = StringNotEmptyValidator();
       final map = validator.toMap();
 
       expect(map, {
@@ -14,7 +14,7 @@ void main() {
     });
 
     test('toString() returns JSON representation', () {
-      final validator = NotEmptyStringValidator();
+      final validator = StringNotEmptyValidator();
       expect(
         validator.toString(),
         contains('not_empty'),

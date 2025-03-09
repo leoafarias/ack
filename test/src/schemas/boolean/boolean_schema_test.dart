@@ -12,10 +12,10 @@ void main() {
 
     test('copyWith changes constraints', () {
       final schema = BooleanSchema();
-      expect(schema.getValidators().length, equals(0));
+      expect(schema.getConstraints().length, equals(0));
 
-      final newSchema = schema.copyWith(validators: []);
-      expect(newSchema.getValidators().length, equals(0));
+      final newSchema = schema.copyWith(constraints: []);
+      expect(newSchema.getConstraints().length, equals(0));
     });
 
     group('BooleanSchema Basic Validation', () {
@@ -25,9 +25,9 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintError>());
+        expect(error, isA<SchemaConstraintsError>());
 
-        final constraintsError = error as SchemaConstraintError;
+        final constraintsError = error as SchemaConstraintsError;
         expect(
           constraintsError.isNonNullable,
           isTrue,
@@ -47,9 +47,9 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintError>());
+        expect(error, isA<SchemaConstraintsError>());
 
-        final constraintsError = error as SchemaConstraintError;
+        final constraintsError = error as SchemaConstraintsError;
         expect(
           constraintsError.isInvalidType,
           isTrue,
@@ -85,9 +85,9 @@ void main() {
 
         expect(result.isFail, isTrue);
         final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintError>());
+        expect(error, isA<SchemaConstraintsError>());
 
-        final constraintsError = error as SchemaConstraintError;
+        final constraintsError = error as SchemaConstraintsError;
         expect(
           constraintsError.isInvalidType,
           isTrue,

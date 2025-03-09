@@ -42,3 +42,12 @@ SchemaContext getCurrentSchemaContext() {
     );
   }
 }
+
+class SchemaMockContext extends SchemaContext {
+  const SchemaMockContext()
+      : super(
+          name: 'mock_context',
+          schema: const StringSchema(),
+          value: 'mock_value',
+        );
+}

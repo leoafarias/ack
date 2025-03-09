@@ -7,7 +7,6 @@ void main() {
       final error = ConstraintError(
         key: 'test_constraint',
         message: 'Test constraint failed',
-        variables: {'key': 'value'},
       );
 
       final map = error.toMap();
@@ -17,7 +16,6 @@ void main() {
           equals({
             'key': 'test_constraint',
             'message': 'Test constraint failed',
-            'variables': {'key': 'value'},
           }));
     });
 
@@ -25,7 +23,6 @@ void main() {
       final error = ConstraintError(
         key: 'test_constraint',
         message: 'Test constraint failed',
-        variables: {'key': 'value'},
       );
 
       final errorString = error.toString();

@@ -13,17 +13,14 @@ void main() {
       final constraint1Violation = ConstraintError(
         key: 'custom_constraint1',
         message: 'Custom constraint',
-        variables: {'key1': 'value1'},
       );
       final constraint2Violation = ConstraintError(
         key: 'custom_constraint2',
         message: 'Custom constraint 2',
-        variables: {'key2': 'value2'},
       );
       final constraint3Violation = ConstraintError(
         key: 'custom_constraint3',
         message: 'Custom constraint 3',
-        variables: {'key3': 'value3'},
       );
       final constraintErrors = [
         constraint1Violation,
@@ -31,8 +28,8 @@ void main() {
         constraint3Violation,
       ];
 
-      final schemaError = SchemaConstraintError(
-        validations: constraintErrors,
+      final schemaError = SchemaConstraintsError(
+        constraints: constraintErrors,
         context: _MockSchemaContext(),
       );
       final exception = AckViolationException(schemaError);
@@ -46,7 +43,7 @@ void main() {
       expect(errorMap['key'], 'validation');
 
       // Verify the constraints are included
-      final constraintsList = schemaError.validations;
+      final constraintsList = schemaError.constraints;
       expect(constraintsList.length, 3);
       expect(constraintsList[0].key, 'custom_constraint1');
       expect(constraintsList[1].key, 'custom_constraint2');
@@ -57,10 +54,9 @@ void main() {
       final constraintError = ConstraintError(
         key: 'custom_constraint',
         message: 'Custom constraint',
-        variables: {'key': 'value'},
       );
-      final schemaError = SchemaConstraintError(
-        validations: [constraintError],
+      final schemaError = SchemaConstraintsError(
+        constraints: [constraintError],
         context: _MockSchemaContext(),
       );
       final exception = AckViolationException(schemaError);

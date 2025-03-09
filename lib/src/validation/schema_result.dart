@@ -37,9 +37,9 @@ sealed class SchemaResult<T extends Object> {
   ///
   /// If this result is successful, it returns an empty list.
   /// If this result is a failure, it returns the list of errors.
-  SchemaError getViolation() {
+  SchemaError getError() {
     return match(
-      onOk: (_) => throw Exception('Cannot get violation from Ok'),
+      onOk: (_) => throw Exception('Cannot get error from Ok'),
       onFail: (error) => error,
     );
   }

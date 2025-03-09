@@ -50,9 +50,9 @@ void main() {
         isTrue,
       );
 
-      expect((result as Fail).error, isA<SchemaConstraintError>());
+      expect((result as Fail).error, isA<SchemaConstraintsError>());
 
-      final error = (result as Fail).error as SchemaConstraintError;
+      final error = (result as Fail).error as SchemaConstraintsError;
       expect(error.getConstraint('discriminator_value'), isNotNull);
     });
 
@@ -76,7 +76,7 @@ void main() {
         result.isFail,
         isTrue,
       );
-      final error = (result as Fail).error as SchemaConstraintError;
+      final error = (result as Fail).error as SchemaConstraintsError;
       expect(
         error.getConstraint('discriminator_schema_structure'),
         isNotNull,
@@ -101,10 +101,10 @@ void main() {
 
       expect(
         (result as Fail).error,
-        isA<NestedSchemaError>(),
+        isA<SchemaNestedError>(),
       );
 
-      final resultError = (result as Fail).error as NestedSchemaError;
+      final resultError = (result as Fail).error as SchemaNestedError;
 
       // Check that the 'value' property has an error
       expect(resultError.errors.any((e) => e.name == 'value'), isTrue);

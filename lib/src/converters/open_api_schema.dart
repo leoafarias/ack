@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import '../constraints/constraint.dart';
 import '../helpers.dart';
 import '../schemas/schema.dart';
 import '../validation/ack_exception.dart';
-import '../validation/constraint_validator.dart';
 
 class OpenApiConverterException implements Exception {
   final Object? error;
@@ -185,7 +185,7 @@ JSON _convertSchema(Schema schema) {
 
   return deepMerge(
     schemaMap,
-    _getMergedOpenApiConstraints(schema.getValidators()),
+    _getMergedOpenApiConstraints(schema.getConstraints()),
   );
 }
 
@@ -211,13 +211,13 @@ String _convertSchemaType(SchemaType type) {
 /// [constraints] - The list of OpenAPI constraint validators to merge.
 /// Returns a merged schema map, or an empty map if no valid schemas are provided.
 JSON _getMergedOpenApiConstraints<T extends Object>(
-  List<ConstraintValidator<T>> constraints,
+  List<Constraint<T>> constraints,
 ) {
-  final openApiConstraints = constraints.whereType<OpenAPiSpecOutput<T>>();
+  final openApiConstraints = constraints.whereType<OpenApiSpec<T>>();
 
   return openApiConstraints.fold<JSON>({}, (previousValue, element) {
     try {
-      final schema = element.topOpenApiSchema();
+      final schema = element.toOpenApiSpec();
 
       return deepMerge(previousValue, schema);
     } catch (e) {

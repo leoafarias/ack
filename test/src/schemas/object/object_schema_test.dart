@@ -24,8 +24,8 @@ void main() {
       expect(result.isFail, isTrue);
 
       final schemaError = (result as Fail).error;
-      expect(schemaError, isA<SchemaConstraintError>());
-      final constraintsError = schemaError as SchemaConstraintError;
+      expect(schemaError, isA<SchemaConstraintsError>());
+      final constraintsError = schemaError as SchemaConstraintsError;
       expect(
         constraintsError.getConstraint('non_nullable') != null,
         isTrue,
@@ -48,8 +48,8 @@ void main() {
       expect(result.isFail, isTrue);
 
       final schemaError = (result as Fail).error;
-      expect(schemaError, isA<SchemaConstraintError>());
-      final constraintsError = schemaError as SchemaConstraintError;
+      expect(schemaError, isA<SchemaConstraintsError>());
+      final constraintsError = schemaError as SchemaConstraintsError;
       expect(
         constraintsError.getConstraint('invalid_type') != null,
         isTrue,
@@ -127,7 +127,7 @@ void main() {
         extensionSchema.getProperties(),
         additionalProperties: extensionSchema.getAllowsAdditionalProperties(),
         required: extensionSchema.getRequiredProperties(),
-        validators: extensionSchema.getValidators(),
+        constraints: extensionSchema.getConstraints(),
       );
 
       // Verify merged schema properties
@@ -189,10 +189,10 @@ void main() {
       final invalidResult = mergedSchema.validate(invalidObject);
       expect(invalidResult.isFail, isTrue);
 
-      final objectError = (invalidResult as Fail).error as NestedSchemaError;
+      final objectError = (invalidResult as Fail).error as SchemaNestedError;
       expect(objectError.errors.any((e) => e.name == 'user'), isTrue);
 
-      final userError = objectError.errors[0] as SchemaConstraintError;
+      final userError = objectError.errors[0] as SchemaConstraintsError;
 
       expect(userError.getConstraint('required_properties'), isNotNull);
 

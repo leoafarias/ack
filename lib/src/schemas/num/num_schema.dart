@@ -6,7 +6,7 @@ final class DoubleSchema extends NumSchema<double> {
 
   const DoubleSchema({
     super.nullable,
-    super.validators,
+    super.constraints,
     super.strict,
     super.description,
     super.defaultValue,
@@ -19,7 +19,7 @@ final class IntegerSchema extends NumSchema<int> {
 
   const IntegerSchema({
     super.nullable,
-    super.validators,
+    super.constraints,
     super.strict,
     super.description,
     super.defaultValue,
@@ -29,7 +29,7 @@ final class IntegerSchema extends NumSchema<int> {
 sealed class NumSchema<T extends num> extends ScalarSchema<NumSchema<T>, T> {
   const NumSchema({
     super.nullable,
-    super.validators,
+    super.constraints,
     super.strict,
     super.description,
     super.defaultValue,

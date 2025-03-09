@@ -12,7 +12,7 @@ final class ObjectSchema extends Schema<MapValue>
   ObjectSchema(
     this._properties, {
     bool additionalProperties = false,
-    super.validators,
+    super.constraints,
     super.description,
     List<String> required = const [],
     super.nullable,
@@ -43,7 +43,7 @@ final class ObjectSchema extends Schema<MapValue>
     List<String>? required,
     bool? nullable,
     String? description,
-    List<ConstraintValidator<MapValue>>? validators,
+    List<Validator<MapValue>>? constraints,
     MapValue? defaultValue,
   }) {
     // if property SchemaValue is of SchemaMap, we need to merge them
@@ -60,7 +60,7 @@ final class ObjectSchema extends Schema<MapValue>
           prop._properties,
           additionalProperties: prop._additionalProperties,
           required: prop._required,
-          validators: prop._validators,
+          constraints: prop._constraints,
         );
       } else {
         mergedProperties[key] = prop;
@@ -73,7 +73,7 @@ final class ObjectSchema extends Schema<MapValue>
       additionalProperties: additionalProperties,
       required: requiredProperties,
       properties: mergedProperties,
-      validators: [..._validators, ...?validators],
+      constraints: [..._constraints, ...?constraints],
       nullable: nullable,
       description: description,
       defaultValue: defaultValue,
@@ -89,8 +89,8 @@ final class ObjectSchema extends Schema<MapValue>
   @override
   List<ConstraintError> checkValidators(MapValue value) {
     final extraValidation = [
-      UnallowedPropertiesConstraintViolation(this),
-      PropertyRequiredConstraintViolation(this),
+      ObjectNoAdditionalPropertiesValidator(this),
+      ObjectRequiredPropertiesValidator(this),
     ];
 
     return [
@@ -122,14 +122,14 @@ final class ObjectSchema extends Schema<MapValue>
       final propResult = propSchema.validate(propValue, debugName: propKey);
 
       if (propResult.isFail) {
-        violations.add(propResult.getViolation());
+        violations.add(propResult.getError());
       }
     }
 
     if (violations.isEmpty) return SchemaResult.ok(resultValue!);
 
     return SchemaResult.fail(
-      NestedSchemaError(errors: violations, context: context),
+      SchemaNestedError(errors: violations, context: context),
     );
   }
 
@@ -151,7 +151,7 @@ final class ObjectSchema extends Schema<MapValue>
     bool? additionalProperties,
     List<String>? required,
     Map<String, Schema>? properties,
-    List<ConstraintValidator<MapValue>>? validators,
+    List<Validator<MapValue>>? constraints,
   }) {
     return extend(
       properties ?? _properties,
@@ -159,7 +159,7 @@ final class ObjectSchema extends Schema<MapValue>
       required: required,
       nullable: nullable,
       description: description,
-      validators: validators,
+      constraints: constraints,
     );
   }
 
@@ -168,7 +168,7 @@ final class ObjectSchema extends Schema<MapValue>
     bool? additionalProperties,
     List<String>? required,
     Map<String, Schema>? properties,
-    List<ConstraintValidator<MapValue>>? validators,
+    List<Validator<MapValue>>? constraints,
     bool? nullable,
     String? description,
     MapValue? defaultValue,
@@ -176,7 +176,7 @@ final class ObjectSchema extends Schema<MapValue>
     return ObjectSchema(
       properties ?? _properties,
       additionalProperties: additionalProperties ?? _additionalProperties,
-      validators: validators ?? _validators,
+      constraints: constraints ?? _constraints,
       description: description ?? _description,
       required: required ?? _required,
       nullable: nullable ?? _nullable,
