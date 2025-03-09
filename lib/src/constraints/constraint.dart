@@ -63,3 +63,16 @@ mixin Validator<T extends Object> on Constraint<T> {
           constraint: this,
         );
 }
+
+mixin WithConstraintError<T> on Constraint {
+  @protected
+  String buildMessage(T value);
+
+  ConstraintError buildError(T value) {
+    return ConstraintError(
+      key: key,
+      message: buildMessage(value),
+      constraint: this,
+    );
+  }
+}

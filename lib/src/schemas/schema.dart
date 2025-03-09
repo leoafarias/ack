@@ -161,24 +161,18 @@ sealed class Schema<T extends Object> {
         return _nullable
             ? SchemaResult.unit()
             : SchemaResult.fail(SchemaConstraintsError(
-                constraints: [NonNullableConstraint()],
+                constraints: [NonNullableConstraint().buildError(value)],
                 context: context,
               ));
       }
 
       final typedValue = tryParse(value);
 
-      final invalidTypeConstraint =
-          InvalidTypeConstraint<T>().validate(typedValue);
-
       if (typedValue == null) {
         return SchemaResult.fail(
           SchemaConstraintsError(
             constraints: [
-              InvalidTypeConstraint(
-                expectedType: value.runtimeType,
-                expectedType: T,
-              ),
+              InvalidTypeConstraint(expectedType: T).buildError(value),
             ],
             context: context,
           ),

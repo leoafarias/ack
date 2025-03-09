@@ -6,31 +6,27 @@ import 'package:meta/meta.dart';
 
 import '../schemas/schema.dart';
 
-final class InvalidTypeConstraint<T extends Object> extends Constraint<Object>
-    with Validator<Object> {
-  InvalidTypeConstraint()
-      : super(key: 'invalid_type', description: 'Type should be $T');
+final class InvalidTypeConstraint extends Constraint<Object>
+    with WithConstraintError<Object> {
+  /// The expected type of the value.
+  final Type expectedType;
+
+  /// Creates a new [InvalidTypeConstraint] that validates that the value is of the expected type.
+  InvalidTypeConstraint({required this.expectedType})
+      : super(key: 'invalid_type', description: 'Type should be $expectedType');
 
   @override
-  bool isValid(Object? value) => value is T;
-
-  @override
-  ConstraintError<InvalidTypeConstraint<T>>? validate(Object? value) =>
-      isValid(value)
-          ? null
-          : ConstraintError(
-              key: key,
-              message: 'Invalid type: ${value.runtimeType}. Expected type: $T',
-              constraint: this,
-            );
-  @override
-  String buildMessage(Object? value) =>
-      'Invalid type: ${value.runtimeType}. Expected type: $T';
+  String buildMessage(Object value) =>
+      'Invalid type: ${value.runtimeType}. Expected type: $expectedType';
 }
 
-final class NonNullableConstraint extends Constraint<Object> {
+final class NonNullableConstraint extends Constraint<Object>
+    with WithConstraintError<Object?> {
   NonNullableConstraint()
       : super(key: 'non_nullable', description: 'Value cannot be null');
+
+  @override
+  String buildMessage(Object? value) => 'Value cannot be null';
 }
 
 /// {@template date_time_validator}
