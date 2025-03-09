@@ -251,6 +251,9 @@ mixin SchemaFluentMethods<S extends Schema<T>, T extends Object> on Schema<T> {
   S withConstraints(List<Validator<T>> constraints) =>
       copyWith(constraints: [..._constraints, ...constraints]) as S;
 
+  S constrain(Validator<T> constraint) =>
+      withConstraints([..._constraints, constraint]);
+
   /// Creates a [ListSchema] with this schema as its item schema.
   ///
   /// This allows you to define schemas for lists where each item must conform

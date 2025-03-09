@@ -8,7 +8,7 @@ void main() {
       final map = validator.toMap();
 
       expect(map, {
-        'key': 'string_not_empty',
+        'constraintKey': 'string_not_empty',
         'description': 'String cannot be empty',
       });
     });

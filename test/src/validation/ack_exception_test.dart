@@ -10,7 +10,7 @@ class _MockSchemaContext extends SchemaContext {
 class _MockConstraint extends Constraint {
   const _MockConstraint(String postfix)
       : super(
-          key: 'test_constraint_$postfix',
+          constraintKey: 'test_constraint_$postfix',
           description: 'Test constraint $postfix',
         );
 }
@@ -48,12 +48,14 @@ void main() {
 
       // Check the structure of the error
       final errorMap = map['error'] as Map<String, dynamic>;
-      expect(errorMap['key'], 'constraints');
+      expect(errorMap['errorKey'], 'schema_constraints_error');
       expect(errorMap['name'], 'test');
       expect(errorMap['value'], null);
-      expect(errorMap['message'], contains('Test constraint'));
-      expect(errorMap['message'], contains('Test constraint 2'));
-      expect(errorMap['message'], contains('Test constraint 3'));
+      final constraints = errorMap['constraints'] as List;
+      expect(constraints.length, 3);
+      expect(constraints.first['message'], contains('Test constraint'));
+      expect(constraints[1]['message'], contains('Test constraint 2'));
+      expect(constraints.last['message'], contains('Test constraint 3'));
 
       // Verify the constraints list
       final constraintsList = errorMap['constraints'] as List;
@@ -61,17 +63,20 @@ void main() {
 
       // Verify first constraint
       final firstConstraint = constraintsList[0] as Map<String, dynamic>;
-      expect(firstConstraint['constraint']['key'], 'test_constraint_1');
+      expect(
+          firstConstraint['constraint']['constraintKey'], 'test_constraint_1');
       expect(firstConstraint['message'], 'Test constraint');
 
       // Verify second constraint
       final secondConstraint = constraintsList[1] as Map<String, dynamic>;
-      expect(secondConstraint['constraint']['key'], 'test_constraint_2');
+      expect(
+          secondConstraint['constraint']['constraintKey'], 'test_constraint_2');
       expect(secondConstraint['message'], 'Test constraint 2');
 
       // Verify third constraint
       final thirdConstraint = constraintsList[2] as Map<String, dynamic>;
-      expect(thirdConstraint['constraint']['key'], 'test_constraint_3');
+      expect(
+          thirdConstraint['constraint']['constraintKey'], 'test_constraint_3');
       expect(thirdConstraint['message'], 'Test constraint 3');
     });
 

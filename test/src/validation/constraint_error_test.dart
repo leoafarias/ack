@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 class _MockConstraint extends Constraint {
   const _MockConstraint()
-      : super(key: 'test_constraint', description: 'Test constraint');
+      : super(constraintKey: 'test_constraint', description: 'Test constraint');
 }
 
 void main() {
@@ -21,7 +21,7 @@ void main() {
           equals({
             'message': 'Test constraint failed',
             'constraint': {
-              'key': 'test_constraint',
+              'constraintKey': 'test_constraint',
               'description': 'Test constraint'
             },
           }));

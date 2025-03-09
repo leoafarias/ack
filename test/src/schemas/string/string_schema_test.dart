@@ -382,7 +382,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'string_enum'),
+          constraintsError.constraints
+              .any((c) => c.constraintKey == 'string_enum'),
           isTrue,
         );
       });

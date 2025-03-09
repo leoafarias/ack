@@ -32,7 +32,7 @@ void main() {
 
         final nonNullableError = error.getConstraint<NonNullableConstraint>();
         expect(
-          nonNullableError!.key == 'non_nullable',
+          nonNullableError!.constraintKey == 'non_nullable',
           isTrue,
         );
       });

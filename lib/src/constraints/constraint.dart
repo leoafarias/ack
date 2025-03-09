@@ -1,42 +1,37 @@
 import 'package:meta/meta.dart';
 
-import '../validation/schema_error.dart';
-
 abstract class Constraint<T extends Object> {
-  final String key;
+  final String constraintKey;
 
   final String description;
 
-  const Constraint({required this.key, required this.description});
+  const Constraint({required this.constraintKey, required this.description});
 
   Map<String, Object?> toMap() {
-    return {'key': key, 'description': description};
+    return {'constraintKey': constraintKey, 'description': description};
   }
 
   @override
-  String toString() => '$runtimeType: $key: $description';
+  String toString() => '$runtimeType: $constraintKey: $description';
 }
 
-final class ConstraintError with ErrorBase {
+final class ConstraintError {
   final Constraint constraint;
 
-  @override
   final String message;
 
-  ConstraintError({required this.message, required this.constraint});
+  const ConstraintError({required this.message, required this.constraint});
 
   Type get type => constraint.runtimeType;
 
-  @override
+  String get constraintKey => constraint.constraintKey;
+
   Map<String, Object?> toMap() {
     return {'message': message, 'constraint': constraint.toMap()};
   }
 
   @override
-  String toString() => '$runtimeType: $key: $message';
-
-  @override
-  String get key => constraint.key;
+  String toString() => '$runtimeType: $constraintKey: $message';
 }
 
 mixin OpenApiSpec<T extends Object> on Constraint<T> {

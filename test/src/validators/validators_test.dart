@@ -26,7 +26,8 @@ void main() {
 
       final constraintsError = error as SchemaConstraintsError;
       expect(
-        constraintsError.constraints.any((e) => e.key == 'list_min_items'),
+        constraintsError.constraints
+            .any((e) => e.constraintKey == 'list_min_items'),
         isTrue,
       );
     });

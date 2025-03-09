@@ -42,7 +42,7 @@ class IsConstraintViolation extends Matcher {
 
   @override
   bool matches(item, Map matchState) {
-    return item is ConstraintError && item.key == key;
+    return item is ConstraintError && item.constraintKey == key;
   }
 
   @override
@@ -165,14 +165,14 @@ class HasConstraintErrors extends Matcher {
 
     if (errors.length != expectedCount) {
       matchState['reason'] =
-          'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.key).toList()}';
+          'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.constraintKey).toList()}';
       return false;
     }
 
     for (final error in errors) {
-      if (!names.contains(error.key)) {
+      if (!names.contains(error.constraintKey)) {
         matchState['reason'] =
-            'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.key).toList()}';
+            'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.constraintKey).toList()}';
         return false;
       }
     }

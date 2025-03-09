@@ -13,7 +13,9 @@ final class InvalidTypeConstraint extends Constraint<Object>
 
   /// Creates a new [InvalidTypeConstraint] that validates that the value is of the expected type.
   InvalidTypeConstraint({required this.expectedType})
-      : super(key: 'invalid_type', description: 'Type should be $expectedType');
+      : super(
+            constraintKey: 'invalid_type',
+            description: 'Type should be $expectedType');
 
   @override
   String buildMessage(Object value) =>
@@ -23,7 +25,8 @@ final class InvalidTypeConstraint extends Constraint<Object>
 final class NonNullableConstraint extends Constraint<Object>
     with WithConstraintError<Object?> {
   NonNullableConstraint()
-      : super(key: 'non_nullable', description: 'Value cannot be null');
+      : super(
+            constraintKey: 'non_nullable', description: 'Value cannot be null');
 
   @override
   String buildMessage(Object? value) => 'Value cannot be null';
@@ -39,7 +42,7 @@ class StringDateTimeConstraint extends Constraint<String>
   /// {@macro string_datetime_validator}
   const StringDateTimeConstraint()
       : super(
-          key: 'string_date_time',
+          constraintKey: 'string_date_time',
           description: 'Must be a valid date time string',
         );
 
@@ -64,7 +67,7 @@ class StringDateConstraint extends Constraint<String>
   /// {@macro string_date_validator}
   const StringDateConstraint()
       : super(
-          key: 'string_date',
+          constraintKey: 'string_date',
           description: 'Must be a valid date string in YYYY-MM-DD format',
         );
 
@@ -105,7 +108,9 @@ class StringEnumConstraint extends Constraint<String>
 
   /// {@macro string_enum_validator}
   const StringEnumConstraint(this.enumValues)
-      : super(key: 'string_enum', description: 'Must be one of: $enumValues}');
+      : super(
+            constraintKey: 'string_enum',
+            description: 'Must be one of: $enumValues}');
 
   @override
   bool isValid(String value) => enumValues.contains(value);
@@ -190,7 +195,9 @@ class StringNotEmptyValidator extends Constraint<String>
     with Validator<String> {
   /// {@macro string_not_empty_validator}
   const StringNotEmptyValidator()
-      : super(key: 'string_not_empty', description: 'String cannot be empty');
+      : super(
+            constraintKey: 'string_not_empty',
+            description: 'String cannot be empty');
 
   @override
   bool isValid(String value) => value.isNotEmpty;
@@ -209,7 +216,9 @@ class StringNotEmptyValidator extends Constraint<String>
 class StringJsonValidator extends Constraint<String> with Validator<String> {
   /// {@macro string_json_validator}
   const StringJsonValidator()
-      : super(key: 'string_json', description: 'Must be a valid JSON string');
+      : super(
+            constraintKey: 'string_json',
+            description: 'Must be a valid JSON string');
 
   @override
   bool isValid(String value) {
@@ -249,7 +258,7 @@ class StringRegexConstraint extends Constraint<String>
     required this.pattern,
     required this.example,
   }) : super(
-          key: 'string_pattern_$patternName',
+          constraintKey: 'string_pattern_$patternName',
           description: 'Must match the pattern: $patternName. Example $example',
         ) {
     // Assert that string is not empty
@@ -275,14 +284,15 @@ class StringRegexConstraint extends Constraint<String>
 
   @override
   String buildMessage(String value) {
-    return 'The value "$value" does not match the required pattern for $key. Expected format: "$example".';
+    return 'The value "$value" does not match the required pattern for $constraintKey. Expected format: "$example".';
   }
 
   @override
-  Map<String, Object?> toMap() => {'pattern': pattern, 'name': key};
+  Map<String, Object?> toMap() => {'pattern': pattern, 'name': constraintKey};
 
   @override
-  Map<String, Object?> toOpenApiSpec() => {'pattern': pattern, 'name': key};
+  Map<String, Object?> toOpenApiSpec() =>
+      {'pattern': pattern, 'name': constraintKey};
 }
 
 /// {@template string_empty_validator}
@@ -293,7 +303,8 @@ class StringRegexConstraint extends Constraint<String>
 class StringEmptyConstraint extends Constraint<String> with Validator<String> {
   /// {@macro string_empty_validator}
   const StringEmptyConstraint()
-      : super(key: 'string_empty', description: 'String must be empty');
+      : super(
+            constraintKey: 'string_empty', description: 'String must be empty');
 
   @override
   bool isValid(String value) => value.isEmpty;
@@ -317,7 +328,7 @@ class StringMinLengthConstraint extends Constraint<String>
   /// {@macro string_min_length_validator}
   const StringMinLengthConstraint(this.min)
       : super(
-          key: 'string_min_length',
+          constraintKey: 'string_min_length',
           description: 'String must be at least $min characters long',
         );
 
@@ -346,7 +357,7 @@ class StringMaxLengthConstraint extends Constraint<String>
   /// {@macro string_max_length_validator}
   const StringMaxLengthConstraint(this.max)
       : super(
-          key: 'string_max_length',
+          constraintKey: 'string_max_length',
           description: 'String must be at most $max characters long',
         );
 
@@ -373,7 +384,7 @@ class ListUniqueItemsConstraint<T extends Object> extends Constraint<List<T>>
   /// {@macro list_unique_items_validator}
   const ListUniqueItemsConstraint()
       : super(
-          key: 'list_unique_items',
+          constraintKey: 'list_unique_items',
           description: 'List items must be unique',
         );
 
@@ -404,7 +415,7 @@ class ListMinItemsConstraint<T extends Object> extends Constraint<List<T>>
   /// {@macro list_min_items_validator}
   const ListMinItemsConstraint(this.min)
       : super(
-          key: 'list_min_items',
+          constraintKey: 'list_min_items',
           description: 'List must have at least $min items',
         );
 
@@ -433,7 +444,7 @@ class ListMaxItemsConstraint<T extends Object> extends Constraint<List<T>>
   /// {@macro list_max_items_validator}
   const ListMaxItemsConstraint(this.max)
       : super(
-          key: 'list_max_items',
+          constraintKey: 'list_max_items',
           description: 'List must have at most $max items',
         );
 
@@ -469,7 +480,7 @@ class NumberMinConstraint<T extends num> extends Constraint<T>
   const NumberMinConstraint(this.min, {bool? exclusive})
       : exclusive = exclusive ?? false,
         super(
-          key: 'number_min',
+          constraintKey: 'number_min',
           description: 'Must be greater than or equal to $min',
         );
   @override
@@ -500,7 +511,7 @@ class NumberMultipleOfConstraint<T extends num> extends Constraint<T>
   /// {@macro number_multiple_of_validator}
   const NumberMultipleOfConstraint(this.multiple)
       : super(
-          key: 'number_multiple_of',
+          constraintKey: 'number_multiple_of',
           description: 'Must be a multiple of $multiple',
         );
 
@@ -537,7 +548,7 @@ class NumberMaxConstraint<T extends num> extends Constraint<T>
   const NumberMaxConstraint(this.max, {bool? exclusive})
       : exclusive = exclusive ?? false,
         super(
-          key: 'number_max',
+          constraintKey: 'number_max',
           description: 'Must be less than or equal to $max',
         );
 
@@ -582,7 +593,7 @@ class NumberRangeConstraint<T extends num> extends Constraint<T>
   const NumberRangeConstraint(this.min, this.max, {bool? exclusive})
       : exclusive = exclusive ?? false,
         super(
-          key: 'number_range',
+          constraintKey: 'number_range',
           description: 'Must be between $min and $max (inclusive)',
         );
 
@@ -617,7 +628,7 @@ class ObjectMinPropertiesConstraint extends Constraint<MapValue>
   /// {@macro object_min_properties_validator}
   const ObjectMinPropertiesConstraint({required this.min})
       : super(
-          key: 'object_min_properties',
+          constraintKey: 'object_min_properties',
           description: 'Object must have at least $min properties',
         );
 
@@ -646,7 +657,7 @@ class ObjectMaxPropertiesConstraint extends Constraint<MapValue>
   /// {@macro object_max_properties_validator}
   const ObjectMaxPropertiesConstraint({required this.max})
       : super(
-          key: 'object_max_properties',
+          constraintKey: 'object_max_properties',
           description: 'Object must have at most $max properties',
         );
 
@@ -672,7 +683,7 @@ class ObjectNoAdditionalPropertiesConstraint extends Constraint<MapValue>
   /// {@macro object_unallowed_property_validator}
   ObjectNoAdditionalPropertiesConstraint(this.schema)
       : super(
-          key: 'object_no_additional_properties',
+          constraintKey: 'object_no_additional_properties',
           description:
               'Unallowed additional properties: ${schema.getProperties().keys}',
         );
@@ -704,7 +715,7 @@ class ObjectRequiredPropertiesConstraint extends Constraint<MapValue>
   /// {@macro object_required_property_validator}
   ObjectRequiredPropertiesConstraint(this.schema)
       : super(
-          key: 'object_required_properties',
+          constraintKey: 'object_required_properties',
           description: 'Required properties: ${schema.getRequiredProperties()}',
         );
 
@@ -731,7 +742,7 @@ class ObjectDiscriminatorStructureConstraint
 
   ObjectDiscriminatorStructureConstraint(this.discriminatorKey)
       : super(
-          key: 'object_discriminator_structure',
+          constraintKey: 'object_discriminator_structure',
           description:
               'All schemas must have "$discriminatorKey" as a required property',
         );
@@ -786,7 +797,7 @@ class ObjectDiscriminatorValueConstraint extends Constraint<MapValue>
 
   ObjectDiscriminatorValueConstraint(this.discriminatorKey, this.schemas)
       : super(
-          key: 'object_discriminator_value',
+          constraintKey: 'object_discriminator_value',
           description: 'Value must have a valid discriminator',
         );
 
