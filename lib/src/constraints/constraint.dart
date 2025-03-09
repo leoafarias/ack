@@ -1,6 +1,5 @@
 import 'package:meta/meta.dart';
 
-import '../helpers.dart';
 import '../validation/schema_error.dart';
 
 abstract class Constraint<T extends Object> {
@@ -13,8 +12,6 @@ abstract class Constraint<T extends Object> {
   Map<String, Object?> toMap() {
     return {'key': key, 'description': description};
   }
-
-  String toJson() => prettyJson(toMap());
 
   @override
   String toString() => '$runtimeType: $key: $description';

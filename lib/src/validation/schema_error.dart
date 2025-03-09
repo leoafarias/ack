@@ -84,7 +84,13 @@ final class SchemaConstraintsError extends SchemaError {
           name: context.name,
           schema: context.schema,
           value: context.value,
-          message: constraints.map((e) => e.message).join('\n'),
+          message: '''
+Schema:
+${context.name}: ${context.value ?? 'null'}
+
+Constraints:
+${constraints.map((e) => '- ${e.message}').join('\n')}
+''',
         );
 
   bool get isInvalidType =>
