@@ -167,12 +167,16 @@ sealed class Schema<T extends Object> {
       }
 
       final typedValue = tryParse(value);
+
+      final invalidTypeConstraint =
+          InvalidTypeConstraint<T>().validate(typedValue);
+
       if (typedValue == null) {
         return SchemaResult.fail(
           SchemaConstraintsError(
             constraints: [
               InvalidTypeConstraint(
-                valueType: value.runtimeType,
+                expectedType: value.runtimeType,
                 expectedType: T,
               ),
             ],

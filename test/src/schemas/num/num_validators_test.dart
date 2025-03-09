@@ -42,14 +42,14 @@ void main() {
 
     group('RangeValidator', () {
       test('Values in range pass validation', () {
-        final validator = NumberRangeValidator(1, 5);
+        final validator = NumberRangeConstraint(1, 5);
         expect(validator.isValid(1), isTrue);
         expect(validator.isValid(3), isTrue);
         expect(validator.isValid(5), isTrue);
       });
 
       test('Values outside range fail validation', () {
-        final validator = NumberRangeValidator(1, 5);
+        final validator = NumberRangeConstraint(1, 5);
         expect(validator.isValid(0), isFalse);
         expect(validator.isValid(6), isFalse);
         expect(validator.isValid(1), isTrue);

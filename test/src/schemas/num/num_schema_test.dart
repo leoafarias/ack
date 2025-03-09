@@ -139,20 +139,20 @@ void main() {
 
     group('RangeValidator', () {
       test('Values in range pass validation', () {
-        final validator = NumberRangeValidator(1.0, 5.0);
+        final validator = NumberRangeConstraint(1.0, 5.0);
         expect(validator.isValid(1.0), isTrue);
         expect(validator.isValid(3.0), isTrue);
         expect(validator.isValid(5.0), isTrue);
       });
 
       test('Values outside range fail validation', () {
-        final validator = NumberRangeValidator(1.0, 5.0);
+        final validator = NumberRangeConstraint(1.0, 5.0);
         expect(validator.isValid(0.9), isFalse);
         expect(validator.isValid(5.1), isFalse);
       });
 
       test('Exclusive range validation works correctly', () {
-        final validator = NumberRangeValidator(1.0, 5.0, exclusive: true);
+        final validator = NumberRangeConstraint(1.0, 5.0, exclusive: true);
         expect(validator.isValid(1.0), isFalse);
         expect(validator.isValid(5.0), isFalse);
         expect(validator.isValid(1.1), isTrue);
@@ -329,20 +329,20 @@ void main() {
 
     group('RangeValidator', () {
       test('Values in range pass validation', () {
-        final validator = NumberRangeValidator(1, 5);
+        final validator = NumberRangeConstraint(1, 5);
         expect(validator.isValid(1), isTrue);
         expect(validator.isValid(3), isTrue);
         expect(validator.isValid(5), isTrue);
       });
 
       test('Values outside range fail validation', () {
-        final validator = NumberRangeValidator(1, 5);
+        final validator = NumberRangeConstraint(1, 5);
         expect(validator.isValid(0), isFalse);
         expect(validator.isValid(6), isFalse);
       });
 
       test('Exclusive range validation works correctly', () {
-        final validator = NumberRangeValidator(1, 5, exclusive: true);
+        final validator = NumberRangeConstraint(1, 5, exclusive: true);
         expect(validator.isValid(1), isFalse);
         expect(validator.isValid(5), isFalse);
         expect(validator.isValid(2), isTrue);

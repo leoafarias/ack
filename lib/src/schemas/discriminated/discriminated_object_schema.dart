@@ -40,9 +40,9 @@ final class DiscriminatedObjectSchema extends Schema<MapValue>
     if (_nullable && mapValue == null) return SchemaResult.unit();
 
     final violations = [
-      ObjectDiscriminatorStructureValidator(_discriminatorKey)
+      ObjectDiscriminatorStructureConstraint(_discriminatorKey)
           .validate(_schemas),
-      ObjectDiscriminatorValueValidator(_discriminatorKey, _schemas)
+      ObjectDiscriminatorValueConstraint(_discriminatorKey, _schemas)
           .validate(mapValue!),
     ].whereType<ConstraintError>();
 

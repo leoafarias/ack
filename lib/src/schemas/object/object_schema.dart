@@ -89,8 +89,8 @@ final class ObjectSchema extends Schema<MapValue>
   @override
   List<ConstraintError> checkValidators(MapValue value) {
     final extraValidation = [
-      ObjectNoAdditionalPropertiesValidator(this),
-      ObjectRequiredPropertiesValidator(this),
+      ObjectNoAdditionalPropertiesConstraint(this),
+      ObjectRequiredPropertiesConstraint(this),
     ];
 
     return [

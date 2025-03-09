@@ -6,13 +6,26 @@ import 'package:meta/meta.dart';
 
 import '../schemas/schema.dart';
 
-final class InvalidTypeConstraint extends Constraint<Object> {
-  final Type valueType;
-  final Type expectedType;
-  InvalidTypeConstraint({
-    required this.valueType,
-    required this.expectedType,
-  }) : super(key: 'invalid_type', description: 'Type should be $expectedType');
+final class InvalidTypeConstraint<T extends Object> extends Constraint<Object>
+    with Validator<Object> {
+  InvalidTypeConstraint()
+      : super(key: 'invalid_type', description: 'Type should be $T');
+
+  @override
+  bool isValid(Object? value) => value is T;
+
+  @override
+  ConstraintError<InvalidTypeConstraint<T>>? validate(Object? value) =>
+      isValid(value)
+          ? null
+          : ConstraintError(
+              key: key,
+              message: 'Invalid type: ${value.runtimeType}. Expected type: $T',
+              constraint: this,
+            );
+  @override
+  String buildMessage(Object? value) =>
+      'Invalid type: ${value.runtimeType}. Expected type: $T';
 }
 
 final class NonNullableConstraint extends Constraint<Object> {
@@ -38,14 +51,8 @@ class StringDateTimeConstraint extends Constraint<String>
   bool isValid(String value) => DateTime.tryParse(value) != null;
 
   @override
-  ConstraintError buildError(String value) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The value "$value" is not a valid date time. Expected format: ISO 8601 (e.g., {{ example }}).',
-      constraint: this,
-    );
-  }
+  String buildMessage(String value) =>
+      'The value "$value" is not a valid date time. Expected format: ISO 8601 (e.g., {{ example }}).';
 
   @override
   Map<String, Object?> toOpenApiSpec() => {'format': 'date-time'};
@@ -83,14 +90,8 @@ class StringDateConstraint extends Constraint<String>
   }
 
   @override
-  ConstraintError buildError(String value) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The value "$value" is not a valid date. Expected format: YYYY-MM-DD (e.g., 2017-07-21).',
-      constraint: this,
-    );
-  }
+  String buildMessage(String value) =>
+      'The value "$value" is not a valid date. Expected format: YYYY-MM-DD (e.g., 2017-07-21).';
 
   @override
   Map<String, Object?> toOpenApiSpec() => {'format': 'date'};
@@ -114,17 +115,12 @@ class StringEnumConstraint extends Constraint<String>
   bool isValid(String value) => enumValues.contains(value);
 
   @override
-  ConstraintError buildError(String value) {
+  String buildMessage(String value) {
     final closestMatch = findClosestStringMatch(value, enumValues);
     final closestMatchMessage =
         closestMatch.isTruthy ? '(Closest match: "${closestMatch!}")' : '';
 
-    return ConstraintError(
-      key: key,
-      message:
-          'Invalid value "$value". Allowed values are: $enumValues. $closestMatchMessage',
-      constraint: this,
-    );
+    return 'Invalid value "$value". Allowed values are: $enumValues. $closestMatchMessage';
   }
 
   @override
@@ -184,13 +180,8 @@ class StringNotOneOfValidator extends StringRegexConstraint {
   bool isValid(String value) => !disallowedValues.contains(value);
 
   @override
-  ConstraintError buildError(String value) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The value "$value" is not allowed. Disallowed values: $disallowedValues.',
-      constraint: this,
-    );
+  String buildMessage(String value) {
+    return 'The value "$value" is not allowed. Disallowed values: $disallowedValues.';
   }
 }
 
@@ -209,12 +200,8 @@ class StringNotEmptyValidator extends Constraint<String>
   bool isValid(String value) => value.isNotEmpty;
 
   @override
-  ConstraintError buildError(String value) {
-    return ConstraintError(
-      key: key,
-      message: 'The string must not be empty.',
-      constraint: this,
-    );
+  String buildMessage(String value) {
+    return 'The string must not be empty.';
   }
 }
 
@@ -244,12 +231,8 @@ class StringJsonValidator extends Constraint<String> with Validator<String> {
   }
 
   @override
-  ConstraintError buildError(String value) {
-    return ConstraintError(
-      key: key,
-      message: 'The value "$value" is not valid JSON.',
-      constraint: this,
-    );
+  String buildMessage(String value) {
+    return 'The value "$value" is not valid JSON.';
   }
 }
 
@@ -290,13 +273,8 @@ class StringRegexConstraint extends Constraint<String>
   }
 
   @override
-  ConstraintError buildError(String value) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The value "$value" does not match the required pattern for $key. Expected format: "$example".',
-      constraint: this,
-    );
+  String buildMessage(String value) {
+    return 'The value "$value" does not match the required pattern for $key. Expected format: "$example".';
   }
 
   @override
@@ -320,12 +298,8 @@ class StringEmptyConstraint extends Constraint<String> with Validator<String> {
   bool isValid(String value) => value.isEmpty;
 
   @override
-  ConstraintError buildError(String value) {
-    return ConstraintError(
-      key: key,
-      message: 'The string must be empty. Got: "$value"',
-      constraint: this,
-    );
+  String buildMessage(String value) {
+    return 'The string must be empty. Got: "$value"';
   }
 }
 
@@ -350,13 +324,8 @@ class StringMinLengthConstraint extends Constraint<String>
   bool isValid(String value) => value.length >= min;
 
   @override
-  ConstraintError buildError(String value) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The string length (${value.length}) is too short; it must be at least ($min) characters.',
-      constraint: this,
-    );
+  String buildMessage(String value) {
+    return 'The string length (${value.length}) is too short; it must be at least ($min) characters.';
   }
 
   @override
@@ -385,13 +354,8 @@ class StringMaxLengthConstraint extends Constraint<String>
 
   @override
   @visibleForTesting
-  ConstraintError buildError(String value) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The string length (${value.length}) exceeds the maximum allowed of ($max) characters.',
-      constraint: this,
-    );
+  String buildMessage(String value) {
+    return 'The string length (${value.length}) exceeds the maximum allowed of ($max) characters.';
   }
 
   @override
@@ -416,15 +380,10 @@ class ListUniqueItemsConstraint<T extends Object> extends Constraint<List<T>>
   bool isValid(List<T> value) => value.duplicates.isEmpty;
 
   @override
-  ConstraintError buildError(List<T> value, {variables}) {
+  String buildMessage(List<T> value) {
     final nonUniqueValues = value.duplicates;
 
-    return ConstraintError(
-      key: key,
-      message:
-          'The list contains duplicate items: $nonUniqueValues. All items must be unique.',
-      constraint: this,
-    );
+    return 'The list contains duplicate items: $nonUniqueValues. All items must be unique.';
   }
 
   @override
@@ -452,13 +411,8 @@ class ListMinItemsConstraint<T extends Object> extends Constraint<List<T>>
   bool isValid(List<T> value) => value.length >= min;
 
   @override
-  ConstraintError buildError(List<T> value, {variables}) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The list has only ${value.length} items; at least $min items are required.',
-      constraint: this,
-    );
+  String buildMessage(List<T> value) {
+    return 'The list has only ${value.length} items; at least $min items are required.';
   }
 
   @override
@@ -486,13 +440,8 @@ class ListMaxItemsConstraint<T> extends Constraint<List<T>>
   bool isValid(List<T> value) => value.length <= max;
 
   @override
-  ConstraintError buildError(List<T> value, {variables}) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The list contains ${value.length} items, which exceeds the allowed maximum of $max.',
-      constraint: this,
-    );
+  String buildMessage(List<T> value) {
+    return 'The list contains ${value.length} items, which exceeds the allowed maximum of $max.';
   }
 
   @override
@@ -526,14 +475,10 @@ class NumberMinConstraint<T extends num> extends Constraint<T>
   bool isValid(num value) => exclusive ? value > min : value >= min;
 
   @override
-  ConstraintError buildError(T value, {variables}) {
-    return ConstraintError(
-      key: key,
-      message: exclusive
-          ? 'The number ($value) is too low; it must be greater than ($min).'
-          : 'The number ($value) is too low; it must be at least ($min).',
-      constraint: this,
-    );
+  String buildMessage(T value) {
+    return exclusive
+        ? 'The number ($value) is too low; it must be greater than ($min).'
+        : 'The number ($value) is too low; it must be at least ($min).';
   }
 
   @override
@@ -562,13 +507,8 @@ class NumberMultipleOfConstraint<T extends num> extends Constraint<T>
   bool isValid(num value) => value % multiple == 0;
 
   @override
-  ConstraintError buildError(T value, {variables}) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The number ($value) is not a multiple of ($multiple). The quotient is (${value / multiple}), the remainder is (${value % multiple}).',
-      constraint: this,
-    );
+  String buildMessage(T value) {
+    return 'The number ($value) is not a multiple of ($multiple). The quotient is (${value / multiple}), the remainder is (${value % multiple}).';
   }
 
   @override
@@ -603,14 +543,10 @@ class NumberMaxConstraint<T extends num> extends Constraint<T>
   bool isValid(num value) => exclusive ? value < max : value <= max;
 
   @override
-  ConstraintError buildError(T value, {variables}) {
-    return ConstraintError(
-      key: key,
-      message: exclusive
-          ? 'The number ($value) exceeds the limit; it must be less than ($max).'
-          : 'The number ($value) exceeds the maximum allowed of ($max).',
-      constraint: this,
-    );
+  String buildMessage(T value) {
+    return exclusive
+        ? 'The number ($value) exceeds the limit; it must be less than ($max).'
+        : 'The number ($value) exceeds the maximum allowed of ($max).';
   }
 
   @override
@@ -629,7 +565,7 @@ class NumberMaxConstraint<T extends num> extends Constraint<T>
 /// - If true (default), only values strictly between min and max are valid
 /// - If false, values between min and max (inclusive) are valid
 /// {@endtemplate}
-class NumberRangeValidator<T extends num> extends Constraint<T>
+class NumberRangeConstraint<T extends num> extends Constraint<T>
     with Validator<T>, OpenApiSpec<T> {
   /// The minimum value
   final T min;
@@ -641,7 +577,7 @@ class NumberRangeValidator<T extends num> extends Constraint<T>
   final bool exclusive;
 
   /// {@macro range_num_validator}
-  const NumberRangeValidator(this.min, this.max, {bool? exclusive})
+  const NumberRangeConstraint(this.min, this.max, {bool? exclusive})
       : exclusive = exclusive ?? false,
         super(
           key: 'number_range',
@@ -653,13 +589,8 @@ class NumberRangeValidator<T extends num> extends Constraint<T>
       exclusive ? value > min && value < max : value >= min && value <= max;
 
   @override
-  ConstraintError buildError(T value, {variables}) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The number ($value) is outside the allowed range ($min to $max).',
-      constraint: this,
-    );
+  String buildMessage(T value) {
+    return 'The number ($value) is outside the allowed range ($min to $max).';
   }
 
   @override
@@ -676,13 +607,13 @@ class NumberRangeValidator<T extends num> extends Constraint<T>
 ///
 /// Equivalent of calling `map.length >= min`
 /// {@endtemplate}
-class ObjectMinPropertiesValidator extends Constraint<MapValue>
+class ObjectMinPropertiesConstraint extends Constraint<MapValue>
     with Validator<MapValue>, OpenApiSpec<MapValue> {
   /// The minimum number of properties required
   final int min;
 
   /// {@macro object_min_properties_validator}
-  const ObjectMinPropertiesValidator({required this.min})
+  const ObjectMinPropertiesConstraint({required this.min})
       : super(
           key: 'object_min_properties',
           description: 'Object must have at least $min properties',
@@ -692,13 +623,8 @@ class ObjectMinPropertiesValidator extends Constraint<MapValue>
   bool isValid(MapValue value) => value.length >= min;
 
   @override
-  ConstraintError buildError(MapValue value, {variables}) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The object has ${value.length} properties, which is less than the required minimum of $min.',
-      constraint: this,
-    );
+  String buildMessage(MapValue value) {
+    return 'The object has ${value.length} properties, which is less than the required minimum of $min.';
   }
 
   @override
@@ -710,13 +636,13 @@ class ObjectMinPropertiesValidator extends Constraint<MapValue>
 ///
 /// Equivalent of calling `map.length <= max`
 /// {@endtemplate}
-class ObjectMaxPropertiesValidator extends Constraint<MapValue>
+class ObjectMaxPropertiesConstraint extends Constraint<MapValue>
     with Validator<MapValue>, OpenApiSpec<MapValue> {
   /// The maximum number of properties allowed
   final int max;
 
   /// {@macro object_max_properties_validator}
-  const ObjectMaxPropertiesValidator({required this.max})
+  const ObjectMaxPropertiesConstraint({required this.max})
       : super(
           key: 'object_max_properties',
           description: 'Object must have at most $max properties',
@@ -726,13 +652,8 @@ class ObjectMaxPropertiesValidator extends Constraint<MapValue>
   bool isValid(MapValue value) => value.length <= max;
 
   @override
-  ConstraintError buildError(MapValue value, {variables}) {
-    return ConstraintError(
-      key: key,
-      message:
-          'The object has ${value.length} properties, exceeding the allowed maximum of $max.',
-      constraint: this,
-    );
+  String buildMessage(MapValue value) {
+    return 'The object has ${value.length} properties, exceeding the allowed maximum of $max.';
   }
 
   @override
@@ -742,12 +663,12 @@ class ObjectMaxPropertiesValidator extends Constraint<MapValue>
 /// {@template unallowed_property_constraint_error}
 /// Validator that checks if a [Map] has unallowed properties
 /// {@endtemplate}
-class ObjectNoAdditionalPropertiesValidator extends Constraint<MapValue>
+class ObjectNoAdditionalPropertiesConstraint extends Constraint<MapValue>
     with Validator<MapValue> {
   final ObjectSchema schema;
 
   /// {@macro unallowed_property_constraint_error}
-  ObjectNoAdditionalPropertiesValidator(this.schema)
+  ObjectNoAdditionalPropertiesConstraint(this.schema)
       : super(
           key: 'object_no_additional_properties',
           description:
@@ -763,27 +684,23 @@ class ObjectNoAdditionalPropertiesValidator extends Constraint<MapValue>
       : _getUnallowedProperties(value).isEmpty;
 
   @override
-  ConstraintError buildError(MapValue value, {variables}) {
+  String buildMessage(MapValue value) {
     final unallowedKeys = _getUnallowedProperties(value);
 
-    return ConstraintError(
-      key: key,
-      message: 'Unallowed properties: $unallowedKeys.',
-      constraint: this,
-    );
+    return 'Unallowed properties: $unallowedKeys.';
   }
 }
 
 /// {@template property_required_constraint_error}
 /// Validator that checks if a [Map] has required properties
 /// {@endtemplate}
-class ObjectRequiredPropertiesValidator extends Constraint<MapValue>
+class ObjectRequiredPropertiesConstraint extends Constraint<MapValue>
     with Validator<MapValue> {
   /// The list of required keys
   final ObjectSchema schema;
 
   /// {@macro property_required_constraint_error}
-  ObjectRequiredPropertiesValidator(this.schema)
+  ObjectRequiredPropertiesConstraint(this.schema)
       : super(
           key: 'object_required_properties',
           description: 'Required properties: ${schema.getRequiredProperties()}',
@@ -795,26 +712,22 @@ class ObjectRequiredPropertiesValidator extends Constraint<MapValue>
   }
 
   @override
-  ConstraintError buildError(MapValue value, {variables}) {
+  String buildMessage(MapValue value) {
     final missingKeys =
         schema.getRequiredProperties().toSet().difference(value.keys.toSet());
 
-    return ConstraintError(
-      key: key,
-      message: 'Missing required properties: $missingKeys.',
-      constraint: this,
-    );
+    return 'Missing required properties: $missingKeys.';
   }
 }
 
 /// Validates that schemas in a discriminated object are properly structured.
 /// Each schema must include the discriminator key as a required property.
-class ObjectDiscriminatorStructureValidator
+class ObjectDiscriminatorStructureConstraint
     extends Constraint<Map<String, ObjectSchema>>
     with Validator<Map<String, ObjectSchema>> {
   final String discriminatorKey;
 
-  ObjectDiscriminatorStructureValidator(this.discriminatorKey)
+  ObjectDiscriminatorStructureConstraint(this.discriminatorKey)
       : super(
           key: 'object_discriminator_structure',
           description:
@@ -851,29 +764,25 @@ class ObjectDiscriminatorStructureValidator
   }
 
   @override
-  ConstraintError buildError(Map<String, ObjectSchema> value, {variables}) {
+  String buildMessage(Map<String, ObjectSchema> value) {
     final missing = _getSchemasWithMissingDiscriminator(value);
     final notRequired = _getSchemasWithNotRequiredDiscriminator(value);
 
-    return ConstraintError(
-      key: key,
-      constraint: this,
-      message: '''
+    return '''
 The discriminator key "$discriminatorKey" must be present and required in all schemas.
 ${missing.isNotEmpty ? '- Missing in: $missing\n' : ''}
 ${notRequired.isNotEmpty ? '- Not marked as required in: $notRequired' : ''}
-''',
-    );
+''';
   }
 }
 
 /// Validates that a value has a valid discriminator that matches a known schema.
-class ObjectDiscriminatorValueValidator extends Constraint<MapValue>
+class ObjectDiscriminatorValueConstraint extends Constraint<MapValue>
     with Validator<MapValue> {
   final String discriminatorKey;
   final Map<String, ObjectSchema> schemas;
 
-  ObjectDiscriminatorValueValidator(this.discriminatorKey, this.schemas)
+  ObjectDiscriminatorValueConstraint(this.discriminatorKey, this.schemas)
       : super(
           key: 'object_discriminator_value',
           description: 'Value must have a valid discriminator',
@@ -895,14 +804,12 @@ class ObjectDiscriminatorValueValidator extends Constraint<MapValue>
   }
 
   @override
-  ConstraintError buildError(MapValue value, {variables}) {
+  String buildMessage(MapValue value) {
     final discriminatorValue = value[discriminatorKey];
     final validSchemaKeys = schemas.keys.toList();
 
-    final message = discriminatorValue != null
+    return discriminatorValue != null
         ? 'The discriminator value "$discriminatorValue" is invalid. Allowed values: $validSchemaKeys.'
         : 'The discriminator field "$discriminatorKey" is missing.';
-
-    return ConstraintError(key: key, message: message, constraint: this);
   }
 }

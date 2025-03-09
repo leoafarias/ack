@@ -50,11 +50,16 @@ mixin OpenApiSpec<T extends Object> on Constraint<T> {
 
 mixin Validator<T extends Object> on Constraint<T> {
   @protected
-  ConstraintError buildError(T value);
+  String buildMessage(T value);
 
   @protected
   bool isValid(T value);
 
-  ConstraintError? validate(T value) =>
-      isValid(value) ? null : buildError(value);
+  ConstraintError? validate(T value) => isValid(value)
+      ? null
+      : ConstraintError(
+          key: key,
+          message: buildMessage(value),
+          constraint: this,
+        );
 }

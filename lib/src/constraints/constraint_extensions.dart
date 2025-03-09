@@ -54,7 +54,7 @@ extension NumSchemaValidatorExt<T extends num> on NumSchema<T> {
   NumSchema<T> max(T max) => _add(NumberMaxConstraint(max));
 
   /// {@macro range_num_validator}
-  NumSchema<T> range(T min, T max) => _add(NumberRangeValidator(min, max));
+  NumSchema<T> range(T min, T max) => _add(NumberRangeConstraint(min, max));
 
   /// {@macro multiple_of_num_validator}
   NumSchema<T> multipleOf(T multiple) =>
@@ -72,7 +72,7 @@ extension ObjectSchemaValidatorsExt on ObjectSchema {
   /// }).minProperties(1);
   /// ```
   ObjectSchema minProperties(int min) {
-    return withConstraints([ObjectMinPropertiesValidator(min: min)]);
+    return withConstraints([ObjectMinPropertiesConstraint(min: min)]);
   }
 
   /// {@macro object_max_properties_validator}
@@ -84,7 +84,7 @@ extension ObjectSchemaValidatorsExt on ObjectSchema {
   /// }).maxProperties(3);
   /// ```
   ObjectSchema maxProperties(int max) {
-    return withConstraints([ObjectMaxPropertiesValidator(max: max)]);
+    return withConstraints([ObjectMaxPropertiesConstraint(max: max)]);
   }
 }
 
