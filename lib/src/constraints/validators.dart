@@ -420,7 +420,7 @@ class ListMinItemsConstraint<T extends Object> extends Constraint<List<T>>
 ///
 /// Equivalent of calling `list.length <= max`
 /// {@endtemplate}
-class ListMaxItemsConstraint<T> extends Constraint<List<T>>
+class ListMaxItemsConstraint<T extends Object> extends Constraint<List<T>>
     with Validator<List<T>>, OpenApiSpec<List<T>> {
   /// The maximum number of items
   final int max;

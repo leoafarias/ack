@@ -7,17 +7,22 @@ class _MockSchemaContext extends SchemaContext {
       : super(name: 'test', schema: ObjectSchema({}), value: null);
 }
 
+class _MockConstraint extends Constraint {
+  const _MockConstraint()
+      : super(key: 'test_constraint', description: 'Test constraint');
+}
+
 void main() {
   group('SchemaError', () {
     group('SchemaConstraintsError', () {
       final constraintError1 = ConstraintError(
-        key: 'custom_constraint',
         message: 'Custom constraint',
+        constraint: _MockConstraint(),
       );
 
       final constraintError2 = ConstraintError(
-        key: 'custom_constraint2',
         message: 'Custom constraint 2',
+        constraint: _MockConstraint(),
       );
 
       test('single constraint error', () {
@@ -64,7 +69,7 @@ void main() {
       expect(
           error.message,
           contains(
-              'The string length (3) is too short; it must be at least 5 characters.'));
+              'The string length (3) is too short; it must be at least (5) characters.'));
 
       result = schema.validate('abcdefghijk');
       expect(result.isFail, isTrue);
@@ -72,7 +77,7 @@ void main() {
       expect(
           error.message,
           contains(
-              'The string length (11) exceeds the maximum allowed of 10 characters.'));
+              'The string length (11) exceeds the maximum allowed of (10) characters.'));
     });
 
     test('Enum validation error messages', () {
@@ -84,7 +89,7 @@ void main() {
       expect(
           error.message,
           contains(
-              'Invalid value "yellow". Allowed values are: [red, green, blue]. (Closest match: "N/A")'));
+              'Invalid value "yellow". Allowed values are: [red, green, blue].'));
     });
 
     test('Date validation error messages', () {

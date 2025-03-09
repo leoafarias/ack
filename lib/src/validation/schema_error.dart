@@ -36,7 +36,13 @@ sealed class SchemaError extends SchemaContext with ErrorBase {
 
   @override
   Map<String, Object?> toMap() {
-    return {'schema': schema.toMap(), 'value': value, 'name': name};
+    return {
+      'key': key,
+      'schema': schema.toMap(),
+      'value': value,
+      'name': name,
+      'message': message,
+    };
   }
 
   @override
@@ -61,6 +67,11 @@ final class SchemaUnknownError extends SchemaError {
 
   @override
   String toString() => '$error \n$stackTrace';
+
+  @override
+  Map<String, Object?> toMap() {
+    return {...super.toMap(), 'error': error, 'stackTrace': stackTrace};
+  }
 }
 
 final class SchemaConstraintsError extends SchemaError {
@@ -73,21 +84,44 @@ final class SchemaConstraintsError extends SchemaError {
           name: context.name,
           schema: context.schema,
           value: context.value,
-          message: constraints.map((e) => '${e.key}: ${e.message}').join('\n'),
+          message: constraints.map((e) => e.message).join('\n'),
         );
 
   bool get isInvalidType =>
-      constraints.any((e) => e is ConstraintError<InvalidTypeConstraint>);
+      constraints.any((e) => e.type == InvalidTypeConstraint);
 
   bool get isNonNullable =>
-      constraints.any((e) => e is ConstraintError<NonNullableConstraint>);
+      constraints.any((e) => e.type == NonNullableConstraint);
 
-  ConstraintError? getConstraint(String key) {
-    return constraints.firstWhereOrNull((e) => e.key == key);
+  ConstraintError? getConstraint<S extends Constraint>() {
+    final constraint = constraints.firstWhereOrNull((e) => e.type == S);
+
+    if (constraint == null) {
+      final notStrict = constraints.firstWhereOrNull((e) {
+        // if the type is is generic meaning TypeName<GenericType>
+        // Get everything before the generic type
+        final typeName = e.type.toString().split('<')[0];
+        final paramTypeName = S.toString().split('<')[0];
+
+        return typeName == paramTypeName;
+      });
+
+      if (notStrict != null) {
+        throw Exception(
+          'Constraint $S not found, but ${notStrict.type} was found. Make sure you add any generic to the constraint type',
+        );
+      }
+    }
+
+    return constraint;
   }
 
-  T? getConstraintByType<T extends ConstraintError>() {
-    return constraints.firstWhereOrNull((e) => e is T) as T?;
+  @override
+  Map<String, Object?> toMap() {
+    return {
+      ...super.toMap(),
+      'constraints': constraints.map((e) => e.toMap()).toList(),
+    };
   }
 }
 
@@ -104,6 +138,15 @@ final class SchemaNestedError extends SchemaError {
         ) {
     assert(schema is ObjectSchema || schema is ListSchema,
         'NestedSchemaError must be used with ObjectSchema or ListSchema');
+  }
+
+  S? getSchemaError<S extends SchemaError>() {
+    return errors.whereType<S>().firstOrNull;
+  }
+
+  @override
+  Map<String, Object?> toMap() {
+    return {...super.toMap(), 'errors': errors.map((e) => e.toMap()).toList()};
   }
 }
 

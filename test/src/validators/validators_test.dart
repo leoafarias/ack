@@ -33,9 +33,9 @@ void main() {
 
     test('error message is correct', () {
       final validator = ListMinItemsConstraint(3);
-      final error = validator.buildError([1, 2]);
+      final message = validator.buildMessage([1, 2]);
       expect(
-        error.message,
+        message,
         'The list has only 2 items; at least 3 items are required.',
       );
     });

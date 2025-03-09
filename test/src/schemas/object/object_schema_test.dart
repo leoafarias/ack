@@ -27,7 +27,7 @@ void main() {
       expect(schemaError, isA<SchemaConstraintsError>());
       final constraintsError = schemaError as SchemaConstraintsError;
       expect(
-        constraintsError.getConstraint('non_nullable') != null,
+        constraintsError.getConstraint<NonNullableConstraint>() != null,
         isTrue,
       );
     });
@@ -51,7 +51,7 @@ void main() {
       expect(schemaError, isA<SchemaConstraintsError>());
       final constraintsError = schemaError as SchemaConstraintsError;
       expect(
-        constraintsError.getConstraint('invalid_type') != null,
+        constraintsError.getConstraint<InvalidTypeConstraint>() != null,
         isTrue,
       );
     });
@@ -194,12 +194,10 @@ void main() {
 
       final userError = objectError.errors[0] as SchemaConstraintsError;
 
-      expect(userError.getConstraint('required_properties'), isNotNull);
-
       expect(
         userError
-            .getConstraint('required_properties')!
-            .getVariable<List<String>>('missing_properties')
+            .getConstraint<ObjectRequiredPropertiesConstraint>()
+            ?.message
             .contains('name'),
         isTrue,
       );

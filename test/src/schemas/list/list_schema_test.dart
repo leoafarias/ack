@@ -28,8 +28,8 @@ void main() {
         final result = schema.validate(null);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<NonNullableConstraint>());
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<NonNullableConstraint>(), isNotNull);
       });
 
       test('Nullable schema passes on null', () {
@@ -44,8 +44,8 @@ void main() {
 
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeConstraint>());
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<InvalidTypeConstraint>(), isNotNull);
       });
 
       test('Valid list passes with no constraints', () {
@@ -73,14 +73,9 @@ void main() {
         final result = schema.validate([1, 2, 2, 3]);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
-
-        final constraintsError = error as SchemaConstraintsError;
+        final error = (result as Fail).error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('list_unique_items'),
-          isNotNull,
-        );
+            error.getConstraint<ListUniqueItemsConstraint<int>>(), isNotNull);
       });
     });
 
@@ -108,7 +103,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('list_min_items'),
+          constraintsError.getConstraint<ListMinItemsConstraint<int>>(),
           isNotNull,
         );
       });
@@ -138,7 +133,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('list_max_items'),
+          constraintsError.getConstraint<ListMaxItemsConstraint<int>>(),
           isNotNull,
         );
       });

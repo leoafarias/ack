@@ -28,7 +28,12 @@ void main() {
         expect(result.isFail, isTrue);
 
         final error = (result as Fail).error;
-        expect(error, isA<NonNullableConstraint>());
+        expect(error, isA<SchemaConstraintsError>());
+        final constraintsError = error as SchemaConstraintsError;
+        expect(
+          constraintsError.getConstraint<NonNullableConstraint>(),
+          isNotNull,
+        );
       });
 
       test('Nullable schema passes on null', () {
@@ -47,7 +52,12 @@ void main() {
         expect(strictResult.isFail, isTrue);
 
         final error = (strictResult as Fail).error;
-        expect(error, isA<InvalidTypeConstraint>());
+        expect(error, isA<SchemaConstraintsError>());
+        final constraintsError = error as SchemaConstraintsError;
+        expect(
+          constraintsError.getConstraint<InvalidTypeConstraint>(),
+          isNotNull,
+        );
       });
 
       test('Valid string passes with no constraints', () {
@@ -85,7 +95,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('string_email'),
+          constraintsError.getConstraint<StringEmailConstraint>(),
           isNotNull,
         );
       });
@@ -120,7 +130,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('string_hex_color'),
+          constraintsError.getConstraint<StringHexColorValidator>(),
           isNotNull,
         );
       });
@@ -149,7 +159,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('string_empty'),
+          constraintsError.getConstraint<StringEmptyConstraint>(),
           isNotNull,
         );
       });
@@ -182,7 +192,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('string_min_length'),
+          constraintsError.getConstraint<StringMinLengthConstraint>(),
           isNotNull,
         );
       });
@@ -215,7 +225,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('string_max_length'),
+          constraintsError.getConstraint<StringMaxLengthConstraint>(),
           isNotNull,
         );
       });
@@ -246,7 +256,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('string_not_one_of'),
+          constraintsError.getConstraint<StringNotOneOfValidator>(),
           isNotNull,
         );
       });
@@ -275,7 +285,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('string_not_empty'),
+          constraintsError.getConstraint<StringNotEmptyValidator>(),
           isNotNull,
         );
       });
@@ -306,7 +316,7 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('string_date_time'),
+          constraintsError.getConstraint<StringDateTimeConstraint>(),
           isNotNull,
         );
       });
@@ -338,8 +348,8 @@ void main() {
 
         final constraintsError = error as SchemaConstraintsError;
         expect(
-          constraintsError.constraints.any((c) => c.key == 'string_date'),
-          isTrue,
+          constraintsError.getConstraint<StringDateConstraint>(),
+          isNotNull,
         );
       });
     });

@@ -2,15 +2,12 @@ import '../helpers.dart';
 import 'schema_error.dart';
 
 class AckViolationException implements Exception {
-  final SchemaError violation;
+  final SchemaError error;
 
-  const AckViolationException(this.violation);
-
-  @Deprecated('Use violation instead')
-  SchemaError get error => violation;
+  const AckViolationException(this.error);
 
   Map<String, dynamic> toMap() {
-    return {'violation': violation.toMap()};
+    return {'error': error.toMap()};
   }
 
   String toJson() => prettyJson(toMap());

@@ -39,7 +39,7 @@ void main() {
         final constraintsError =
             (result as Fail).error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('list_unique_items'),
+          constraintsError.getConstraint<ListUniqueItemsConstraint<int>>(),
           isNotNull,
         );
       });
@@ -77,7 +77,7 @@ void main() {
         final constraintsError =
             (result as Fail).error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('list_min_items'),
+          constraintsError.getConstraint<ListMinItemsConstraint<int>>(),
           isNotNull,
         );
       });
@@ -111,7 +111,7 @@ void main() {
         final constraintsError =
             (result as Fail).error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('list_max_items'),
+          constraintsError.getConstraint<ListMaxItemsConstraint<int>>(),
           isNotNull,
         );
       });

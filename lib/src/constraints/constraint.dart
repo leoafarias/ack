@@ -17,31 +17,29 @@ abstract class Constraint<T extends Object> {
   String toJson() => prettyJson(toMap());
 
   @override
-  String toString() => toJson();
+  String toString() => '$runtimeType: $key: $description';
 }
 
-final class ConstraintError<C extends Constraint> with ErrorBase {
-  @override
-  final String key;
-
-  final C constraint;
+final class ConstraintError with ErrorBase {
+  final Constraint constraint;
 
   @override
   final String message;
 
-  ConstraintError({
-    required this.key,
-    required this.message,
-    required this.constraint,
-  });
+  ConstraintError({required this.message, required this.constraint});
+
+  Type get type => constraint.runtimeType;
 
   @override
   Map<String, Object?> toMap() {
-    return {'key': key, 'message': message, 'constraint': constraint.toMap()};
+    return {'message': message, 'constraint': constraint.toMap()};
   }
 
   @override
   String toString() => '$runtimeType: $key: $message';
+
+  @override
+  String get key => constraint.key;
 }
 
 mixin OpenApiSpec<T extends Object> on Constraint<T> {
@@ -57,11 +55,7 @@ mixin Validator<T extends Object> on Constraint<T> {
 
   ConstraintError? validate(T value) => isValid(value)
       ? null
-      : ConstraintError(
-          key: key,
-          message: buildMessage(value),
-          constraint: this,
-        );
+      : ConstraintError(message: buildMessage(value), constraint: this);
 }
 
 mixin WithConstraintError<T> on Constraint {
@@ -69,10 +63,6 @@ mixin WithConstraintError<T> on Constraint {
   String buildMessage(T value);
 
   ConstraintError buildError(T value) {
-    return ConstraintError(
-      key: key,
-      message: buildMessage(value),
-      constraint: this,
-    );
+    return ConstraintError(message: buildMessage(value), constraint: this);
   }
 }

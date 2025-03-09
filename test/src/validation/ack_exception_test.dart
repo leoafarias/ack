@@ -7,20 +7,28 @@ class _MockSchemaContext extends SchemaContext {
       : super(name: 'test', schema: ObjectSchema({}), value: null);
 }
 
+class _MockConstraint extends Constraint {
+  const _MockConstraint(String postfix)
+      : super(
+          key: 'test_constraint_$postfix',
+          description: 'Test constraint $postfix',
+        );
+}
+
 void main() {
   group('AckException', () {
     test('toMap() returns error map', () {
       final constraint1Violation = ConstraintError(
-        key: 'custom_constraint1',
-        message: 'Custom constraint',
+        message: 'Test constraint',
+        constraint: _MockConstraint('1'),
       );
       final constraint2Violation = ConstraintError(
-        key: 'custom_constraint2',
-        message: 'Custom constraint 2',
+        message: 'Test constraint 2',
+        constraint: _MockConstraint('2'),
       );
       final constraint3Violation = ConstraintError(
-        key: 'custom_constraint3',
-        message: 'Custom constraint 3',
+        message: 'Test constraint 3',
+        constraint: _MockConstraint('3'),
       );
       final constraintErrors = [
         constraint1Violation,
@@ -35,25 +43,42 @@ void main() {
       final exception = AckViolationException(schemaError);
       final map = exception.toMap();
 
-      // Now checks a single 'error' field instead of 'errors' list
-      expect(map.containsKey('constraints'), isTrue);
+      // Verify the error map structure
+      expect(map.containsKey('error'), isTrue);
 
       // Check the structure of the error
-      final errorMap = map['constraints'] as Map<String, dynamic>;
-      expect(errorMap['key'], 'validation');
+      final errorMap = map['error'] as Map<String, dynamic>;
+      expect(errorMap['key'], 'constraints');
+      expect(errorMap['name'], 'test');
+      expect(errorMap['value'], null);
+      expect(errorMap['message'], contains('Test constraint'));
+      expect(errorMap['message'], contains('Test constraint 2'));
+      expect(errorMap['message'], contains('Test constraint 3'));
 
-      // Verify the constraints are included
-      final constraintsList = schemaError.constraints;
+      // Verify the constraints list
+      final constraintsList = errorMap['constraints'] as List;
       expect(constraintsList.length, 3);
-      expect(constraintsList[0].key, 'custom_constraint1');
-      expect(constraintsList[1].key, 'custom_constraint2');
-      expect(constraintsList[2].key, 'custom_constraint3');
+
+      // Verify first constraint
+      final firstConstraint = constraintsList[0] as Map<String, dynamic>;
+      expect(firstConstraint['constraint']['key'], 'test_constraint_1');
+      expect(firstConstraint['message'], 'Test constraint');
+
+      // Verify second constraint
+      final secondConstraint = constraintsList[1] as Map<String, dynamic>;
+      expect(secondConstraint['constraint']['key'], 'test_constraint_2');
+      expect(secondConstraint['message'], 'Test constraint 2');
+
+      // Verify third constraint
+      final thirdConstraint = constraintsList[2] as Map<String, dynamic>;
+      expect(thirdConstraint['constraint']['key'], 'test_constraint_3');
+      expect(thirdConstraint['message'], 'Test constraint 3');
     });
 
     test('toString() includes error details', () {
       final constraintError = ConstraintError(
-        key: 'custom_constraint',
-        message: 'Custom constraint',
+        message: 'Test constraint',
+        constraint: _MockConstraint('4'),
       );
       final schemaError = SchemaConstraintsError(
         constraints: [constraintError],
@@ -69,7 +94,7 @@ void main() {
       );
       expect(
         value,
-        contains('custom_constraint'),
+        contains('test_constraint_4'),
       );
     });
   });

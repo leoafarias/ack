@@ -24,8 +24,11 @@ void main() {
         // bool.tryParse("True") returns null, so this should fail unless handled differently.
 
         expect(result.isFail, isTrue);
-        final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeConstraint>());
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(
+          error.getConstraint<InvalidTypeConstraint>(),
+          isNotNull,
+        );
       });
 
       test('String with whitespace " true " fails validation', () {
@@ -34,8 +37,11 @@ void main() {
         // Again, this should fail unless you choose to trim inputs.
 
         expect(result.isFail, isTrue);
-        final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeConstraint>());
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(
+          error.getConstraint<InvalidTypeConstraint>(),
+          isNotNull,
+        );
       });
     });
 
@@ -45,8 +51,11 @@ void main() {
         final result = schema.validate(123);
 
         expect(result.isFail, isTrue);
-        final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeConstraint>());
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(
+          error.getConstraint<InvalidTypeConstraint>(),
+          isNotNull,
+        );
       });
 
       test('Passing an object returns invalid type error', () {
@@ -54,8 +63,11 @@ void main() {
         final result = schema.validate({'key': 'value'});
 
         expect(result.isFail, isTrue);
-        final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeConstraint>());
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(
+          error.getConstraint<InvalidTypeConstraint>(),
+          isNotNull,
+        );
       });
     });
   });

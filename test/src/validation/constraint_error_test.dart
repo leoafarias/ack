@@ -1,12 +1,17 @@
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
+class _MockConstraint extends Constraint {
+  const _MockConstraint()
+      : super(key: 'test_constraint', description: 'Test constraint');
+}
+
 void main() {
   group('$ConstraintError', () {
     test('toMap() returns correct structure', () {
       final error = ConstraintError(
-        key: 'test_constraint',
         message: 'Test constraint failed',
+        constraint: _MockConstraint(),
       );
 
       final map = error.toMap();
@@ -14,15 +19,18 @@ void main() {
       expect(
           map,
           equals({
-            'key': 'test_constraint',
             'message': 'Test constraint failed',
+            'constraint': {
+              'key': 'test_constraint',
+              'description': 'Test constraint'
+            },
           }));
     });
 
     test('toString() returns formatted string', () {
       final error = ConstraintError(
-        key: 'test_constraint',
         message: 'Test constraint failed',
+        constraint: _MockConstraint(),
       );
 
       final errorString = error.toString();

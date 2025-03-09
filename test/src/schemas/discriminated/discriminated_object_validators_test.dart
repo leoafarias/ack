@@ -1,8 +1,6 @@
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
-import '../../../test_helpers.dart';
-
 void main() {
   group('Discriminated Validators', () {
     test('Fails when discriminator key is missing from the value', () {
@@ -23,11 +21,10 @@ void main() {
         result.isFail,
         isTrue,
       );
+      final error = (result as Fail).error as SchemaConstraintsError;
       expect(
-        result,
-        hasOneConstraintViolation(
-          'discriminator_value',
-        ),
+        error.getConstraint<ObjectDiscriminatorValueConstraint>(),
+        isNotNull,
       );
     });
 
@@ -53,7 +50,10 @@ void main() {
       expect((result as Fail).error, isA<SchemaConstraintsError>());
 
       final error = (result as Fail).error as SchemaConstraintsError;
-      expect(error.getConstraint('discriminator_value'), isNotNull);
+      expect(
+        error.getConstraint<ObjectDiscriminatorValueConstraint>(),
+        isNotNull,
+      );
     });
 
     test('Fails when discriminator key is not required in the selected schema',
@@ -78,7 +78,7 @@ void main() {
       );
       final error = (result as Fail).error as SchemaConstraintsError;
       expect(
-        error.getConstraint('discriminator_schema_structure'),
+        error.getConstraint<ObjectDiscriminatorStructureConstraint>(),
         isNotNull,
       );
     });
@@ -106,12 +106,16 @@ void main() {
 
       final resultError = (result as Fail).error as SchemaNestedError;
 
+      final constraintsError =
+          resultError.getSchemaError<SchemaConstraintsError>();
+
       // Check that the 'value' property has an error
-      expect(resultError.errors.any((e) => e.name == 'value'), isTrue);
+      expect(constraintsError, isNotNull);
 
       // Check that it's an invalid type error
-      final valueError = resultError.errors[0] as InvalidTypeConstraint;
-      expect(valueError, isA<InvalidTypeConstraint>());
+      final valueError =
+          constraintsError!.getConstraint<InvalidTypeConstraint>();
+      expect(valueError, isNotNull);
     });
   });
 }

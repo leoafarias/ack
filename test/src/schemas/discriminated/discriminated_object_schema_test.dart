@@ -50,8 +50,8 @@ void main() {
       final result = discriminatedSchema.validate(null);
 
       expect(result.isFail, isTrue);
-      final error = (result as Fail).error;
-      expect(error, isA<NonNullableConstraint>());
+      final error = (result as Fail).error as SchemaConstraintsError;
+      expect(error.getConstraint<NonNullableConstraint>(), isNotNull);
     });
 
     test('Nullable schema passes on null', () {
@@ -92,7 +92,12 @@ void main() {
 
       expect(result.isFail, isTrue);
       final error = (result as Fail).error;
-      expect(error, isA<InvalidTypeConstraint>());
+      expect(error, isA<SchemaConstraintsError>());
+      final constraintsError = error as SchemaConstraintsError;
+      expect(
+        constraintsError.getConstraint<InvalidTypeConstraint>(),
+        isNotNull,
+      );
     });
 
     test('Valid discriminated object passes validation', () {
@@ -135,7 +140,8 @@ void main() {
       );
       expect((result as Fail).error, isA<SchemaConstraintsError>());
       final error = (result as Fail).error as SchemaConstraintsError;
-      expect(error.getConstraint('discriminator_value'), isNotNull);
+      expect(
+          error.getConstraint<ObjectDiscriminatorValueConstraint>(), isNotNull);
     });
 
     test('Fails when no schema is found for the discriminator value', () {
@@ -158,7 +164,8 @@ void main() {
       );
       expect((result as Fail).error, isA<SchemaConstraintsError>());
       final error = (result as Fail).error as SchemaConstraintsError;
-      expect(error.getConstraint('discriminator_value'), isNotNull);
+      expect(
+          error.getConstraint<ObjectDiscriminatorValueConstraint>(), isNotNull);
     });
 
     test('Fails when discriminator key is not required in the selected schema',
@@ -183,7 +190,10 @@ void main() {
       );
       expect((result as Fail).error, isA<SchemaConstraintsError>());
       final error = (result as Fail).error as SchemaConstraintsError;
-      expect(error.getConstraint('discriminator_schema_structure'), isNotNull);
+      expect(
+        error.getConstraint<ObjectDiscriminatorStructureConstraint>(),
+        isNotNull,
+      );
     });
 
     test('Fails when underlying schema validation fails', () {
@@ -204,12 +214,13 @@ void main() {
 
       final error = (result as Fail).error as SchemaNestedError;
 
-      // Check that the 'value' property has an error
-      expect(error.errors.any((e) => e.name == 'value'), isTrue);
+      final valueError = error.getSchemaError<SchemaConstraintsError>();
+      expect(valueError, isA<SchemaConstraintsError>());
 
-      // Check that it's an invalid type error
-      final valueError = error.errors[0] as InvalidTypeConstraint;
-      expect(valueError, isA<InvalidTypeConstraint>());
+      expect(
+        valueError!.getConstraint<InvalidTypeConstraint>(),
+        isNotNull,
+      );
     });
   });
 }

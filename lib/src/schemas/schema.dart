@@ -131,7 +131,7 @@ sealed class Schema<T extends Object> {
   });
 
   /// Returns the list of constraint validators associated with this schema.
-  List<Constraint<T>> getConstraints() => _constraints;
+  List<Validator<T>> getConstraints() => _constraints;
 
   /// Returns whether this schema allows null values.
   bool getNullableValue() => _nullable;

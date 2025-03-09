@@ -27,12 +27,12 @@ void main() {
         final result = schema.validate(null);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<NonNullableConstraint>());
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<NonNullableConstraint>(), isNotNull);
 
-        final nonNullableError = error as NonNullableConstraint;
+        final nonNullableError = error.getConstraint<NonNullableConstraint>();
         expect(
-          nonNullableError.key == 'non_nullable',
+          nonNullableError!.key == 'non_nullable',
           isTrue,
         );
       });
@@ -48,8 +48,8 @@ void main() {
         final result = schema.validate('not a double');
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeConstraint>());
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<InvalidTypeConstraint>(), isNotNull);
       });
 
       test('Valid double passes with no constraints', () {
@@ -90,14 +90,8 @@ void main() {
         final result = schema.validate(4.0);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
-
-        final constraintsError = error as SchemaConstraintsError;
-        expect(
-          constraintsError.getConstraint('number_min'),
-          isNotNull,
-        );
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<NumberMinConstraint<double>>(), isNotNull);
       });
     });
 
@@ -126,14 +120,8 @@ void main() {
         final result = schema.validate(6.0);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
-
-        final constraintsError = error as SchemaConstraintsError;
-        expect(
-          constraintsError.getConstraint('number_max'),
-          isNotNull,
-        );
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<NumberMaxConstraint<double>>(), isNotNull);
       });
     });
 
@@ -166,14 +154,8 @@ void main() {
         final result = schema.validate(6.0);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
-
-        final constraintsError = error as SchemaConstraintsError;
-        expect(
-          constraintsError.getConstraint('number_range'),
-          isNotNull,
-        );
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<NumberRangeConstraint<double>>(), isNotNull);
       });
     });
 
@@ -198,14 +180,9 @@ void main() {
         final result = schema.validate(1.7);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
-
-        final constraintsError = error as SchemaConstraintsError;
-        expect(
-          constraintsError.getConstraint('multiple_of'),
-          isNotNull,
-        );
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<NumberMultipleOfConstraint<double>>(),
+            isNotNull);
       });
     });
   });
@@ -234,8 +211,8 @@ void main() {
         final result = schema.validate(null);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<NonNullableConstraint>());
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<NonNullableConstraint>(), isNotNull);
       });
 
       test('Nullable schema passes on null', () {
@@ -249,8 +226,8 @@ void main() {
         final result = schema.validate('not an int');
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<InvalidTypeConstraint>());
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<InvalidTypeConstraint>(), isNotNull);
       });
 
       test('Valid int passes with no constraints', () {
@@ -297,14 +274,8 @@ void main() {
         final result = schema.validate(4);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
-
-        final constraintsError = error as SchemaConstraintsError;
-        expect(
-          constraintsError.getConstraint('number_min'),
-          isNotNull,
-        );
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<NumberMinConstraint<int>>(), isNotNull);
       });
     });
 
@@ -356,14 +327,8 @@ void main() {
         final result = schema.validate(6);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
-
-        final constraintsError = error as SchemaConstraintsError;
-        expect(
-          constraintsError.getConstraint('number_range'),
-          isNotNull,
-        );
+        final error = (result as Fail).error as SchemaConstraintsError;
+        expect(error.getConstraint<NumberRangeConstraint<int>>(), isNotNull);
       });
     });
 
@@ -388,12 +353,9 @@ void main() {
         final result = schema.validate(7);
         expect(result.isFail, isTrue);
 
-        final error = (result as Fail).error;
-        expect(error, isA<SchemaConstraintsError>());
-
-        final constraintsError = error as SchemaConstraintsError;
+        final error = (result as Fail).error as SchemaConstraintsError;
         expect(
-          constraintsError.getConstraint('multiple_of'),
+          error.getConstraint<NumberMultipleOfConstraint<int>>(),
           isNotNull,
         );
       });
