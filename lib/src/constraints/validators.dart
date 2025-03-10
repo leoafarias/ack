@@ -14,8 +14,9 @@ final class InvalidTypeConstraint extends Constraint<Object>
   /// Creates a new [InvalidTypeConstraint] that validates that the value is of the expected type.
   InvalidTypeConstraint({required this.expectedType})
       : super(
-            constraintKey: 'invalid_type',
-            description: 'Type should be $expectedType');
+          constraintKey: 'invalid_type',
+          description: 'Type should be $expectedType',
+        );
 
   @override
   String buildMessage(Object value) =>
@@ -26,7 +27,9 @@ final class NonNullableConstraint extends Constraint<Object>
     with WithConstraintError<Object?> {
   NonNullableConstraint()
       : super(
-            constraintKey: 'non_nullable', description: 'Value cannot be null');
+          constraintKey: 'non_nullable',
+          description: 'Value cannot be null',
+        );
 
   @override
   String buildMessage(Object? value) => 'Value cannot be null';
@@ -109,8 +112,9 @@ class StringEnumConstraint extends Constraint<String>
   /// {@macro string_enum_validator}
   const StringEnumConstraint(this.enumValues)
       : super(
-            constraintKey: 'string_enum',
-            description: 'Must be one of: $enumValues}');
+          constraintKey: 'string_enum',
+          description: 'Must be one of: $enumValues}',
+        );
 
   @override
   bool isValid(String value) => enumValues.contains(value);
@@ -196,8 +200,9 @@ class StringNotEmptyValidator extends Constraint<String>
   /// {@macro string_not_empty_validator}
   const StringNotEmptyValidator()
       : super(
-            constraintKey: 'string_not_empty',
-            description: 'String cannot be empty');
+          constraintKey: 'string_not_empty',
+          description: 'String cannot be empty',
+        );
 
   @override
   bool isValid(String value) => value.isNotEmpty;
@@ -217,8 +222,9 @@ class StringJsonValidator extends Constraint<String> with Validator<String> {
   /// {@macro string_json_validator}
   const StringJsonValidator()
       : super(
-            constraintKey: 'string_json',
-            description: 'Must be a valid JSON string');
+          constraintKey: 'string_json',
+          description: 'Must be a valid JSON string',
+        );
 
   @override
   bool isValid(String value) {
@@ -304,7 +310,9 @@ class StringEmptyConstraint extends Constraint<String> with Validator<String> {
   /// {@macro string_empty_validator}
   const StringEmptyConstraint()
       : super(
-            constraintKey: 'string_empty', description: 'String must be empty');
+          constraintKey: 'string_empty',
+          description: 'String must be empty',
+        );
 
   @override
   bool isValid(String value) => value.isEmpty;
@@ -704,6 +712,23 @@ class ObjectNoAdditionalPropertiesConstraint extends Constraint<MapValue>
   }
 }
 
+class ObjectRequiredPropertyConstraint extends Constraint<MapValue>
+    with Validator<MapValue> {
+  final String property;
+
+  ObjectRequiredPropertyConstraint(this.property)
+      : super(
+          constraintKey: 'object_required_property',
+          description: 'Property is required: $property',
+        );
+
+  @override
+  bool isValid(MapValue value) => value.containsKey(property);
+
+  @override
+  String buildMessage(MapValue value) => 'Property $property is required.';
+}
+
 /// {@template object_required_property_validator}
 /// Validator that checks if a [Map] has required properties
 /// {@endtemplate}
@@ -726,8 +751,11 @@ class ObjectRequiredPropertiesConstraint extends Constraint<MapValue>
 
   @override
   String buildMessage(MapValue value) {
-    final missingKeys =
-        schema.getRequiredProperties().toSet().difference(value.keys.toSet());
+    final missingKeys = schema
+        .getRequiredProperties()
+        .toSet()
+        .difference(value.keys.toSet())
+        .toList();
 
     return 'Missing required properties: $missingKeys.';
   }

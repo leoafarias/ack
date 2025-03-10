@@ -1,5 +1,6 @@
 import 'package:ack/ack.dart';
 import 'package:ack/src/context.dart';
+import 'package:ack/src/helpers.dart';
 import 'package:test/test.dart';
 
 class _MockSchemaContext extends SchemaContext {
@@ -10,44 +11,6 @@ class _MockSchemaContext extends SchemaContext {
 class _MockConstraint extends Constraint {
   const _MockConstraint()
       : super(constraintKey: 'test_constraint', description: 'Test constraint');
-}
-
-Map<String, Object?> schemaConstraintErrorMap() {
-  return {
-    'name': {
-      'errorKey': 'schema_constraints_error',
-      'value': 'schema_value',
-      'errors': [
-        {
-          'constraintKey': 'test_constraint',
-          'description': 'Constraint error description',
-          'message': 'Constraint error message'
-        },
-      ]
-    }
-  };
-}
-
-Map<String, Object?> schemaNestedErrorMap() {
-  return {
-    'name': {
-      'errorKey': 'schema_nested_error',
-      'value': 'schema_value',
-      'schemas': {
-        'name': {
-          'errorKey': 'schema_constraints_error',
-          'value': 'schema_value',
-          'errors': [
-            {
-              'constraintKey': 'test_constraint',
-              'description': 'Constraint error description',
-              'message': 'Constraint error message'
-            },
-          ]
-        }
-      }
-    }
-  };
 }
 
 void main() {
@@ -182,5 +145,41 @@ void main() {
           contains(
               'The list contains duplicate items: [a]. All items must be unique.'));
     });
+  });
+
+  final userSchema = Ack.object({
+    'name': Ack.string.minLength(5).maxLength(10),
+    'age': Ack.int.min(18).max(100),
+    'email': Ack.string.isEmail(),
+    'phone': Ack.string.isNotEmpty(),
+  }, required: [
+    'name',
+    'email'
+  ]);
+
+  final addressSchema = Ack.object({
+    'street': Ack.string,
+    'city': Ack.string,
+    'zip': Ack.int,
+  });
+
+  final userWithAddressSchema = userSchema.extend({
+    'address': addressSchema,
+  });
+
+  test('SchemaError', () {
+    final result =
+        userWithAddressSchema.validate(debugName: 'userWithAddress', {
+      'age': 'car',
+      'email': 'john.doe@example.com',
+      'phone': '1234567890',
+      'address': {
+        'street': '123 Main St',
+        'city': 'Anytown',
+        'zip': 'here',
+      },
+    });
+
+    print(prettyJson(composeSchemaErrorMap(result.getError())));
   });
 }

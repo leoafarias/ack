@@ -90,7 +90,7 @@ final class ObjectSchema extends Schema<MapValue>
   List<ConstraintError> checkValidators(MapValue value) {
     final extraValidation = [
       ObjectNoAdditionalPropertiesConstraint(this),
-      ObjectRequiredPropertiesConstraint(this),
+      // ObjectRequiredPropertiesConstraint(this),
     ];
 
     return [
@@ -117,7 +117,22 @@ final class ObjectSchema extends Schema<MapValue>
       final propKey = entry.key;
       final propSchema = entry.value;
 
-      final propValue = resultValue?[propKey];
+      // final requiredConstraint =
+      //     ObjectRequiredPropertyConstraint(propKey).validate(resultValue!);
+
+      // if (requiredConstraint != null) {
+      //   violations.add(SchemaConstraintsError(
+      //     constraints: [requiredConstraint],
+      //     context: SchemaContext(
+      //       name: propKey,
+      //       schema: propSchema,
+      //       value: null,
+      //     ),
+      //   ));
+      //   continue;
+      // }
+
+      final propValue = resultValue![propKey];
 
       final propResult = propSchema.validate(propValue, debugName: propKey);
 
@@ -193,5 +208,50 @@ final class ObjectSchema extends Schema<MapValue>
       'additionalProperties': _additionalProperties,
       'required': _required,
     };
+  }
+}
+
+class MapEntrySchema extends Schema<MapEntry<String, Object?>>
+    with SchemaFluentMethods<MapEntrySchema, MapEntry<String, Object?>> {
+  final MapEntry<String, Schema> _entry;
+  MapEntrySchema({
+    required MapEntry<String, Schema> entry,
+    super.nullable,
+    super.description,
+    super.constraints,
+    super.defaultValue,
+  })  : _entry = entry,
+        super(type: SchemaType.mapEntry);
+
+  @override
+  MapEntrySchema call({
+    bool? nullable,
+    String? description,
+    MapEntry<String, Schema>? entry,
+    List<Validator<MapEntry<String, Object?>>>? constraints,
+  }) {
+    return copyWith(
+      nullable: nullable,
+      description: description,
+      constraints: constraints,
+      entry: entry,
+    );
+  }
+
+  @override
+  MapEntrySchema copyWith({
+    bool? nullable,
+    MapEntry<String, Schema>? entry,
+    String? description,
+    List<Validator<MapEntry<String, Object?>>>? constraints,
+    MapEntry<String, Object?>? defaultValue,
+  }) {
+    return MapEntrySchema(
+      nullable: nullable ?? _nullable,
+      description: description ?? _description,
+      constraints: constraints ?? _constraints,
+      defaultValue: defaultValue ?? _defaultValue,
+      entry: entry ?? _entry,
+    );
   }
 }

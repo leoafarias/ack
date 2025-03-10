@@ -16,7 +16,6 @@ sealed class SchemaError extends SchemaContext {
     required this.errorKey,
   });
 
-  @override
   Map<String, Object?> toMap() {
     return {
       'errorKey': errorKey,
@@ -131,4 +130,28 @@ class SchemaMockError extends SchemaError {
           schema: context.schema,
           value: context.value,
         );
+}
+
+Map<String, Object?> composeSchemaErrorMap(SchemaError error) {
+  final errorMap = switch (error) {
+    SchemaConstraintsError error => {
+        'errors': error.constraints.map((c) => c.message).toList(),
+      },
+    SchemaNestedError error => {
+        for (final e in error.errors) ...composeSchemaErrorMap(e),
+      },
+    SchemaUnknownError error => {
+        'error': error.error,
+        'stackTrace': error.stackTrace,
+      },
+    _ => {},
+  };
+
+  return {
+    error.name: {
+      // 'errorKey': error.errorKey,
+      // 'value': error.value,
+      ...errorMap,
+    },
+  };
 }
