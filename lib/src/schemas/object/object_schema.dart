@@ -90,7 +90,7 @@ final class ObjectSchema extends Schema<MapValue>
   List<ConstraintError> checkValidators(MapValue value) {
     final extraValidation = [
       ObjectNoAdditionalPropertiesConstraint(this),
-      // ObjectRequiredPropertiesConstraint(this),
+      ObjectRequiredPropertiesConstraint(this),
     ];
 
     return [
@@ -116,21 +116,6 @@ final class ObjectSchema extends Schema<MapValue>
     for (final entry in _properties.entries) {
       final propKey = entry.key;
       final propSchema = entry.value;
-
-      // final requiredConstraint =
-      //     ObjectRequiredPropertyConstraint(propKey).validate(resultValue!);
-
-      // if (requiredConstraint != null) {
-      //   violations.add(SchemaConstraintsError(
-      //     constraints: [requiredConstraint],
-      //     context: SchemaContext(
-      //       name: propKey,
-      //       schema: propSchema,
-      //       value: null,
-      //     ),
-      //   ));
-      //   continue;
-      // }
 
       final propValue = resultValue![propKey];
 

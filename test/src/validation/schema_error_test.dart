@@ -171,6 +171,7 @@ void main() {
     final result =
         userWithAddressSchema.validate(debugName: 'userWithAddress', {
       'age': 'car',
+      'name': 'Leo',
       'email': 'john.doe@example.com',
       'phone': '1234567890',
       'address': {

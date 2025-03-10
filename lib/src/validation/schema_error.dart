@@ -135,6 +135,7 @@ class SchemaMockError extends SchemaError {
 Map<String, Object?> composeSchemaErrorMap(SchemaError error) {
   final errorMap = switch (error) {
     SchemaConstraintsError error => {
+        'value': error.value,
         'errors': error.constraints.map((c) => c.message).toList(),
       },
     SchemaNestedError error => {
