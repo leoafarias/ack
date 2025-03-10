@@ -23,7 +23,6 @@ enum SchemaType {
   double,
   boolean,
   object,
-  mapEntry,
   discriminatedObject,
   list,
 
