@@ -2,19 +2,19 @@ import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
 class IsSchemaError extends Matcher {
-  final String type;
+  final String key;
 
-  IsSchemaError(this.type);
+  IsSchemaError(this.key);
 
   @override
   bool matches(item, Map matchState) {
-    return item is SchemaError && item.type == type;
+    return item is SchemaError && item.name == key;
   }
 
   @override
   Description describe(Description description) {
     return description.add(
-      'a SchemaError containing error type "$type"',
+      'a SchemaError containing error key "$key"',
     );
   }
 
@@ -30,25 +30,25 @@ class IsSchemaError extends Matcher {
     }
 
     return mismatchDescription.add(
-      'had error type "$item" instead of "$type"',
+      'had error key "$item" instead of "$key"',
     );
   }
 }
 
-class IsConstraintError extends Matcher {
-  final String name;
+class IsConstraintViolation extends Matcher {
+  final String key;
 
-  IsConstraintError(this.name);
+  IsConstraintViolation(this.key);
 
   @override
   bool matches(item, Map matchState) {
-    return item is ConstraintError && item.name == name;
+    return item is ConstraintError && item.constraintKey == key;
   }
 
   @override
   Description describe(Description description) {
     return description.add(
-      'a ConstraintError containing error name "$name"',
+      'a ConstraintError containing error key "$key"',
     );
   }
 
@@ -63,7 +63,7 @@ class IsConstraintError extends Matcher {
       return mismatchDescription.add('was not a ConstraintError');
     }
     return mismatchDescription.add(
-      'Constrained name is "$item" instead of "$name"',
+      'Constrained key is "$item" instead of "$key"',
     );
   }
 }
@@ -79,25 +79,19 @@ class HasSchemaErrors extends Matcher {
   @override
   bool matches(item, Map matchState) {
     final isFail = item is Fail;
-    final isErrors = item is List<SchemaError>;
+    final isErrors = item is SchemaError;
     if (!isFail && !isErrors) {
-      matchState['reason'] = 'was not a Fail result or a List<SchemaError>';
+      matchState['reason'] = 'was not a Fail result or a SchemaError';
       return false;
     }
 
-    List<SchemaError> errors = [];
+    final schemaError = item is Fail ? item.error : item as SchemaError;
 
-    if (item is Fail) {
-      errors = item.errors;
-    } else if (item is List<SchemaError>) {
-      errors = item;
-    } else {
-      throw ArgumentError('Invalid argument type: ${item.runtimeType}');
-    }
+    final errors = getErrors(schemaError, []);
 
     if (errors.length != expectedCount) {
       matchState['reason'] =
-          'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.type).toList()}';
+          'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.name).toList()}';
       return false;
     }
 
@@ -107,9 +101,9 @@ class HasSchemaErrors extends Matcher {
     }
 
     for (final error in errors) {
-      if (!types.contains(error.type)) {
+      if (!types.contains(error.name)) {
         matchState['reason'] =
-            'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.type).toList()}';
+            'expected $expectedCount SchemaErrors with types $types, but found ${errors.length} errors with types ${errors.map((e) => e.name).toList()}';
         return false;
       }
     }
@@ -135,6 +129,18 @@ class HasSchemaErrors extends Matcher {
   }
 }
 
+List<SchemaError> getErrors(
+    SchemaError error, List<SchemaError> aggregatedErrors) {
+  final extractedErrors = switch (error) {
+    SchemaConstraintsError constraintsError => [constraintsError],
+    SchemaNestedError propertiesError => propertiesError.errors,
+    SchemaUnknownError() => [error],
+    SchemaMockError() => [error],
+  };
+
+  return [...aggregatedErrors, ...extractedErrors];
+}
+
 class HasConstraintErrors extends Matcher {
   final List<String> names;
   final int expectedCount;
@@ -148,18 +154,25 @@ class HasConstraintErrors extends Matcher {
       return false;
     }
 
-    final errors = item.errors.whereType<ConstraintError>();
+    final error = item.error;
+
+    if (error is! SchemaConstraintsError) {
+      matchState['reason'] = 'was not a SchemaConstraintsError';
+      return false;
+    }
+
+    final errors = error.constraints;
 
     if (errors.length != expectedCount) {
       matchState['reason'] =
-          'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.name).toList()}';
+          'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.constraintKey).toList()}';
       return false;
     }
 
     for (final error in errors) {
-      if (!names.contains(error.name)) {
+      if (!names.contains(error.constraintKey)) {
         matchState['reason'] =
-            'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.name).toList()}';
+            'expected $expectedCount ConstraintErrors with names $names, but found ${errors.length} errors with names ${errors.map((e) => e.constraintKey).toList()}';
         return false;
       }
     }
@@ -227,25 +240,5 @@ class IsOkMatcher<T extends Object> extends Matcher {
   }
 }
 
-Matcher isSchemaError(String type) => IsSchemaError(type);
-Matcher isConstraintError(String name) => IsConstraintError(name);
-
-Matcher hasOneSchemaError(String type) => _hasSchemaErrors([type], count: 1);
-Matcher hasTwoSchemaErrors(List<String> types) =>
-    _hasSchemaErrors(types, count: 2);
-Matcher hasThreeSchemaErrors(List<String> types) =>
-    _hasSchemaErrors(types, count: 3);
-
-Matcher hasOneConstraintError(String name) => HasConstraintErrors([name], 1);
-Matcher hasTwoConstraintErrors(List<String> names) =>
-    HasConstraintErrors(names, 2);
-Matcher hasThreeConstraintErrors(List<String> names) =>
-    HasConstraintErrors(names, 3);
-
-extension FailExt<T extends Object> on Fail<T> {
-  List<SchemaError> get schemaErrors =>
-      errors.whereType<SchemaError>().toList();
-
-  List<PathSchemaError> get pathSchemaError =>
-      errors.whereType<PathSchemaError>().toList();
-}
+Matcher hasOneConstraintViolation(String name) =>
+    HasConstraintErrors([name], 1);
