@@ -125,7 +125,9 @@ class StringEnumConstraint extends Constraint<String>
     final closestMatchMessage =
         closestMatch.isTruthy ? '(Closest match: "${closestMatch!}")' : '';
 
-    return 'Invalid value ($value). Allowed values are: ($enumValues). $closestMatchMessage';
+    final allowedValues = enumValues.map((e) => '"$e"').join(', ');
+
+    return 'Invalid value ($value). Allowed values are: ($allowedValues). $closestMatchMessage';
   }
 
   @override
@@ -401,9 +403,9 @@ class ListUniqueItemsConstraint<T extends Object> extends Constraint<List<T>>
 
   @override
   String buildMessage(List<T> value) {
-    final nonUniqueValues = value.duplicates;
+    final nonUniqueValues = value.duplicates.map((e) => '"$e"').join(', ');
 
-    return 'The list contains duplicate items: ($nonUniqueValues). All items must be unique.';
+    return 'The list contains duplicate items: $nonUniqueValues. All items must be unique.';
   }
 
   @override

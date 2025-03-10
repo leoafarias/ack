@@ -93,9 +93,8 @@ void main() {
       expect(
           error.constraints.first.message,
           contains(
-              'Invalid value "yellow". Allowed values are: [red, green, blue].'));
+              'Invalid value (yellow). Allowed values are: ("red", "green", "blue"). '));
     });
-
     test('Date validation error messages', () {
       final constraint = StringDateConstraint();
       final schema = Ack.string.constrain(constraint);
@@ -106,9 +105,8 @@ void main() {
       expect(
           error.constraints.first.message,
           contains(
-              'The value "2023-13-45" is not a valid date. Expected format: YYYY-MM-DD (e.g., 2017-07-21).'));
+              'The value (2023-13-45) is not a valid date. Expected format: YYYY-MM-DD (e.g. 2017-07-21)'));
     });
-
     test('List validation error messages', () {
       final minItems = ListMinItemsConstraint(2);
       final maxItems = ListMaxItemsConstraint(4);
@@ -125,7 +123,7 @@ void main() {
       expect(
           error.constraints.first.message,
           contains(
-              'The list has only 1 items; at least 2 items are required.'));
+              'The list has only (1) items; at least (2) items are required.'));
 
       // Test too many items
       result = schema.validate(['a', 'b', 'c', 'd', 'e']);
@@ -134,7 +132,7 @@ void main() {
       expect(
           error.constraints.first.message,
           contains(
-              'The list contains 5 items, which exceeds the allowed maximum of 4.'));
+              'The list contains (5) items, which exceeds the allowed maximum of (4).'));
 
       // Test duplicate items
       result = schema.validate(['a', 'b', 'a']);
@@ -143,7 +141,7 @@ void main() {
       expect(
           error.constraints.first.message,
           contains(
-              'The list contains duplicate items: [a]. All items must be unique.'));
+              'The list contains duplicate items: "a". All items must be unique.'));
     });
   });
 

@@ -37,7 +37,7 @@ void main() {
       final message = validator.buildMessage([1, 2]);
       expect(
         message,
-        'The list has only 2 items; at least 3 items are required.',
+        'The list has only (2) items; at least (3) items are required.',
       );
     });
   });

@@ -1,8 +1,6 @@
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
-import '../../../test_helpers.dart';
-
 void main() {
   group('Number Validators', () {
     group('MinValueValidator', () {
@@ -22,8 +20,11 @@ void main() {
         expect(schema.validate(4).isOk, isTrue);
 
         final result = schema.validate(6);
+
         expect(result.isFail, isTrue);
-        expect(result, hasOneConstraintViolation('number_max'));
+        final error = result.getError() as SchemaConstraintsError;
+
+        expect(error.getConstraint<NumberMaxConstraint<double>>(), isNotNull);
       });
     });
 
@@ -62,7 +63,9 @@ void main() {
         expect(result.isOk, isTrue);
 
         final result2 = schema.validate(6);
-        expect(result2, hasOneConstraintViolation('number_range'));
+        expect(result2.isFail, isTrue);
+        final error = result2.getError() as SchemaConstraintsError;
+        expect(error.getConstraint<NumberRangeConstraint<double>>(), isNotNull);
       });
     });
   });
