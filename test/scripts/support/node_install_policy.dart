@@ -2,7 +2,7 @@
 /// This is a policy check, not a general-purpose shell parser.
 bool isPinnedNodeInstall(String statement) {
   if (statement.trimLeft().startsWith('#')) return true;
-  final command = RegExp(r'^(?:run:\s*)?(npm|pnpm|npx)\s+(.+)$');
+  final command = RegExp(r'^(?:-?\s*run:\s*)?(npm|pnpm|npx)\s+(.+)$');
   final pinned = RegExp(
     r'^(@[^/\s]+/)?[^@\s]+@(\d+\.\d+\.\d+(-[\w.-]+)?|\$[A-Z_][A-Z_0-9]*)$',
   );
