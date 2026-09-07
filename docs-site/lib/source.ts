@@ -1,4 +1,4 @@
-import { PAGE_STATUSES } from '@conceptadev/docs-theme';
+import { PAGE_STATUSES } from '@conceptadev/docs-theme/status';
 import { loader } from 'fumadocs-core/source';
 import { metaSchema, pageSchema } from 'fumadocs-core/source/schema';
 import { defineDocs } from 'fumadocs-mdx/macro';

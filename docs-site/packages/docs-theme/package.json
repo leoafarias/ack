@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./mdx": "./src/mdx.tsx",
+    "./status": "./src/status.ts",
     "./theme.css": "./src/theme.css",
     "./package.json": "./package.json"
   },

@@ -2,11 +2,13 @@
 
 This is the only local `@conceptadev/docs-theme` package in Ack.
 It tracks the public API and source corrections in Concepta docs-theme PR #2,
-source revision `49766e3627c0c21f9b045f80855e4198c9d859ec`.
+source revision `117abf35b821603fa63869db2d45f365284ef1ee`.
 
 The package manifest uses source exports because Next.js transpiles this local
 workspace package. Its explicit Base UI development dependency prevents a
 second Radix-based UI implementation from being installed for the peer.
+The separate `status` export is safe for Node-based MDX configuration evaluation;
+it does not load React components or extensionless UI modules.
 
 The shared package remains private and unpublished. Once a reviewed release is
 available, replace `workspace:*` with its version, regenerate the lockfile,
