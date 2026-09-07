@@ -30,10 +30,19 @@ test('keyboard search reads the static index and returns a working page', async 
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await dialog.locator('input').first().fill('schemas');
-  const result = dialog.locator('a[href*="core-concepts/schemas"]').first();
-  await expect(result).toBeVisible();
-  await result.click();
-  await expect(page).toHaveURL(new RegExp(`${base}/core-concepts/schemas`));
-  await expect(page.locator('h1')).toBeVisible();
-  expect(failed).toEqual([]);
+  // Base UI search results are buttons that call the framework router.
+  const result = dialog.getByRole('button').filter({
+    has: page.getByText('Schemas', { exact: true }),
+  }).first();
+  try {
+    await expect(result).toBeVisible();
+    await result.click();
+    await expect(page).toHaveURL(new RegExp(`${base}/core-concepts/schemas`));
+    await expect(page.locator('h1')).toBeVisible();
+    expect(failed).toEqual([]);
+  } catch (error) {
+    console.error('Search dialog state:', await dialog.ariaSnapshot().catch(() => 'Dialog closed'));
+    console.error('Browser errors:', failed);
+    throw error;
+  }
 });
