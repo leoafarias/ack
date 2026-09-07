@@ -1,24 +1,23 @@
 {
   "name": "@conceptadev/docs-theme",
-  "version": "0.1.0-local.0",
+  "version": "0.1.0-local.1",
   "private": true,
   "type": "module",
-  "description": "Pinned local snapshot of the Concepta Fumadocs theme.",
+  "description": "Reviewed local snapshot of the Concepta Fumadocs theme.",
   "exports": {
     ".": "./src/index.ts",
     "./mdx": "./src/mdx.tsx",
     "./theme.css": "./src/theme.css",
     "./package.json": "./package.json"
   },
-  "sideEffects": [
-    "./src/theme.css"
-  ],
+  "sideEffects": ["./src/theme.css"],
   "peerDependencies": {
     "@types/mdx": ">=2",
-    "fumadocs-core": ">=16.14.5 <17",
-    "fumadocs-ui": ">=16.15.4 <17",
-    "next": ">=16.3.3 <17",
+    "fumadocs-core": ">=16.15.8 <17",
+    "fumadocs-ui": ">=16.15.8 <17",
+    "next": ">=16.3.4 <17",
     "react": ">=19.2.0 <20",
     "react-dom": ">=19.2.0 <20"
-  }
+  },
+  "devDependencies": { "fumadocs-ui": "npm:@fumadocs/base-ui@16.15.8" }
 }

@@ -1,5 +1,9 @@
 packages:
   - packages/*
-
+autoInstallPeers: false
+resolvePeersFromWorkspaceRoot: true
+strictPeerDependencies: true
+engineStrict: true
+saveExact: true
 allowBuilds:
   esbuild: true

@@ -1,12 +1,9 @@
 import type { MetadataRoute } from 'next';
-import { docsConfig } from '@/docs.config';
+import { absoluteSiteUrl } from '@/lib/routes';
 import { source } from '@/lib/source';
 
+export const dynamic = 'force-static';
 export default function sitemap(): MetadataRoute.Sitemap {
-  return source.getPages().map((page) => ({
-    url: new URL(page.url, docsConfig.site.url).toString(),
-    lastModified: page.data.lastReviewed,
-    changeFrequency: 'weekly',
-    priority: page.slugs.length === 0 ? 1 : 0.7,
-  }));
+  // lastReviewed is an editorial date, not a content modification timestamp.
+  return source.getPages().map((page) => ({ url: absoluteSiteUrl(page.url) }));
 }

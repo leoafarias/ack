@@ -1,20 +1,10 @@
+import { addBasePath, createSiteUrl } from '@conceptadev/docs-theme';
 import { docsConfig } from '@/docs.config';
 
-const basePath = process.env.NEXT_PUBLIC_DOCS_BASE_PATH ?? '';
-
+/** Only for raw fetches/assets; Next.js Link adds basePath itself. */
 export function withBasePath(path: string): string {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  if (!basePath) return normalizedPath;
-  if (normalizedPath === '/') return basePath || '/';
-  return `${basePath}${normalizedPath}`;
+  return addBasePath(process.env.NEXT_PUBLIC_DOCS_BASE_PATH ?? '', path);
 }
-
 export function absoluteSiteUrl(path: string): string {
-  const base = new URL(
-    docsConfig.site.url.endsWith('/')
-      ? docsConfig.site.url
-      : `${docsConfig.site.url}/`,
-  );
-
-  return new URL(path.replace(/^\/+/, ''), base).toString();
+  return createSiteUrl(docsConfig.site.url, path);
 }

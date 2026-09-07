@@ -1,12 +1,10 @@
 import type { MetadataRoute } from 'next';
-import { docsConfig } from '@/docs.config';
+import { absoluteSiteUrl } from '@/lib/routes';
 
+export const dynamic = 'force-static';
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-    },
-    sitemap: new URL('/sitemap.xml', docsConfig.site.url).toString(),
+    rules: { userAgent: '*', allow: '/' },
+    sitemap: absoluteSiteUrl('/sitemap.xml'),
   };
 }

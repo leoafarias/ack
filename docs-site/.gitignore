@@ -1,6 +1,8 @@
-.generated/
 .next/
+.source/
 node_modules/
 out/
-public/_ack-docs/
+content/
+playwright-report/
+test-results/
 *.tsbuildinfo

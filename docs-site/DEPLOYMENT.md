@@ -1,33 +1,50 @@
 # Documentation deployment
 
-The Fumadocs application produces a static site in `docs-site/out`.
+The app exports static files to `docs-site/out`. It has one route contract:
+application-relative `/core-concepts/schemas` is published at
+`https://concepta.dev/ack/core-concepts/schemas`.
 
-## Production build
+## Build
 
 ```bash
 cd docs-site
 npm install --global pnpm@11.5.3
 pnpm install --frozen-lockfile
-DOCS_BASE_PATH=/ack \
-NEXT_PUBLIC_SITE_URL=https://concepta.dev/ack \
-pnpm build
+DOCS_BASE_PATH=/ack NEXT_PUBLIC_SITE_URL=https://concepta.dev/ack pnpm build
+DOCS_BASE_PATH=/ack NEXT_PUBLIC_SITE_URL=https://concepta.dev/ack python3 scripts/verify-export.py
+DOCS_BASE_PATH=/ack pnpm test:browser
 ```
 
-Publish the contents of `docs-site/out` at the `/ack` path on
-`https://concepta.dev`.
+Install the Playwright Chromium runtime before running browser tests. Publish
+`out` at the `/ack` mount, not at `/ack/docs`. The host must serve directory
+indexes and raw files, including `/ack/api/search`, `/ack/llms.txt`, Markdown
+files, and PNG images. Do not use a homepage fallback for missing files.
 
-The build uses Next.js `basePath` support, so scripts, styles, search data,
-Open Graph routes, and Markdown routes are emitted for that subpath.
+Next.js adds basePath to its links. Raw fetches use `addBasePath`; canonical,
+sitemap, image metadata, and LLM URLs use `createSiteUrl`. Do not prefix a URL
+twice. `site.url` includes the deployment path, while `site.docsPath` is `/`.
 
-## Cutover requirement
+## Crawler ownership
 
-The existing site is hosted by docs.page. This migration removes `docs.json`,
-so merge and hosting cutover must be coordinated. Do not merge until the
-`concepta.dev/ack` route is configured to serve the generated static output.
+The exported `/ack/robots.txt` is not a domain-wide crawler policy. Crawlers
+read the origin's `/robots.txt`. Coordinate the Concepta root site's robots
+configuration and add the sitemap `https://concepta.dev/ack/sitemap.xml` there.
+Do not overwrite the root site's existing crawler rules. Review dates are not
+used as sitemap modification dates.
+
+## Cutover gate
+
+This PR removes docs.page's `docs.json`. Do not merge until the new host can
+serve the complete static export and the production route has been reviewed.
+No deployment, DNS change, registry publication, or merge is automated here.
+
+Keep the previous deployment available for rollback. Verify existing public
+links, search, Markdown copy, source links, images, navigation, and 404s at the
+real host before completing cutover. Older `/documentation/ack` URLs require
+explicit redirects at that host; this static app does not own that prefix.
 
 ## Shared package follow-up
 
-The site currently uses the pinned workspace snapshot in
-`docs-site/packages/docs-theme`. Once `@conceptadev/docs-theme` is published,
-replace the workspace dependency with the released version and remove the local
-snapshot.
+After a reviewed theme release is published, replace the `workspace:*`
+dependency, remove `packages/docs-theme`, regenerate the lockfile, and rerun the
+same root/subpath checks. Do not retain two packages with the same name.

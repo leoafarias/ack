@@ -1,50 +1,25 @@
-import type { DocsConfig, DocsRepository } from './types';
+import type { DocsConfig } from './types';
 
-function trimSlashes(value: string): string {
-  return value.replace(/^\/+|\/+$/g, '');
+function encodePath(...parts: Array<string | undefined>): string {
+  return parts.filter((part): part is string => Boolean(part))
+    .flatMap((part) => part.split('/')).filter(Boolean)
+    .map((part) => {
+      if (part === '.' || part === '..' || /[\\\u0000-\u001f]/.test(part)) throw new Error('Repository paths must not contain traversal.');
+      return encodeURIComponent(part);
+    }).join('/');
 }
-
-function joinPath(...parts: Array<string | undefined>): string {
-  return parts
-    .filter((part): part is string => Boolean(part))
-    .map(trimSlashes)
-    .filter(Boolean)
-    .join('/');
-}
-
-function getRepository(config: DocsConfig): DocsRepository | undefined {
-  return config.project.repository;
-}
-
-function repositoryBaseUrl(repository: DocsRepository): string {
-  return repository.url.replace(/\/+$/, '');
-}
-
 export function createRepositoryUrl(config: DocsConfig): string | undefined {
-  const repository = getRepository(config);
-  return repository ? repositoryBaseUrl(repository) : undefined;
+  return config.project.repository?.url.replace(/\/+$/, '');
 }
-
-export function createSourceUrl(
-  config: DocsConfig,
-  pagePath: string,
-): string | undefined {
-  const repository = getRepository(config);
+function fileUrl(config: DocsConfig, pagePath: string, action: 'blob' | 'edit'): string | undefined {
+  const repository = config.project.repository;
   if (!repository) return undefined;
-
   const branch = encodeURIComponent(repository.branch ?? 'main');
-  const path = joinPath(repository.contentPath, pagePath);
-  return `${repositoryBaseUrl(repository)}/blob/${branch}/${path}`;
+  return `${createRepositoryUrl(config)}/${action}/${branch}/${encodePath(repository.contentPath, pagePath)}`;
 }
-
-export function createEditUrl(
-  config: DocsConfig,
-  pagePath: string,
-): string | undefined {
-  const repository = getRepository(config);
-  if (!repository) return undefined;
-
-  const branch = encodeURIComponent(repository.branch ?? 'main');
-  const path = joinPath(repository.contentPath, pagePath);
-  return `${repositoryBaseUrl(repository)}/edit/${branch}/${path}`;
+export function createSourceUrl(config: DocsConfig, pagePath: string): string | undefined {
+  return fileUrl(config, pagePath, 'blob');
+}
+export function createEditUrl(config: DocsConfig, pagePath: string): string | undefined {
+  return fileUrl(config, pagePath, 'edit');
 }
