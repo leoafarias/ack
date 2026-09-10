@@ -11,6 +11,7 @@ workspace:
   - packages/ack_generator
   - packages/ack_firebase_ai
   - packages/ack_json_schema_builder
+  - packages/ack_mcp_dart
   - example
 
 dependencies:
@@ -20,6 +21,7 @@ dev_dependencies:
   melos: ^7.3.0
   # Release tooling under /scripts reads and rewrites pubspecs.
   path: ^1.9.0
+  pub_semver: ^2.2.0
   test: ^1.25.15
   very_good_analysis: ^9.0.0
   yaml: ^3.1.2
@@ -58,6 +60,7 @@ melos:
           - ack_generator
           - ack_firebase_ai
           - ack_json_schema_builder
+          - ack_mcp_dart
           - ack_example
           - ack_annotations
 

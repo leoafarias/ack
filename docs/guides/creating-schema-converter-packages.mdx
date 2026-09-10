@@ -50,6 +50,7 @@ ack_<target_system>
 
 **Examples**:
 - `ack_firebase_ai` - Firebase AI (Gemini) schemas
+- `ack_mcp_dart` - MCP tool input schemas and runtime argument validation
 - `ack_openapi` - OpenAPI 3.0/3.1 schemas
 - `ack_graphql` - GraphQL SDL schemas
 - `ack_protobuf` - Protocol Buffer schemas
@@ -1480,6 +1481,9 @@ class GraphQlSchemaConverter {
 
 ### Reference Implementations
 - **ack_firebase_ai**: Firebase AI/Gemini schemas
+- **ack_mcp_dart**: MCP tool input schemas with ACK parsing before tool callbacks.
+  Runtime adapters can use the same contract for schema export and defaults,
+  codecs, refinements, and typed model parsing; transport stays in the host SDK.
 - **ack core**: JSON Schema implementation (`toJsonSchema()`)
 
 ### Target System Documentation

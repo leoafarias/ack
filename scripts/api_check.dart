@@ -3,6 +3,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:pub_semver/pub_semver.dart';
+
 import 'src/workspace_packages.dart';
 
 final ackPackages = publishableAckPackages;
@@ -50,6 +52,21 @@ Future<void> main(List<String> args) async {
 
   print('🚀 API Compatibility Check vs $version');
 
+  final requestedPackages = packageName != null ? [packageName] : ackPackages;
+  final baseline = Version.parse(cleanVersion);
+  final packagesToCheck = requestedPackages.where((package) {
+    final firstRelease = ackPackageFirstReleases[package];
+    if (firstRelease != null && baseline < Version.parse(firstRelease)) {
+      print(
+        'Skipping $package: $package first releases in $firstRelease; '
+        'no API exists at baseline $cleanVersion.',
+      );
+      return false;
+    }
+    return true;
+  }).toList();
+  if (packagesToCheck.isEmpty) return;
+
   // Activate dart_apitool
   final activated = await runCommand('dart', [
     'pub',
@@ -65,7 +82,6 @@ Future<void> main(List<String> args) async {
   }
 
   // Check packages
-  final packagesToCheck = packageName != null ? [packageName] : ackPackages;
   final reports = <String>[];
   var hasFailures = false;
 

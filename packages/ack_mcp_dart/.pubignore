@@ -1,0 +1,19 @@
+# Development and IDE files
+.claude/
+.idea/
+.vscode/
+
+# Build artifacts
+build/
+.dart_tool/
+
+# Coverage files
+coverage/
+
+# Local example files
+example/local/
+
+# The shared lint config. Its `include: ../../analysis_options.yaml`
+# cannot resolve outside the workspace, so shipping it breaks
+# `dart format` and `dart analyze` in the published archive.
+analysis_options.yaml

@@ -112,6 +112,7 @@ Duplicate stable notes.
       'packages/ack_generator/CHANGELOG.md',
       'packages/ack_firebase_ai/CHANGELOG.md',
       'packages/ack_json_schema_builder/CHANGELOG.md',
+      'packages/ack_mcp_dart/CHANGELOG.md',
     ];
     final originals = <String, String>{};
     for (final path in paths) {

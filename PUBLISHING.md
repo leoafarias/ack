@@ -30,7 +30,7 @@ Before creating a release:
    ```
 
 4. Check that the documentation is up to date across the repo and docs site
-5. Decide on the new version number following [Semantic Versioning](https://semver.org/) and apply it consistently to every publishable package (`ack`, `ack_annotations`, `ack_generator`, `ack_firebase_ai`, `ack_json_schema_builder`)
+5. Decide on the new version number following [Semantic Versioning](https://semver.org/) and apply it consistently to every publishable package (`ack`, `ack_annotations`, `ack_generator`, `ack_firebase_ai`, `ack_json_schema_builder`, `ack_mcp_dart`)
 6. Ensure package CHANGELOG entries are finalized before tagging. If you want a link-only entry for a version, you can run `dart scripts/update_release_changelog.dart <version> [tag]` after `dart run melos version`.
 
 ### 2. Create a GitHub Release
@@ -85,7 +85,7 @@ When the `v*` tag is pushed, the GitHub Actions workflow will automatically:
    packages.
 4. After both hosted versions are available, test and publish `ack_generator`.
 5. After the generator stage completes, test and publish
-   `ack_json_schema_builder` and `ack_firebase_ai`.
+   `ack_json_schema_builder`, `ack_mcp_dart`, and `ack_firebase_ai`.
 6. Run `dart scripts/publish_dry_run.dart` immediately before each package
    upload and require zero warnings.
 
@@ -159,7 +159,7 @@ dart run melos run validate-jsonschema:batch
 dart scripts/api_check.dart <previous-version>
 
 # Only then, one package at a time, in release order:
-#   ack, ack_annotations -> ack_generator -> ack_json_schema_builder, ack_firebase_ai
+#   ack, ack_annotations -> ack_generator -> ack_json_schema_builder, ack_mcp_dart, ack_firebase_ai
 (cd packages/<package> && dart pub publish)
 ```
 
@@ -197,3 +197,8 @@ The Ack project follows [Semantic Versioning](https://semver.org/):
 - **Patch version (0.0.x)**: Backwards-compatible bug fixes
 
 For pre-releases, use formats like `0.2.0-beta.1` or `0.2.0-rc.1`.
+
+New packages have no API at an older release baseline. Record their first release
+in `ackPackageFirstReleases` in `scripts/src/workspace_packages.dart`; API checks
+skip only baselines before that version and compare normally from that version
+onward. `ack_mcp_dart` starts at 1.2.0.

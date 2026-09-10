@@ -90,4 +90,5 @@ jobs:
       packages_folder_path: "packages"
       packages: |
         ack_json_schema_builder
+        ack_mcp_dart
         ack_firebase_ai

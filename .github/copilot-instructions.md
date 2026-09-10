@@ -11,6 +11,7 @@
 - `packages/ack_generator`: build_runner generator + unit/integration tests.
 - `packages/ack_firebase_ai`: Firebase AI schema adapter.
 - `packages/ack_json_schema_builder`: JSON Schema adapter.
+- `packages/ack_mcp_dart`: MCP tool input schemas and typed argument validation.
 - `example`: sample usage.
 
 ## Environment and setup

@@ -14,6 +14,7 @@ There is no `@AckSchema()` annotation; `AckSchema` is the runtime schema type.
 3. `ack_generator`: generates models from schemas and schemas from models
 4. `ack_firebase_ai`: converts Ack schemas to Firebase AI structured-output schemas
 5. `ack_json_schema_builder`: converts Ack schemas to `json_schema_builder` schemas
+6. `ack_mcp_dart`: advertises MCP tool input schemas and validates typed arguments with `mcp_dart`
 
 ## Core runtime usage
 
