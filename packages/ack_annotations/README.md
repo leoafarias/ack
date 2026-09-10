@@ -95,4 +95,4 @@ Unknown properties use `unknownProperties: AckUnknownPropertyPolicy.<policy>`.
 Use `discard` only for tolerant, read-only consumers; models that round-trip
 unknown keys use `capture` and may select their map field with `captureField`.
 `@AckField` can override `schema` and/or `AckFieldPresence`. See the
-[Model Code Generation guide](https://concepta.dev/documentation/ack/advanced/typesafe-schemas).
+[Model Code Generation guide](https://concepta.dev/ack/core-concepts/typesafe-schemas).

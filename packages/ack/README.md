@@ -52,7 +52,7 @@ Use `.optional()` when a field may be omitted entirely. Chain `.nullable()` if a
 ## Documentation
 
 - [Full documentation](https://concepta.dev/ack)
-- [AI agent index (llms.txt)](https://concepta.dev/documentation/ack/reference/llms-txt)
+- [AI agent index (llms.txt)](https://concepta.dev/ack/llms.txt)
 
 ## Related Packages
 

@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
+import 'support/node_install_policy.dart';
+
 void main() {
   group('every workflow and action', () {
     test('executes only immutable reviewed dependencies', () {
@@ -62,24 +64,14 @@ void main() {
     });
 
     test('installs only pinned npm packages', () {
-      // `npm ci` is exact by definition, because it reads the lockfile. Every
-      // other npm invocation must name a version, either literally or through
-      // an environment variable that the workflow sets.
-      final pinned = RegExp(r'@\d+\.\d+\.\d+|@\$[A-Z_]');
       for (final entry in _automationSources().entries) {
         for (final line in entry.value.split('\n')) {
-          final statement = line.trim();
-          if (statement.startsWith('#')) continue;
-          if (!statement.contains('npm install') &&
-              !statement.contains('npx ')) {
-            continue;
-          }
           expect(
-            statement,
-            matches(pinned),
+            isPinnedNodeInstall(line),
+            isTrue,
             reason:
-                '${entry.key} installs an npm package without a version: '
-                '$statement',
+                '${entry.key} must use a frozen lockfile or exact package '
+                'versions: ${line.trim()}',
           );
         }
       }

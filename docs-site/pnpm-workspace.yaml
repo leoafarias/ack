@@ -1,0 +1,15 @@
+packages:
+  - packages/*
+autoInstallPeers: false
+resolvePeersFromWorkspaceRoot: true
+strictPeerDependencies: true
+engineStrict: true
+saveExact: true
+allowBuilds:
+  esbuild: true
+# Exact stable releases reviewed against upstream release 16.15.8 (2026-09-07).
+# Keep the normal age gate for every other dependency.
+minimumReleaseAgeStrict: true
+minimumReleaseAgeExclude:
+  - '@fumadocs/base-ui@16.15.8'
+  - 'fumadocs-core@16.15.8'

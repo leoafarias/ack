@@ -3,11 +3,11 @@
 [![CI/CD](https://github.com/conceptadev/ack/actions/workflows/ci.yml/badge.svg)](https://github.com/conceptadev/ack/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/badge/docs-documentation-blue)](https://concepta.dev/ack)
 [![pub package](https://img.shields.io/pub/v/ack.svg)](https://pub.dev/packages/ack)
-[![llms.txt](https://img.shields.io/badge/llms.txt-available-8A2BE2)](https://concepta.dev/documentation/ack/reference/llms-txt)
+[![llms.txt](https://img.shields.io/badge/llms.txt-available-8A2BE2)](https://concepta.dev/ack/llms.txt)
 
 Ack is a schema validation library for Dart and Flutter. It validates data with a fluent API. Ack is short for "acknowledge".
 
-For AI agents: start at [`/llms.txt`](https://concepta.dev/documentation/ack/reference/llms-txt).
+For AI agents: start at [`/llms.txt`](https://concepta.dev/ack/llms.txt).
 
 ## Why use Ack?
 
@@ -235,12 +235,12 @@ csv.encode(['a', 'b', 'c']); // 'a,b,c'
 ```
 
 Use `.transform<R>(...)` for one-way (parse-only) conversions. See the
-[Codecs guide](https://concepta.dev/documentation/ack/advanced/codecs).
+[Codecs guide](https://concepta.dev/ack/core-concepts/codecs).
 
 ## Documentation
 
 - Human docs: [concepta.dev/ack](https://concepta.dev/ack)
-- AI agent index: [AI & llms.txt](https://concepta.dev/documentation/ack/reference/llms-txt)
+- AI agent index: [llms.txt](https://concepta.dev/ack/llms.txt)
 - Canonical plaintext source: [raw.githubusercontent.com/conceptadev/ack/main/llms.txt](https://raw.githubusercontent.com/conceptadev/ack/main/llms.txt)
 
 ## Development

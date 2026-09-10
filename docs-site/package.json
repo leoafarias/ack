@@ -1,0 +1,40 @@
+{
+  "name": "@conceptadev/ack-docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:sync": "node scripts/sync-docs.mjs",
+    "build": "pnpm docs:sync && next build",
+    "dev": "node scripts/dev.mjs",
+    "preview": "python3 scripts/preview.py",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "playwright test",
+    "typecheck": "pnpm docs:sync && next typegen && tsc --noEmit",
+    "check": "pnpm test && pnpm typecheck && pnpm build && python3 scripts/verify-export.py"
+  },
+  "dependencies": {
+    "@base-ui/react": "1.7.0",
+    "@conceptadev/docs-theme": "workspace:*",
+    "fumadocs-core": "16.15.8",
+    "fumadocs-mdx": "15.4.0",
+    "fumadocs-ui": "npm:@fumadocs/base-ui@16.15.8",
+    "next": "16.3.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/mdx": "2.0.14",
+    "@types/node": "26.3.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "postcss": "8.5.26",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3"
+  },
+  "engines": { "node": ">=24.14.0" },
+  "packageManager": "pnpm@11.5.3"
+}

@@ -90,7 +90,7 @@ void main() {
     });
 
     test('converter authoring guides are published and navigable', () {
-      final docsConfig = jsonDecode(_readFromRepo('docs.json')) as Object?;
+      final docsConfig = jsonDecode(_readFromRepo('docs/meta.json')) as Object?;
       final serializedConfig = jsonEncode(docsConfig);
 
       expect(

@@ -1,0 +1,30 @@
+{
+  "title": "Ack",
+  "pages": [
+    "index",
+    "---Getting Started---",
+    "./getting-started/installation",
+    "./getting-started/quickstart-tutorial",
+    "---Essentials---",
+    "./core-concepts/schemas",
+    "./core-concepts/validation",
+    "./core-concepts/error-handling",
+    "./core-concepts/json-serialization",
+    "---How-To Guides---",
+    "./guides/flutter-form-validation",
+    "./guides/common-recipes",
+    "./guides/custom-validation",
+    "---Advanced---",
+    "./core-concepts/codecs",
+    "./core-concepts/typesafe-schemas",
+    "./guides/json-schema-integration",
+    "./core-concepts/configuration",
+    "---Adapter Authors---",
+    "./guides/schema-converter-quickstart",
+    "./guides/creating-schema-converter-packages",
+    "---Architecture---",
+    "./architecture/ackinfer-model-generation",
+    "---Reference---",
+    "./api-reference/index"
+  ]
+}

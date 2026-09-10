@@ -1,63 +1,66 @@
 name: Documentation
-
 on:
   push:
     branches: [main]
-    paths:
-      - 'docs/**'
-      - 'docs.json'
-      - 'llms.txt'
-  # No `branches:` filter. A stacked pull request targets its parent
-  # branch, not main, and would otherwise run no checks at all.
+    paths: ['docs/**', 'docs-site/**', '.github/workflows/docs.yml', 'llms.txt']
   pull_request:
-    paths:
-      - 'docs/**'
-      - 'docs.json'
-      - 'llms.txt'
-
+    paths: ['docs/**', 'docs-site/**', '.github/workflows/docs.yml', 'docs.json', 'llms.txt']
 permissions:
   contents: read
-
 concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
   validate:
     name: validate
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      DOCS_BASE_PATH: /ack
+      NEXT_PUBLIC_SITE_URL: https://concepta.dev/ack
+      NEXT_TELEMETRY_DISABLED: '1'
+    defaults:
+      run:
+        working-directory: docs-site
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: '22'
-
-      - name: Verify llms.txt sources
-        run: |
-          set -euo pipefail
-          test -s llms.txt || {
-            echo "llms.txt is missing or empty."
-            exit 1
-          }
-          test ! -e docs/llms.txt.mdx || {
-            echo "docs.page reserves /llms.txt; remove docs/llms.txt.mdx to avoid a duplicate index entry."
-            exit 1
-          }
-          grep -q 'https://docs.page/conceptadev/ack/llms.txt' docs/index.mdx || {
-            echo "The docs homepage must link to the generated docs.page llms.txt export."
-            exit 1
-          }
-
-      # Pin the CLI version. An unpinned `npm install -g @docs.page/cli` would
-      # execute whatever the registry serves at run time, which is the
-      # mutable-dependency problem that the other workflows removed.
-      - name: Validate documentation
+          node-version: '24.14.0'
+      - name: Install pinned pnpm
+        run: npm install --global pnpm@11.5.3
+      - name: Install documentation dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check helper contracts and dependency identity
+        run: pnpm test
+      - name: Type-check documentation
+        run: pnpm typecheck
+      - name: Verify the canonical content mirror
+        run: diff -qr ../docs content/docs
+      - name: Install the pinned browser test runtime
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build and verify a root deployment
         env:
-          DOCS_PAGE_CLI_VERSION: '2.0.0'
-        run: npx --yes "@docs.page/cli@$DOCS_PAGE_CLI_VERSION" check
+          DOCS_BASE_PATH: ''
+          NEXT_PUBLIC_SITE_URL: https://docs.example.test
+        run: |
+          pnpm build
+          python3 scripts/verify-export.py
+          pnpm test:browser
+      - name: Build and verify the production subpath
+        run: |
+          pnpm build
+          python3 scripts/verify-export.py
+          pnpm test:browser
+      - name: Check runtime dependency advisories
+        run: pnpm audit --prod --audit-level=high
+      - name: Check migration invariants
+        run: |
+          test ! -e ../docs.json
+          test ! -e theme
+          test ! -e app/docs
+          test ! -e scripts/sync-content.mjs

@@ -145,7 +145,7 @@ getters. Classes, instance members, and local variables are rejected.
 `@AckModel()` annotates public, constructable `final class` declarations whose
 stored fields are final. Annotated sealed union bases remain supported, and
 their concrete branches must also be final. See the
-[Model Code Generation guide](https://concepta.dev/documentation/ack/advanced/typesafe-schemas)
+[Model Code Generation guide](https://concepta.dev/ack/core-concepts/typesafe-schemas)
 for both directions, field inference, sealed unions, passthrough properties,
 and build configuration.
 

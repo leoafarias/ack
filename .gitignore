@@ -51,6 +51,13 @@ CLAUDE.md
 tools/node_modules/
 tools/package-lock.json
 
+# Fumadocs application outputs
+docs-site/node_modules/
+docs-site/.next/
+docs-site/.source/
+docs-site/content/
+docs-site/out/
+
 # Temporary test files
 temp/
 *.tmp

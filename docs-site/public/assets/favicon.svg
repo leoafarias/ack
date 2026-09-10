@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="32" height="32">
+  <path
+    fill="#2C5282"
+    fill-rule="evenodd"
+    d="M40,180 L100,30 L160,180 L130,180 L100,130 L70,180 Z M70,140 L130,140 L150,180 L50,180 Z"
+  />
+</svg>

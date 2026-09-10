@@ -3,8 +3,8 @@
 ## Start with the documentation
 
 - [Ack documentation](https://concepta.dev/ack)
-- [Quickstart tutorial](https://concepta.dev/documentation/ack/getting-started/quickstart-tutorial)
-- [API quick reference](https://concepta.dev/documentation/ack/reference/api-reference)
+- [Quickstart tutorial](https://concepta.dev/ack/getting-started/quickstart-tutorial)
+- [API quick reference](https://concepta.dev/ack/api-reference/)
 - [Generated API documentation](https://pub.dev/documentation/ack/latest/ack/)
 
 Search existing [GitHub issues](https://github.com/conceptadev/ack/issues) before

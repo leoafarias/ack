@@ -1,4 +1,7 @@
-# Ack model and schema generation
+---
+title: Ack model and schema generation
+description: Architecture and generation contracts for AckInfer and AckModel.
+---
 
 `@AckInfer()` generates immutable Dart classes while the source Ack schema
 remains responsible for validation, defaults, codecs, and serialization.

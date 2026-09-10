@@ -14,6 +14,34 @@ dart run melos bootstrap
 Ack uses a Melos workspace. Run commands from the repository root unless a
 package README says otherwise.
 
+## Documentation changes
+
+The canonical documentation source is in `docs/`. Do not edit
+`docs-site/content`; the Fumadocs application generates that mirror for local
+and production builds.
+
+Set up and run the documentation site with:
+
+```bash
+cd docs-site
+npm install --global pnpm@11.5.3
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+The development server watches `docs/` and refreshes the content mirror. Open
+`http://localhost:3000`.
+
+Before submitting documentation changes, run:
+
+```bash
+cd docs-site
+pnpm typecheck
+DOCS_BASE_PATH=/ack \
+NEXT_PUBLIC_SITE_URL=https://concepta.dev/ack \
+pnpm build
+```
+
 ## Before opening a PR
 
 1. Keep the change scoped to one problem.
