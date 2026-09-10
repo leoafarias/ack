@@ -1,3 +1,10 @@
+## 1.3.0
+
+### Changed
+
+* Align with the coordinated Ack 1.3 release introducing `ack_mcp_dart`;
+  this package has no runtime or public API changes from 1.2.0.
+
 ## 1.2.0
 
 ### Added

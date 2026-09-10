@@ -18,7 +18,7 @@ final searchInput = Ack.object({
 
 Future<void> main() async {
   final server = McpServer(
-    const Implementation(name: 'ack-search-example', version: '1.2.0'),
+    const Implementation(name: 'ack-search-example', version: '1.3.0'),
   );
   server.registerAckTool(
     'search',

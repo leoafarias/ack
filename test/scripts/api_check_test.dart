@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:test/test.dart';
 
 void main() {
-  for (final baseline in ['1.1.0', '1.2.0']) {
+  for (final baseline in ['1.1.0', '1.2.0', '1.3.0']) {
     test(
       'new adapter API baseline $baseline respects its first release',
       () async {
@@ -20,11 +20,11 @@ void main() {
             'PATH': '${fakeBin.path}:/usr/bin:/bin',
           },
         );
-        if (baseline == '1.1.0') {
+        if (baseline != '1.3.0') {
           expect(result.exitCode, 0);
           expect(
             result.stdout,
-            contains('ack_mcp_dart first releases in 1.2.0'),
+            contains('ack_mcp_dart first releases in 1.3.0'),
           );
           expect(result.stderr, isEmpty);
         } else {
