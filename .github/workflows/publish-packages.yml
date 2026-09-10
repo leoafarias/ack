@@ -164,6 +164,12 @@ jobs:
           sdk: ${{ steps.flutter.outputs.dart-version }}
           problem-matcher: false
 
+      # `Validate package publication` above already resolved and validated
+      # this package without a credential. Repeating that resolution here
+      # authenticates the public version-listing and advisory reads, which
+      # pub.dev now answers with HTTP 403 before the upload can start:
+      # https://github.com/dart-lang/pub-dev/issues/9576. Drop the flag once
+      # that is fixed. pub.dev still validates the archive server-side.
       - name: Publish package with pub.dev OIDC
         if: steps.publication.outputs.published != 'true'
         working-directory: ${{ inputs.packages_folder_path }}/${{ matrix.package }}
@@ -171,4 +177,4 @@ jobs:
           SDK: ${{ steps.sdk.outputs.executable }}
         run: |
           set -euo pipefail
-          "$SDK" pub publish --force
+          "$SDK" pub publish --force --skip-validation
