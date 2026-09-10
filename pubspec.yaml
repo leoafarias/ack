@@ -1,5 +1,7 @@
 name: ack_workspace
 description: ACK workspace root package
+publish_to: none
+repository: https://github.com/conceptadev/ack
 
 environment:
   sdk: '>=3.9.0 <4.0.0'
@@ -18,7 +20,7 @@ dependencies:
   meta: ^1.15.0
 
 dev_dependencies:
-  melos: ^7.3.0
+  melos: ^8.7.0
   # Release tooling under /scripts reads and rewrites pubspecs.
   path: ^1.9.0
   pub_semver: ^2.2.0
@@ -36,19 +38,14 @@ melos:
 
   command:
     version:
-      # Generate changelogs for the workspace
+      # All publishable packages share one version and one reviewed release tag.
+      mode: fixed
+      workspaceTag: true
+      smartDependents: true
       workspaceChangelog: true
-      # Message for version commits
-      message: "chore(release): publish packages\n\n{new_package_versions}"
-      # Exclude example from versioning
-      packageFilters:
-        ignore:
-          - ack_example
-      # Hooks for customizing the versioning process
-      hooks:
-        preCommit: |
-          echo "Running pre-commit hook for versioning"
-          dart scripts/update_release_changelog.dart
+      message: "chore(release): prepare packages\n\n{new_package_versions}"
+      # Private packages (including ack_example) are excluded by default.
+      # Preserve substantive changelogs; never replace them in a commit hook.
 
   scripts:
     analyze:

@@ -1,204 +1,145 @@
 # Publishing Guide
 
-This document explains how to version and publish the Ack packages to pub.dev.
+ACK uses a coordinated release: all six publishable packages share one version
+and a single `v<version>` tag. GitHub Actions publishes dependencies before their
+consumers using pub.dev OIDC credentials and the protected `Production`
+environment. A release-preparation PR does not publish anything.
 
-## Overview
+## Version policy
 
-The Ack project uses GitHub Releases to manage versioning and publishing. This approach provides:
+Use SemVer for the combined public API: patch for compatible fixes, minor for
+new compatible features/packages, and major when any stable public API breaks.
+The next release is **1.3.0**, introducing `ack_mcp_dart`; the existing five
+packages have no runtime or API changes since 1.2.0.
 
-- Centralized release management through GitHub's UI
-- Explicit version/changelog control in this repository
-- Automated publishing to pub.dev
+Melos **8.7** is configured with `mode: fixed` and `workspaceTag: true`, matching
+this repository's release-tag verifier. `smartDependents: true` preserves
+compatible dependency minimums instead of forcing unnecessary upgrades.
+For example, packages at 1.3.0 can still declare `ack: ^1.2.0` when they use only
+1.2 APIs. Raise that minimum when a consumer actually requires a newer API.
 
-## Release Process
+Pub workspaces manage one local dependency resolution, not package versions.
+Keep hosted version constraints on sibling dependencies and `resolution:
+workspace` in members; do not add local path overrides to publishable manifests.
+Keep explicit workspace paths because glob patterns require Dart 3.11 and this
+repository supports Dart 3.9. The root and `ack_example` are private and are not
+part of the six-package release.
 
-### 1. Prepare for Release
+References: [Melos versioning](https://melos.invertase.dev/commands/version),
+[pub workspaces](https://dart.dev/tools/pub/workspaces), and
+[pub versioning](https://dart.dev/tools/pub/versioning).
 
-Before creating a release:
+## Prepare a release PR
 
-1. Ensure all changes are committed and pushed to the `main` branch
-2. Verify that all tests pass by running `dart run melos run test` (include `dart run melos run validate-jsonschema` and `dart run melos run test:gen` for full coverage)
-3. Confirm that the `Release preflight` workflow is green on the merge commit. Run its checks locally with:
+1. Check pub.dev and tags before selecting the version; published versions and
+   their changelog sections are immutable.
+2. Start a release branch from current `origin/main` and resolve dependencies:
 
-   ```bash
-   dart scripts/stage_min_sdk_workspace.dart /tmp/ack-min-dart
-   dart scripts/stage_package.dart ack_firebase_ai /tmp/ack-min-flutter --local-deps
-   dart run melos run validate-jsonschema:batch
-   dart scripts/api_check.dart 1.1.0
-   dart run melos run build && git diff --exit-code
-   dart scripts/publish_dry_run.dart
+   ```sh
+   dart pub get
    ```
 
-4. Check that the documentation is up to date across the repo and docs site
-5. Decide on the new version number following [Semantic Versioning](https://semver.org/) and apply it consistently to every publishable package (`ack`, `ack_annotations`, `ack_generator`, `ack_firebase_ai`, `ack_json_schema_builder`, `ack_mcp_dart`)
-6. Ensure package CHANGELOG entries are finalized before tagging. If you want a link-only entry for a version, you can run `dart scripts/update_release_changelog.dart <version> [tag]` after `dart run melos version`.
+3. Preview/prepare a coordinated version without creating commits or tags:
 
-### 2. Create a GitHub Release
+   ```sh
+   dart run melos version --manual-version=ack:1.3.0 --yes --no-git-commit-version
+   ```
 
-1. Go to the [Releases page](https://github.com/conceptadev/ack/releases) in the repository
-2. Click "Draft a new release"
-3. Create a new tag in the format `v0.2.0` (must start with "v")
-4. Add a title, e.g., "Release v0.2.0"
-5. Add detailed release notes with a structure like:
+   Use the named flag, not a positional package argument: the positional form
+   filters the selected packages in Melos 8.7. Choose the next SemVer value for
+   later releases. Normal automatic selection is also available with
+   `dart run melos version --yes --no-git-commit-version` after reviewing commits.
+   Do not pass `--all`: that would include private packages.
 
-```markdown
-# Release v0.2.0
+4. Review generated changelogs and retain substantive release notes; move only
+   unreleased notes into the new section, preserving every published section.
+   Update installation snippets to match each package's version.
+5. Set `API_BASELINE_VERSION` in `.github/workflows/preflight.yml` to the latest
+   published release (currently `1.2.0`). Record a new package's actual first
+   release in `ackPackageFirstReleases` in `scripts/src/workspace_packages.dart`;
+   checks skip only older baselines. `ack_mcp_dart` first releases at 1.3.0.
+6. Validate the complete release:
 
-This release introduces [brief description of major changes].
+   ```sh
+   dart scripts/verify_release_tag.dart v1.3.0 --skip-ancestry
+   dart run melos run ci
+   dart scripts/api_check.dart 1.2.0
+   dart scripts/publish_dry_run.dart
+   dart run melos run validate-jsonschema:batch
+   ```
 
-## Key Features
-- **Feature 1**: Description
-- **Feature 2**: Description
+   `--skip-ancestry` is only for preparing a version before the tag exists.
+   The actual release workflow always enforces ancestry on `origin/main`.
+   CI also runs minimum Dart/Flutter SDK checks, deterministic generation, and
+   staged hosted-dependency analysis; all must pass on the release merge commit.
+7. Review and merge the release PR before creating the tag.
 
-## Breaking Changes
-- **Feature**: Description of breaking change
-  - Detail 1
-  - Detail 2
+## First publication of ack_mcp_dart
 
-## Improvements
-- **Feature**: Description of improvement
-  - Detail 1
-  - Detail 2
+[pub.dev requires the first version of a new package to be published manually](https://dart.dev/tools/pub/automated-publishing).
+OIDC cannot create a new package, and `ack_mcp_dart` is not yet on pub.dev.
 
-## Bug Fixes
-- Fixed [description of bug]
+After the release PR merges and all checks pass, but **before pushing v1.3.0**:
+
+1. Check out the reviewed release commit and stage the new package outside the
+   workspace so its hosted dependencies are verified:
+
+   ```sh
+   dart scripts/stage_package.dart ack_mcp_dart /tmp/ack-mcp-first-release
+   cd /tmp/ack-mcp-first-release/packages/ack_mcp_dart
+   dart pub get
+   dart analyze --fatal-infos
+   dart test
+   dart pub publish --dry-run
+   dart pub publish
+   ```
+
+   It declares `ack: ^1.2.0`, so the first upload can resolve the already-published
+   core package. Follow pub's authentication prompt using an authorized uploader
+   account; for a supported token-based flow use `dart pub token add https://pub.dev`.
+2. In the package's pub.dev Admin tab, enable GitHub Actions publication for
+   repository `conceptadev/ack`, tag pattern `v{{version}}`, and required
+   environment `Production`. Associate the package with the intended publisher.
+3. Verify version 1.3.0 is visible on pub.dev before starting the coordinated tag
+   release. Keep the same reviewed source for the manual upload and release tag.
+
+Later releases need no manual package bootstrap. Existing package Admin settings
+must likewise permit the repository/tag/environment used by the workflow; the
+repository cannot configure pub.dev Admin settings on behalf of its owner.
+
+## Publish the coordinated release
+
+After the release commit's CI/preflight succeeds and first-package setup is done:
+
+```sh
+git fetch origin main --tags
+# Use the exact reviewed release merge commit, not an arbitrary later main head.
+git tag -a v1.3.0 <release-merge-sha> -m 'Ack 1.3.0'
+dart scripts/verify_release_tag.dart v1.3.0
+git push origin v1.3.0
 ```
 
-> **Note**: You should manually update the `pubspec.yaml` and `CHANGELOG.md` files in each package before creating a tag/release. The release workflow publishes what is already committed.
+Pushing the tag triggers `.github/workflows/release.yml`; there is no Melos
+publish/release script. The workflow verifies the tag, reruns release preflight,
+and publishes in dependency order:
 
-6. Choose whether this is a pre-release:
-   - Check "This is a pre-release" if you're releasing a beta or RC version
-   - Pre-releases WILL be published to pub.dev as pre-release versions
-   - Only draft releases won't be published to pub.dev
+1. `ack`, `ack_annotations`
+2. `ack_generator`
+3. `ack_json_schema_builder`, `ack_mcp_dart`, `ack_firebase_ai`
 
-7. Click "Publish release"
+Each package resolves and analyzes a staged copy against pub.dev, runs tests,
+and passes a zero-warning publish dry run. `dart-lang/setup-dart` provisions the
+short-lived OIDC credential immediately before upload; no permanent `PUB_TOKEN`
+secret is required. Approve the existing `Production` environment deployment
+when GitHub requests it.
 
-### 3. Automated Steps
+The workflow checks exact versions on pub.dev and skips upload/OIDC provisioning
+for versions already published, while retaining validation. This handles the
+manually bootstrapped MCP adapter and retries after a partially completed
+release. Network/server failures stop the job instead of being mistaken for a
+missing version. Rerun failed jobs on the **same tag**; never move a published tag
+or republish different contents under an existing version.
 
-When the `v*` tag is pushed, the GitHub Actions workflow will automatically:
-
-1. Verify the tag with `dart scripts/verify_release_tag.dart`. The tag commit
-   must be reachable from `main`, and the tagged version must match every
-   publishable `pubspec.yaml` version and every `CHANGELOG.md` heading.
-2. Rerun `.github/workflows/preflight.yml` on the tagged commit.
-3. Test and publish the independent `ack` and `ack_annotations` foundation
-   packages.
-4. After both hosted versions are available, test and publish `ack_generator`.
-5. After the generator stage completes, test and publish
-   `ack_json_schema_builder`, `ack_mcp_dart`, and `ack_firebase_ai`.
-6. Run `dart scripts/publish_dry_run.dart` immediately before each package
-   upload and require zero warnings.
-
-Each publish stage first copies its package out of the workspace with
-`dart scripts/stage_package.dart`, then resolves and tests it there. Workspace
-resolution replaces every `ack: ^1.2.0` constraint with the local sibling
-directory, so only the staged copy proves that a pub.dev consumer can resolve
-the release. The stages are deliberately sequential, so each dependent package
-resolves the foundation version that the preceding stage published.
-
-Every external action is pinned to a commit SHA, and the Flutter SDK is
-installed only through `.github/actions/setup-flutter`, which verifies the
-archive against the SHA-256 value in `.github/flutter-releases.json`.
-`test/scripts/release_workflow_security_test.dart` enforces these rules.
-
-### pub.dev automated publishing
-
-The publish job grants `id-token: write`, then the pinned
-`dart-lang/setup-dart` action exchanges GitHub's OIDC token for a short-lived
-pub.dev `PUB_TOKEN` and registers it with `pub`. Each of the five packages must
-also enable automated publishing on pub.dev before the first automated release:
-
-1. Open `https://pub.dev/packages/<package>/admin`.
-2. Enable **Automated publishing** from GitHub Actions.
-3. Set the repository to `conceptadev/ack`.
-4. Set the tag pattern to `v{{version}}`.
-5. Set the environment to `Production`, which matches the publish job.
-
-Confirm all five packages after any repository rename or owner change,
-because pub.dev stores the repository name, not its numeric id.
-
-The workflow does **not** modify versions or changelogs, and does **not** commit changes back to the repository.
-
-### 4. Verify the Release
-
-After the workflow completes:
-
-1. Check that the packages are available on pub.dev
-2. Verify that the version numbers and changelogs are correct
-3. Test the published packages in a new project to ensure they work as expected
-
-## Alternative: Manual Versioning
-
-If needed, you can version packages locally from conventional commits:
-
-```bash
-# Propose/apply version and changelog updates
-dart run melos version
-
-# Non-interactive
-dart run melos version --yes
-
-# Push the changes and tags
-git push --follow-tags
-```
-
-## Manual Publishing
-
-Publishing runs only from a `v*` tag. The repository has no `melos run publish`
-or `melos run release` script, because a one-command publish would skip tag
-verification, the preflight, the `Production` environment gate, and the staged
-hosted-dependency proof.
-
-Publish by hand only when GitHub Actions is unavailable. Run every gate first,
-from a clean checkout of the tag:
-
-```bash
-dart scripts/verify_release_tag.dart v<version>
-dart scripts/publish_dry_run.dart
-dart run melos run validate-jsonschema:batch
-dart scripts/api_check.dart <previous-version>
-
-# Only then, one package at a time, in release order:
-#   ack, ack_annotations -> ack_generator -> ack_json_schema_builder, ack_mcp_dart, ack_firebase_ai
-(cd packages/<package> && dart pub publish)
-```
-
-A manual upload uses your personal pub.dev credentials rather than the
-repository's OIDC identity. Prefer fixing the workflow.
-
-## Troubleshooting
-
-### Release Workflow Fails
-
-If the release workflow fails, check:
-
-1. **Test Failures**: Fix any failing tests or analyze issues
-2. **Version Issues**: Check if the version is valid and follows semantic versioning
-3. **Permission Issues**: Ensure the GitHub Actions workflow has the necessary permissions
-4. **Git Issues**: There might be problems with pushing commits back to the repository
-
-### Manual Publishing Issues
-
-If manual publishing fails:
-
-1. **Authentication**: Run `dart pub publish` and follow its authentication
-   prompt. If your release process explicitly uses a pub.dev token instead of
-   browser authorization, add that token with
-   `dart pub token add https://pub.dev`.
-2. **Version Conflicts**: Check if the version already exists on pub.dev
-3. **Dependency Issues**: Verify that all dependencies are correctly specified
-
-## Version Numbering
-
-The Ack project follows [Semantic Versioning](https://semver.org/):
-
-- **Major version (x.0.0)**: Incompatible API changes
-- **Minor version (0.x.0)**: Backwards-compatible functionality additions
-- **Patch version (0.0.x)**: Backwards-compatible bug fixes
-
-For pre-releases, use formats like `0.2.0-beta.1` or `0.2.0-rc.1`.
-
-New packages have no API at an older release baseline. Record their first release
-in `ackPackageFirstReleases` in `scripts/src/workspace_packages.dart`; API checks
-skip only baselines before that version and compare normally from that version
-onward. `ack_mcp_dart` starts at 1.2.0.
+After all six exact versions are visible, create the GitHub Release from the
+existing tag using the prepared release notes. Before the first subsequent code
+change, begin a new unreleased changelog section instead of editing 1.3.0 notes.

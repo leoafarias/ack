@@ -9,10 +9,10 @@ retained for Ack 1.1 extension-type compatibility.
 ```yaml
 dependencies:
   ack: ^1.2.0
-  ack_annotations: ^1.2.0
+  ack_annotations: ^1.3.0
 
 dev_dependencies:
-  ack_generator: ^1.2.0
+  ack_generator: ^1.3.0
   build_runner: ^2.4.0
 ```
 

@@ -69,6 +69,19 @@ jobs:
       - name: Resolve workspace dependencies
         run: dart pub get
 
+      - name: Check whether this version is already published
+        id: publication
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          published="$(dart scripts/pub_release_status.dart "$PACKAGE" "$version")"
+          printf 'published=%s\n' "$published" >> "$GITHUB_OUTPUT"
+          if [ "$published" = true ]; then
+            echo "$PACKAGE $version is already published; validating without uploading again."
+          fi
+
       # Workspace resolution replaces every `ack: ^1.2.0` constraint with the
       # sibling directory, so a workspace test never proves that a pub.dev
       # consumer can resolve this release. The staged copy leaves the workspace
@@ -145,12 +158,14 @@ jobs:
       # registers the token with `pub` and uses the exact Dart version bundled
       # by the checksum-verified Flutter archive above.
       - name: Provision pub.dev OIDC credentials
+        if: steps.publication.outputs.published != 'true'
         uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
         with:
           sdk: ${{ steps.flutter.outputs.dart-version }}
           problem-matcher: false
 
       - name: Publish package with pub.dev OIDC
+        if: steps.publication.outputs.published != 'true'
         working-directory: ${{ inputs.packages_folder_path }}/${{ matrix.package }}
         env:
           SDK: ${{ steps.sdk.outputs.executable }}

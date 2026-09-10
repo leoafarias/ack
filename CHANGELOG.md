@@ -3,10 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## 1.2.0
+## 1.3.0
 
-* Add `ack_mcp_dart` for MCP tool input schemas, typed argument parsing, and
-  schema/model registration helpers with validation error results.
+* Add `ack_mcp_dart` for MCP tool input schemas, defaults, codecs, refinements,
+  typed model callbacks, and validation error results with exception redaction.
+* Align all six publishable packages at 1.3.0; existing package APIs are unchanged.
+* Use Melos 8.7 fixed versioning and a single workspace release tag, preserve
+  compatible dependency minimums, and compare public APIs against 1.2.0.
+* Support resumed publication by skipping versions already present on pub.dev;
+  document manual first publication and OIDC setup for the new MCP adapter.
+
+## 1.2.0
 
 * **Deprecated:** `@AckType()` remains available with its Ack 1.1
   extension-type behavior frozen through 1.x, but it will be removed in
