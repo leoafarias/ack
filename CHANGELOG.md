@@ -5,6 +5,9 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ## 1.2.0
 
+* Add `ack_mcp_dart` for MCP tool input schemas, typed argument parsing, and
+  schema/model registration helpers with validation error results.
+
 * **Deprecated:** `@AckType()` remains available with its Ack 1.1
   extension-type behavior frozen through 1.x, but it will be removed in
   Ack 2.0.0. Use `@AckInfer()` for schema-first models or `@AckModel()` for

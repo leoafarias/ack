@@ -26,6 +26,7 @@ This repository is a monorepo containing:
 - **[ack_generator](./packages/ack_generator)**: Generates models from schemas and schemas from hand-written models
 - **[ack_firebase_ai](./packages/ack_firebase_ai)**: Firebase AI (Gemini) schema converter for structured-output generation
 - **[ack_json_schema_builder](./packages/ack_json_schema_builder)**: Converter to `json_schema_builder` schemas
+- **[ack_mcp_dart](./packages/ack_mcp_dart)**: MCP tool schemas and typed argument validation for `mcp_dart`
 - **[example](./example)**: Example projects demonstrating usage of all packages
 
 ## Community and support

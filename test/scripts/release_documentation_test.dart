@@ -8,6 +8,7 @@ void main() {
     for (final package in const [
       'ack_firebase_ai',
       'ack_json_schema_builder',
+      'ack_mcp_dart',
     ]) {
       final directory = 'packages/$package';
       final pubspec = loadYaml(
