@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 1.4.0
+
+* Add `@Optional()`, `@Required()`, and `@NotNull()` class-first field
+  annotations so JSON key presence stays independent of null acceptance.
+* Deprecate `AckField.presence` and `AckFieldPresence` for removal in 2.0.0.
+* Fix class-first `copyWith` so optional non-nullable codec fields follow the
+  constructor type and do not receive `null`.
+* Align all six publishable packages at 1.4.0; compare public APIs against 1.3.0.
+
 ## 1.3.0
 
 * Add `ack_mcp_dart` for MCP tool input schemas, defaults, codecs, refinements,
