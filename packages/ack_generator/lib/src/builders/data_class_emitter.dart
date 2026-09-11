@@ -171,10 +171,7 @@ ${_ack('SchemaResult')}<Map<String, Object?>> safeToJson() =>
   String _copyWithType(AckConstructorParameter parameter) =>
       '${_type(parameter.typeRef)}?';
 
-  String _copyWithArgument(
-    AckConstructorParameter parameter,
-    String receiver,
-  ) {
+  String _copyWithArgument(AckConstructorParameter parameter, String receiver) {
     final replacement = _usesCopyWithSentinel(parameter)
         ? 'identical(${parameter.name}, $_copyWithUnset) '
               '? $receiver.${parameter.fieldName} '

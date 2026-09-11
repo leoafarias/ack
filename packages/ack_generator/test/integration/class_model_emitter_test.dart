@@ -533,7 +533,9 @@ final class CapabilityBinding with _\$CapabilityBindingAck {
         outputs: {
           'test_pkg|lib/fields.ack.dart': decodedMatches(
             allOf([
-              contains("'label': Ack.string().optional().nullable(value: false)"),
+              contains(
+                "'label': Ack.string().optional().nullable(value: false)",
+              ),
               contains("'nickname': Ack.string().optional().nullable()"),
               isNot(
                 contains(

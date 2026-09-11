@@ -43,9 +43,7 @@ Future<void> _expectWarning(String body, List<String> messages) async {
     {'test_pkg|lib/model.dart': '$_head\n$body'},
     generateFor: const {'test_pkg|lib/model.dart'},
     readerWriter: readerWriter,
-    outputs: {
-      'test_pkg|lib/model.ack.dart': decodedMatches(contains('mixin')),
-    },
+    outputs: {'test_pkg|lib/model.ack.dart': decodedMatches(contains('mixin'))},
     onLog: (LogRecord log) {
       if (log.level.name != 'WARNING') return;
       for (final message in messages) {
@@ -1086,10 +1084,11 @@ final class User with _\$UserAck {
     );
   });
 
-  test('warns when matching legacy and new presence declarations coexist',
-      () async {
-    await _expectWarning(
-      '''
+  test(
+    'warns when matching legacy and new presence declarations coexist',
+    () async {
+      await _expectWarning(
+        '''
 @AckModel()
 final class User with _\$UserAck {
   const User({this.name});
@@ -1099,9 +1098,10 @@ final class User with _\$UserAck {
   final String? name;
 }
 ''',
-      ['User.name', '@AckField(presence:', '2.0.0'],
-    );
-  });
+        ['User.name', '@AckField(presence:', '2.0.0'],
+      );
+    },
+  );
 
   test('rejects an unmapped constructor parameter', () async {
     await _expectFailure(
