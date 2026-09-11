@@ -1,3 +1,15 @@
+## Unreleased
+
+### Added
+
+* Add `@Optional()`, `@Required()`, and `@NotNull()` field annotations for
+  class-first key presence and JSON null rejection.
+
+### Deprecated
+
+* Deprecate `AckField.presence` and `AckFieldPresence`. Use `@Optional()` or
+  `@Required()`; they will be removed in Ack 2.0.0.
+
 ## 1.3.0
 
 ### Changed

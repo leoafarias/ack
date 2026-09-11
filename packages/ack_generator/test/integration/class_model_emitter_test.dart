@@ -425,6 +425,147 @@ final class Account with _\$AccountAck {
     },
   );
 
+  test(
+    'field presence annotations compose independently of nullability',
+    () async {
+      await _build(
+        {
+          'fields.dart':
+              '''
+$_imports
+part 'fields.ack.dart';
+part 'fields.ack.g.dart';
+
+@AckModel()
+final class Example with _\$ExampleAck {
+  const Example({this.label, this.nickname, this.title});
+
+  @Optional()
+  @NotNull()
+  final String? label;
+
+  @Optional()
+  final String? nickname;
+
+  @Optional()
+  @NotNull()
+  @NotEmpty()
+  final String? title;
+}
+
+@AckModel()
+final class InferredNotNull with _\$InferredNotNullAck {
+  const InferredNotNull({this.label});
+
+  @NotNull()
+  final String? label;
+}
+
+AckSchema<String, String> nullableNameSchema() => Ack.string().nullable();
+
+@AckModel()
+final class OverrideNotNull with _\$OverrideNotNullAck {
+  const OverrideNotNull({this.name});
+
+  @NotNull()
+  @AckField(schema: nullableNameSchema)
+  final String? name;
+}
+
+@AckModel()
+final class RequiredNotNull with _\$RequiredNotNullAck {
+  const RequiredNotNull({this.value});
+
+  @Required()
+  @NotNull()
+  final String? value;
+}
+
+@AckModel()
+final class Forced with _\$ForcedAck {
+  const Forced({this.summary});
+
+  @Required()
+  final String? summary;
+}
+
+@AckModel()
+final class LegacyOptional with _\$LegacyOptionalAck {
+  const LegacyOptional({this.note});
+
+  @AckField(presence: AckFieldPresence.optional)
+  final String? note;
+}
+
+final class ParameterEntry {
+  const ParameterEntry(this.value);
+  final String value;
+}
+
+AckSchema<Map<String, Object?>, Map<String, ParameterEntry>>
+parameterMapSchema() =>
+    Ack.object({}, additionalProperties: true)
+        .codec<Map<String, ParameterEntry>>(
+          decode: (value) => {
+            for (final entry in value.entries)
+              entry.key: ParameterEntry(entry.value! as String),
+          },
+          encode: (value) => {
+            for (final entry in value.entries) entry.key: entry.value.value,
+          },
+        );
+
+@AckModel()
+final class CapabilityBinding with _\$CapabilityBindingAck {
+  CapabilityBinding({
+    required this.name,
+    Map<String, ParameterEntry> parameters = const {},
+  }) : parameters = Map.unmodifiable(parameters);
+
+  final String name;
+
+  @Optional()
+  @AckField(schema: parameterMapSchema)
+  final Map<String, ParameterEntry> parameters;
+}
+''',
+        },
+        outputs: {
+          'test_pkg|lib/fields.ack.dart': decodedMatches(
+            allOf([
+              contains(
+                "'label': Ack.string().optional().nullable(value: false)",
+              ),
+              contains("'nickname': Ack.string().optional().nullable()"),
+              isNot(
+                contains(
+                  "'nickname': Ack.string().optional().nullable(value: false)",
+                ),
+              ),
+              contains(
+                "'title': Ack.string().notEmpty().optional().nullable(value: false)",
+              ),
+              contains(
+                'nullableNameSchema().optional().nullable(value: false)',
+              ),
+              contains("'value': Ack.string().nullable(value: false)"),
+              isNot(contains("'value': Ack.string().optional()")),
+              contains("'summary': Ack.string().nullable()"),
+              contains("'note': Ack.string().optional().nullable()"),
+              contains("'parameters': parameterMapSchema().optional()"),
+              isNot(contains('parameterMapSchema().optional().nullable(')),
+              contains('Map<String, ParameterEntry>? parameters'),
+              contains('parameters: parameters ?? self.parameters'),
+              isNot(contains('parameters as Map<String, ParameterEntry>?')),
+              contains('Object? label = _ackCopyWithUnset'),
+              contains(': label as String?'),
+            ]),
+          ),
+        },
+      );
+    },
+  );
+
   test('qualifies facade APIs through a prefixed Ack import', () async {
     await _build(
       {

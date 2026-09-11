@@ -73,16 +73,43 @@ void main() {
   test('AckField accepts a schema tear-off and a presence override', () {
     const inferred = AckField(schema: _customSchema);
     expect(inferred.schema, same(_customSchema));
-    expect(inferred.presence, AckFieldPresence.inferred);
+    expect(
+      // ignore: deprecated_member_use_from_same_package
+      inferred.presence,
+      // ignore: deprecated_member_use_from_same_package
+      AckFieldPresence.inferred,
+    );
 
+    // ignore: deprecated_member_use_from_same_package
     const optional = AckField(presence: AckFieldPresence.optional);
     expect(optional.schema, isNull);
-    expect(optional.presence, AckFieldPresence.optional);
-    expect(AckFieldPresence.values, const [
-      AckFieldPresence.inferred,
-      AckFieldPresence.required,
+    expect(
+      // ignore: deprecated_member_use_from_same_package
+      optional.presence,
+      // ignore: deprecated_member_use_from_same_package
       AckFieldPresence.optional,
-    ]);
+    );
+    expect(
+      // ignore: deprecated_member_use_from_same_package
+      AckFieldPresence.values,
+      const [
+        // ignore: deprecated_member_use_from_same_package
+        AckFieldPresence.inferred,
+        // ignore: deprecated_member_use_from_same_package
+        AckFieldPresence.required,
+        // ignore: deprecated_member_use_from_same_package
+        AckFieldPresence.optional,
+      ],
+    );
+  });
+
+  test('presence and null annotations are const', () {
+    const optional = Optional();
+    const required = Required();
+    const notNull = NotNull();
+    expect(optional, isA<Optional>());
+    expect(required, isA<Required>());
+    expect(notNull, isA<NotNull>());
   });
 
   test('constraint sugar annotations are const data', () {

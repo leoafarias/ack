@@ -44,7 +44,8 @@ final class TolerantPayload {
   final Map<String, Object?> extras;
 }
 
-/// `@AckField()` overrides what the constructor implies for one field.
+/// `@Required()` and `@Optional()` override what the constructor implies for one
+/// field. Keep `@AckField(schema: ...)` for custom field codecs.
 @AckModel()
 final class Article {
   const Article({required this.title, this.summary});
@@ -53,7 +54,7 @@ final class Article {
   final String title;
 
   /// The constructor allows a missing value, so mark the key required anyway.
-  @AckField(presence: AckFieldPresence.required)
+  @Required()
   final String? summary;
 }
 

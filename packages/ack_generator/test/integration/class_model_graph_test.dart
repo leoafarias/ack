@@ -34,6 +34,26 @@ Future<void> _expectFailure(
   expect(seen, containsAll(messages));
 }
 
+Future<void> _expectWarning(String body, List<String> messages) async {
+  final readerWriter = TestReaderWriter(rootPackage: 'test_pkg');
+  await readerWriter.testing.loadIsolateSources();
+  final seen = <String>{};
+  await testBuilder(
+    ackModelBuilder(BuilderOptions.empty),
+    {'test_pkg|lib/model.dart': '$_head\n$body'},
+    generateFor: const {'test_pkg|lib/model.dart'},
+    readerWriter: readerWriter,
+    outputs: {'test_pkg|lib/model.ack.dart': decodedMatches(contains('mixin'))},
+    onLog: (LogRecord log) {
+      if (log.level.name != 'WARNING') return;
+      for (final message in messages) {
+        if (log.message.contains(message)) seen.add(message);
+      }
+    },
+  );
+  expect(seen, containsAll(messages));
+}
+
 const _head = '''
 import 'package:ack/ack.dart';
 import 'package:ack_annotations/ack_annotations.dart';
@@ -998,6 +1018,87 @@ final class User with _\$UserAck {
 }
 ''',
         ['User.name', 'optional', 'constructor'],
+      );
+    },
+  );
+
+  test('rejects @Optional() on a required constructor parameter', () async {
+    await _expectFailure(
+      '''
+@AckModel()
+final class User with _\$UserAck {
+  const User({required this.name});
+
+  @Optional()
+  final String name;
+}
+''',
+      ['User.name', 'optional', 'constructor'],
+    );
+  });
+
+  test('rejects combining @Optional() and @Required()', () async {
+    await _expectFailure(
+      '''
+@AckModel()
+final class User with _\$UserAck {
+  const User({this.name});
+
+  @Optional()
+  @Required()
+  final String? name;
+}
+''',
+      ['User.name', '@Optional()', '@Required()'],
+    );
+  });
+
+  test('rejects conflicting legacy and new presence declarations', () async {
+    await _expectFailure(
+      '''
+@AckModel()
+final class User with _\$UserAck {
+  const User({this.name});
+
+  @Optional()
+  @AckField(presence: AckFieldPresence.required)
+  final String? name;
+}
+''',
+      ['User.name', 'conflicting', 'presence'],
+    );
+  });
+
+  test('warns when legacy AckField presence is used', () async {
+    await _expectWarning(
+      '''
+@AckModel()
+final class User with _\$UserAck {
+  const User({this.name});
+
+  @AckField(presence: AckFieldPresence.optional)
+  final String? name;
+}
+''',
+      ['User.name', '@AckField(presence:', '@Optional()', '2.0.0'],
+    );
+  });
+
+  test(
+    'warns when matching legacy and new presence declarations coexist',
+    () async {
+      await _expectWarning(
+        '''
+@AckModel()
+final class User with _\$UserAck {
+  const User({this.name});
+
+  @Optional()
+  @AckField(presence: AckFieldPresence.optional)
+  final String? name;
+}
+''',
+        ['User.name', '@AckField(presence:', '2.0.0'],
       );
     },
   );

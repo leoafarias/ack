@@ -21,10 +21,10 @@ final class AckSchemaId {
 
 /// Input-presence semantics for an object field in the normalized graph.
 ///
-/// This is distinct from the public `AckFieldPresence` annotation, which only
-/// expresses an override (`inferred` / `required` / `optional`). Presence and
-/// nullability stay separate: a field can be required and nullable, optional
-/// and non-nullable, or defaulted by the schema.
+/// This is distinct from the public `@Optional()` / `@Required()` annotations
+/// and the deprecated `AckFieldPresence` override. Presence and nullability
+/// stay separate: a field can be required and nullable, optional and
+/// non-nullable, or defaulted by the schema.
 enum AckSchemaFieldPresence { required, optional, defaulted }
 
 /// How an object model treats undeclared properties.
@@ -138,15 +138,22 @@ final class AckFieldNode {
     required this.presence,
     required this.nullable,
     required this.runtimeRef,
+    bool? acceptsNull,
     this.description,
     this.schemaExpression,
     this.defaultExpression,
-  });
+  }) : acceptsNull = acceptsNull ?? nullable;
 
   final String dartName;
   final String jsonKey;
   final AckSchemaFieldPresence presence;
   final bool nullable;
+
+  /// Whether a present JSON value may be `null`.
+  ///
+  /// This is independent of [nullable] Dart storage and of key [presence].
+  /// `@NotNull()` sets it to false while leaving the Dart type unchanged.
+  final bool acceptsNull;
   final AckInferRef runtimeRef;
   final String? description;
 

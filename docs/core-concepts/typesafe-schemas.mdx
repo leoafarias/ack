@@ -234,6 +234,31 @@ Nullable defaults keep their source-level behavior. With
 null. With `this.label = null`, missing input and JSON `null` parse as null and
 the encoded object keeps the key with a null value.
 
+Use `@Optional()` or `@Required()` to override inferred key presence. These
+control whether the JSON key must exist; they do not change Dart nullability.
+Unannotated fields keep constructor inference.
+
+Use `@NotNull()` when the Dart type is nullable (`String?`) but a present JSON
+value must not be `null`. Do not add it on non-nullable fields such as
+`Map<String, V>` — those already reject JSON `null`. `@Optional()` alone on
+`String?` still accepts JSON `null`, matching legacy `presence: optional`
+behavior. `@Optional()` is redundant when the constructor already treats the
+field as optional; `@NotNull()` is the annotation that changes null acceptance:
+
+```dart
+@AckModel()
+final class Example with _$ExampleAck {
+  const Example({this.label});
+
+  @Optional()
+  @NotNull()
+  final String? label;
+}
+```
+
+`ExampleSchema.parse({})` yields `label: null`, `{"label": "hello"}` succeeds,
+and `{"label": null}` fails. Encoding omits a null Dart value.
+
 The generator infers `String`, `bool`, numeric types, `DateTime`, `Uri`,
 `Duration`, enums, nested lists, and sets. Sets use a list codec.
 
@@ -253,8 +278,7 @@ schema and generated JSON mapping cannot diverge.
 ### Custom field schemas
 
 Use `@AckField` when inference is not enough. `schema` is a const tear-off of a
-top-level function returning an `AckSchema`. `presence` overrides constructor
-inference. At least one of those arguments is required:
+top-level function returning an `AckSchema`. A no-op `@AckField()` is rejected.
 
 ```dart
 final class Color {
@@ -283,6 +307,30 @@ Automatic `List<T>` and `Set<T>` inference also requires non-nullable element
 types because `Ack.list` has no nullable-item contract. An explicit
 `@AckField(schema: ...)` codec remains the escape hatch when a field deliberately
 uses a different collection representation.
+
+`@AckField(presence: ...)` is deprecated. Migrate to field annotations:
+
+```dart
+// Optional
+@Optional()
+final String? summary;
+
+// Required
+@Required()
+final String? summary;
+
+// Inferred: omit presence annotations
+
+// Schema plus presence
+@Optional()
+@AckField(schema: parametersSchema)
+final Map<String, ParameterEntry> parameters;
+```
+
+Matching legacy and new declarations are accepted with a deprecation warning.
+Conflicting declarations and combining `@Optional()` with `@Required()` are
+errors. `@Optional()` is allowed only when the constructor can accept a missing
+value, with a discriminator exception for union branches.
 
 ### Class-first unions
 
@@ -338,11 +386,6 @@ discriminator cannot be replaced by an extra value. Models that must round-trip
 unknown keys must use `capture`, not `discard`. Hand-written constructors can
 call `deepUnmodifiableJsonMap` to detach and recursively freeze direct map
 inputs without validating them.
-
-`@AckField` can override inferred presence with `AckFieldPresence.required` or
-`optional`. A no-op `@AckField()` is rejected. `optional` is allowed only when
-the constructor can accept a missing value, with a discriminator exception for
-union branches.
 
 ### Reusing generated schemas
 
