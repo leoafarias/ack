@@ -1,11 +1,11 @@
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
 
-SchemaError _singleNestedError(SchemaResult<Object> result) {
-  final error = result.getError();
-  expect(error, isA<SchemaNestedError>());
-  return (error as SchemaNestedError).errors.single;
-}
+Matcher _nestedErrorAt(String path) => isA<SchemaNestedError>().having(
+  (error) => error.errors.single.context.path,
+  'single nested error path',
+  path,
+);
 
 void main() {
   group('MapSchema', () {
@@ -20,9 +20,10 @@ void main() {
     test('reports invalid values at their key path', () {
       final schema = Ack.map(Ack.integer());
 
-      final error = _singleNestedError(schema.safeParse({'a': 1, 'b': 'two'}));
-
-      expect(error.context.path, '#/b');
+      expect(
+        schema.safeParse({'a': 1, 'b': 'two'}).getError(),
+        _nestedErrorAt('#/b'),
+      );
     });
 
     test('rejects null, non-map input, and non-string keys', () {
@@ -35,11 +36,10 @@ void main() {
     });
 
     test('rejects null values unless the value schema is nullable', () {
-      final error = _singleNestedError(
-        Ack.map(Ack.any()).safeParse({'a': null}),
+      expect(
+        Ack.map(Ack.any()).safeParse({'a': null}).getError(),
+        _nestedErrorAt('#/a'),
       );
-
-      expect(error.context.path, '#/a');
       expect(Ack.map(Ack.any().nullable()).parse({'a': null}), {'a': null});
     });
 
@@ -77,12 +77,18 @@ void main() {
     test('encodes null values only when the value schema accepts null', () {
       expect(Ack.map(Ack.string().nullable()).encode({'a': null}), {'a': null});
 
-      final result = Ack.map(Ack.string()).safeEncode({'a': null});
-
-      expect(result.getError(), isA<SchemaNestedError>());
-      final error = (result.getError() as SchemaNestedError).errors.single;
-      expect(error, isA<SchemaEncodeError>());
-      expect(error.context.path, '#/a');
+      expect(
+        Ack.map(Ack.string()).safeEncode({'a': null}).getError(),
+        isA<SchemaNestedError>().having(
+          (error) => error.errors.single,
+          'single nested error',
+          isA<SchemaEncodeError>().having(
+            (error) => error.context.path,
+            'path',
+            '#/a',
+          ),
+        ),
+      );
     });
 
     test('returns unmodifiable parsed and encoded maps', () {
@@ -114,15 +120,15 @@ void main() {
         'meta': null,
       });
 
-      final scoresError = _singleNestedError(
+      expect(
         schema.safeParse({
           'scores': {'a': 'x'},
-        }),
-      );
-      expect(scoresError, isA<SchemaNestedError>());
-      expect(
-        (scoresError as SchemaNestedError).errors.single.context.path,
-        '#/scores/a',
+        }).getError(),
+        isA<SchemaNestedError>().having(
+          (error) => error.errors.single,
+          'scores error',
+          _nestedErrorAt('#/scores/a'),
+        ),
       );
     });
 

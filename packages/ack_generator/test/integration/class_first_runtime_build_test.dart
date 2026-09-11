@@ -786,34 +786,35 @@ void main() {
     );
   });
 
-  test('Object and map fields reject non-JSON and invalid values', () {
-    for (final invalid in <Map<String, Object?>>[
-      {'payload': DateTime(2026)},
-      {
-        'items': [DateTime(2026)],
+  for (final invalid in <Map<String, Object?>>[
+    {'payload': DateTime(2026)},
+    {
+      'items': [DateTime(2026)],
+    },
+    {
+      'values': {'a': null},
+    },
+    {
+      'metadata': {
+        'nested': {'at': DateTime(2026)},
       },
-      {
-        'values': {'a': null},
-      },
-      {
-        'metadata': {
-          'nested': {'at': DateTime(2026)},
-        },
-      },
-      {
-        'labels': {'env': 1},
-      },
-      {
-        'scores': {'a': -1},
-      },
-    ]) {
+    },
+    {
+      'labels': {'env': 1},
+    },
+    {
+      'scores': {'a': -1},
+    },
+  ]) {
+    test('Envelope rejects invalid field values: $invalid', () {
       expect(
         EnvelopeSchema.safeParse({...envelopeJson, ...invalid}).isFail,
         isTrue,
-        reason: '$invalid',
       );
-    }
+    });
+  }
 
+  test('Object fields reject non-JSON encodes and maps export schemas', () {
     final envelope = EnvelopeSchema.parse(envelopeJson);
     expect(
       EnvelopeSchema.safeEncode(

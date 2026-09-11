@@ -270,7 +270,7 @@ values use the Dart types you already write:
 | Dart field | Inferred schema |
 | --- | --- |
 | `Object` | `Ack.any()` |
-| `Object?` | `Ack.any().nullable()`, with the same presence rules as `String?` |
+| `Object?` | `Ack.any().nullable()`; presence rules match `String?` |
 | `List<Object>` | `Ack.list(Ack.any())` |
 | `Map<String, T>` | `Ack.map(<schema for T>)` |
 | `Map<String, Object?>` | `Ack.map(Ack.any().nullable())` |

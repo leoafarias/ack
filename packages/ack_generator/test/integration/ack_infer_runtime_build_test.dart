@@ -322,48 +322,49 @@ void main() {
     expect(constructed.toJson().containsKey('maybe'), isTrue);
   });
 
-  test('Ack.any and Ack.map fields hold immutable JSON values', () {
-    final json = <String, Object?>{
-      'kind': 'event',
-      'payload': {
-        'nested': [null, 1],
-      },
-      'items': [
-        1,
-        {'a': true},
-      ],
-      'values': {'a': 1},
-      'metadata': {'trace': null},
-      'labels': {'env': 'prod'},
-    };
+  final envelopeJson = <String, Object?>{
+    'kind': 'event',
+    'payload': {
+      'nested': [null, 1],
+    },
+    'items': [
+      1,
+      {'a': true},
+    ],
+    'values': {'a': 1},
+    'metadata': {'trace': null},
+    'labels': {'env': 'prod'},
+  };
 
-    final envelope = Envelope.parse(json);
+  for (final invalid in <Map<String, Object?>>[
+    {'payload': DateTime(2026)},
+    {'kind': null},
+    {
+      'values': {'a': null},
+    },
+    {
+      'labels': {'env': 1},
+    },
+  ]) {
+    test('Envelope rejects invalid field values: $invalid', () {
+      expect(Envelope.safeParse({...envelopeJson, ...invalid}).isFail, isTrue);
+    });
+  }
+
+  test('Ack.any and Ack.map fields hold immutable JSON values', () {
+    final envelope = Envelope.parse(envelopeJson);
     expect(envelope.payload, {
       'nested': [null, 1],
     });
     expect(envelope.metadata, {'trace': null});
     expect(envelope.loose, isNull);
-    expect(envelope.toJson(), json);
-    expect(Envelope.parse(json), envelope);
-    expect(Envelope.parse(json).hashCode, envelope.hashCode);
-    expect(Envelope.parse({...json, 'payload': null}).payload, isNull);
-
-    for (final invalid in <Map<String, Object?>>[
-      {'payload': DateTime(2026)},
-      {'kind': null},
-      {
-        'values': {'a': null},
-      },
-      {
-        'labels': {'env': 1},
-      },
-    ]) {
-      expect(
-        Envelope.safeParse({...json, ...invalid}).isFail,
-        isTrue,
-        reason: '$invalid',
-      );
-    }
+    expect(envelope.toJson(), envelopeJson);
+    expect(Envelope.parse(envelopeJson), envelope);
+    expect(Envelope.parse(envelopeJson).hashCode, envelope.hashCode);
+    expect(
+      Envelope.parse({...envelopeJson, 'payload': null}).payload,
+      isNull,
+    );
 
     expect(() => (envelope.payload! as Map)['x'] = 1, throwsUnsupportedError);
     expect(() => envelope.metadata['x'] = 1, throwsUnsupportedError);

@@ -170,7 +170,7 @@ maps), not an arbitrary Dart instance:
 | Dart field | Inferred schema |
 | --- | --- |
 | `Object` | `Ack.any()` |
-| `Object?` | `Ack.any().nullable()`, with the same presence rules as `String?` |
+| `Object?` | `Ack.any().nullable()`; presence rules match `String?` |
 | `List<Object>` | `Ack.list(Ack.any())`; `List<Object?>` is rejected |
 | `Map<String, T>` | `Ack.map(<schema for T>)` |
 | `Map<String, Object?>` | `Ack.map(Ack.any().nullable())` |
