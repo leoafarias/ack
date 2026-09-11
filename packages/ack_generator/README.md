@@ -152,6 +152,17 @@ requiring the key, and `@AckField(schema: ...)` for custom codecs. See the
 for both directions, field inference, sealed unions, passthrough properties,
 and build configuration.
 
+Open JSON fields are inferred from their Dart types. `Object` means a JSON-safe
+value, not an arbitrary Dart instance:
+
+| Dart field | Inferred schema |
+| --- | --- |
+| `Object` / `Object?` | `Ack.any()` / `Ack.any().nullable()` |
+| `List<Object>` | `Ack.list(Ack.any())`; `List<Object?>` is rejected |
+| `Map<String, T>` | `Ack.map(<schema for T>)` |
+| `Map<String, Object?>` | `Ack.map(Ack.any().nullable())` |
+| `dynamic` | rejected; use `Object?` |
+
 For a hand-written `Account`, class-first generation exposes an
 `AccountSchema` facade backed by a private `_accountSchema` codec. The facade
 provides parsing, safe parsing, encoding, JSON Schema/schema-model export,

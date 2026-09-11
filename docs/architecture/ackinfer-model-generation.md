@@ -197,8 +197,8 @@ schema's encode output.
 
 `Ack.any()` fields and inferred class-first `Object` fields hold JSON-safe
 values. `Ack.any()` parsing returns a detached, recursively unmodifiable
-snapshot, so parsed `Object` values are frozen like collections without extra
-generated code; values passed directly to a constructor are stored as given.
+snapshot, so parsed `Object` values are frozen like collections; values passed
+directly to a constructor are stored as given.
 `Ack.map(...)` fields and inferred class-first `Map<String, T>` fields use the
 same string-keyed map contract; unlike list items, map values may be nullable.
 

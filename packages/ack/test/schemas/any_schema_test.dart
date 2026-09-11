@@ -68,7 +68,7 @@ void main() {
       expect(Ack.any().parse('text'), 'text');
     });
 
-    test('encode and runtime validation keep the runtime value', () {
+    test('encode returns the validated runtime value unchanged', () {
       final value = <String, Object?>{'a': 1};
 
       expect(Ack.any().encode(value), same(value));

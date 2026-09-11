@@ -321,10 +321,10 @@ final class Theme with _$ThemeAck {
 ```
 
 `@AckField` also replaces an inferred `Object` or `Map<String, V>` schema when
-the field needs a tighter contract, for example a `MapSchema<int, int>`
-function returning `Ack.map(Ack.integer().min(0))`. Non-String map keys and
-`dynamic` are rejected because they do not provide a static schema; use
-`Object?` for an open JSON value.
+the field needs a tighter contract, such as a function returning
+`Ack.map(Ack.integer().min(0))` for a `Map<String, int>` field. Non-String map
+keys and `dynamic` are rejected because they do not provide a static schema;
+use `Object?` for an open JSON value.
 Automatic `List<T>` and `Set<T>` inference also requires non-nullable element
 types because `Ack.list` has no nullable-item contract. An explicit
 `@AckField(schema: ...)` codec remains the escape hatch when a field deliberately

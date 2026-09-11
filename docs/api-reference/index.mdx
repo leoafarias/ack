@@ -308,7 +308,8 @@ Annotate a top-level schema variable or getter. The schema stays in your source 
 **Supported schema types:**
 - `Ack.object({...})` → immutable object models
 - Primitives: `Ack.string()`, `Ack.integer()`, `Ack.double()`, `Ack.boolean()`
-- Collections: `Ack.list(...)`, `Ack.map(...)` fields, typed sets and maps
+- Collections: `Ack.list(...)`, `Ack.map(...)` fields, and codec-backed sets
+  and maps
 - JSON values: `Ack.any()` fields as `Object` / `Object?`
 - Enums: `Ack.literal()`, `Ack.enumString()`, `Ack.enumValues()`
 - Discriminated unions: `Ack.discriminated(...)`
@@ -465,8 +466,9 @@ Schema for a JSON object with arbitrary string keys whose values all match
 
 - Created by `Ack.map(valueSchema)`.
 - Boundary and runtime types are `Map<String, ValueBoundary?>` and
-  `Map<String, ValueRuntime?>`: a value may be `null` only when `valueSchema`
-  is nullable, so the static value type is always nullable.
+  `Map<String, ValueRuntime?>`. Nullability is a runtime flag in Ack, so the
+  static value type is nullable; a value is `null` only when `valueSchema` is
+  nullable.
 - Parse runs `valueSchema` on every value and encode on every non-null value,
   including codecs; errors report the value's key path.
 - Exported to JSON Schema as
