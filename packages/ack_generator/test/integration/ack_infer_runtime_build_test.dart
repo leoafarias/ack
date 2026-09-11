@@ -53,6 +53,13 @@ dependency_overrides:
   ack_annotations:
     path: ${p.join(projectRoot.path, 'packages', 'ack_annotations')}
 ''');
+        File(p.join(temporary.path, 'analysis_options.yaml')).writeAsStringSync(
+          '''
+linter:
+  rules:
+    - prefer_null_aware_operators
+''',
+        );
         File(p.join(temporary.path, 'lib', 'models.dart')).writeAsStringSync(
           r'''
 import 'package:ack/ack.dart';
@@ -145,6 +152,14 @@ final envelopeSchema = Ack.object({
   'metadata': Ack.map(Ack.any().nullable()),
   'labels': Ack.map(Ack.string()),
   'loose': looseAny.optional(),
+});
+
+final nullableLabel = Ack.string().nullable();
+
+@AckInfer()
+final labelsSchema = Ack.object({
+  'byKey': Ack.map(nullableLabel),
+  'groups': Ack.map(Ack.list(Ack.string()).nullable()),
 });
 
 final class Counted {
@@ -383,6 +398,22 @@ void main() {
     expect(constructed.copyWith(payload: 'x').payload, 'x');
     expect(constructed.copyWith(payload: 'x').copyWith(payload: null).payload,
         isNull);
+  });
+
+  test('map values follow nullable variables and nullable collections', () {
+    final json = <String, Object?>{
+      'byKey': {'a': 'x', 'b': null},
+      'groups': {
+        'g': ['x'],
+        'none': null,
+      },
+    };
+
+    final labels = Labels.parse(json);
+
+    expect(labels.byKey, {'a': 'x', 'b': null});
+    expect(labels.groups['none'], isNull);
+    expect(labels.toJson(), json);
   });
 
   test('union discriminators cannot be spoofed through extras', () {

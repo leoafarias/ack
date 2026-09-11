@@ -809,7 +809,12 @@ final class ClassModelGraphBuilder {
   }
 
   String _setCodec(String listSchema, AckInferRef runtimeRef) {
-    final rendered = _renderType(_schemaRuntimeRef(runtimeRef));
+    // Presence adds nullability to the codec; its type argument is the set.
+    final setType = switch (runtimeRef) {
+      AckNullableTypeRef(:final inner) => inner,
+      _ => runtimeRef,
+    };
+    final rendered = _renderType(_schemaRuntimeRef(setType));
     return '$listSchema.codec<$rendered>('
         'decode: (list) => list.toSet(), '
         'encode: (set) => set.toList(growable: false),'

@@ -18,6 +18,13 @@
 
 * Omit the redundant `as Object?` cast in generated `copyWith` bodies for
   `Object?` fields.
+* Infer nullable `Ack.map` values when the value schema is a variable declared
+  with `.nullable()`, such as `Ack.map(nullableLabel)`.
+* Keep generated code clean under `--fatal-infos`: fieldless class-first
+  models no longer declare an unused `self` local, and nullable collection
+  bridges use null-aware access.
+* Generate compiling code for nullable class-first `Set<T>?` fields; the set
+  codec now uses the non-null set type and presence adds nullability.
 
 ## 1.4.0
 

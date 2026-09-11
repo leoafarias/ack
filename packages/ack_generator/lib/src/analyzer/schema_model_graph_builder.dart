@@ -722,8 +722,9 @@ final class SchemaModelGraphBuilder {
           depth: depth,
         );
         // Unlike list items, JSON object values may be null.
+        final nullableValue = await _isNullableSchema(arguments.first);
         return AckMapTypeRef(
-          _chain(arguments.first).nullable && valueType is! AckNullableTypeRef
+          nullableValue && valueType is! AckNullableTypeRef
               ? AckNullableTypeRef(valueType)
               : valueType,
         );
@@ -864,6 +865,33 @@ final class SchemaModelGraphBuilder {
       followedName: element.name,
       collectionElement: collectionElement,
     );
+  }
+
+  /// Whether [expression] marks its schema `.nullable()`, following
+  /// unannotated variable references such as `Ack.map(nullableLabel)`.
+  Future<bool> _isNullableSchema(Expression expression, {int depth = 0}) async {
+    final chain = _chain(expression);
+    if (chain.nullable) return true;
+    final reference = chain.reference;
+    if (chain.base != null ||
+        reference == null ||
+        depth >= _maxReferenceDepth) {
+      return false;
+    }
+    final element = _referencedElement(reference);
+    if (element == null ||
+        (element is! TopLevelVariableElement && element is! GetterElement)) {
+      return false;
+    }
+    final declaration = _propertyDeclaration(element);
+    final owningLibrary = declaration.library;
+    if (owningLibrary == null) return false;
+    final initializer = _declarationExpression(
+      await _resolvedLibraryFor(owningLibrary),
+      declaration,
+    );
+    return initializer != null &&
+        await _isNullableSchema(initializer, depth: depth + 1);
   }
 
   Future<AckInferRef> _lazyType(

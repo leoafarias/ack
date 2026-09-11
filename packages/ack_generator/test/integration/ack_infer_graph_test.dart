@@ -338,6 +338,16 @@ final userSchema = Ack.object({
     );
   });
 
+  test('infers nullable map values through a nullable variable', () async {
+    await _expectOutput('''
+$_head
+final nullableAny = Ack.any().nullable();
+
+@AckInfer()
+final userSchema = Ack.object({'metadata': Ack.map(nullableAny)});
+''', contains('final Map<String, Object?> metadata;'));
+  });
+
   test('rejects nullable Ack.any() list items', () async {
     await _expectFailure(
       '''

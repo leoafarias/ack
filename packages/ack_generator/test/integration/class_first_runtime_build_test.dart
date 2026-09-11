@@ -67,6 +67,13 @@ dependency_overrides:
   ack_annotations:
     path: ${p.join(projectRoot.path, 'packages', 'ack_annotations')}
 ''');
+        File(p.join(temporary.path, 'analysis_options.yaml')).writeAsStringSync(
+          '''
+linter:
+  rules:
+    - prefer_null_aware_operators
+''',
+        );
         File(p.join(temporary.path, 'build.yaml')).writeAsStringSync('''
 targets:
   \$default:
@@ -381,6 +388,20 @@ final class Envelope with _$EnvelopeAck {
   final Map<String, String> labels;
   @AckField(schema: scoresSchema)
   final Map<String, int> scores;
+}
+
+@AckModel()
+final class Declined with _$DeclinedAck {
+  const Declined();
+}
+
+@AckModel()
+final class OptionalCollections with _$OptionalCollectionsAck {
+  const OptionalCollections({this.headers, this.aliases, this.tags});
+
+  final Map<String, String>? headers;
+  final List<String>? aliases;
+  final Set<String>? tags;
 }
 
 @AckModel(discriminatorKey: 'type')
@@ -848,6 +869,33 @@ void main() {
       throwsUnsupportedError,
     );
     expect(() => envelope.scores['b'] = 2, throwsUnsupportedError);
+  });
+
+  test('fieldless models generate working value members', () {
+    expect(DeclinedSchema.parse({}), const Declined());
+    expect(const Declined().copyWith(), const Declined());
+    expect(const Declined().hashCode, const Declined().hashCode);
+    expect(const Declined().toString(), 'Declined()');
+    expect(const Declined().toJson(), isEmpty);
+  });
+
+  test('optional collections round-trip through null-aware bridges', () {
+    final empty = OptionalCollectionsSchema.parse({});
+    expect(empty.headers, isNull);
+    expect(empty.toJson(), isEmpty);
+
+    final full = OptionalCollectionsSchema.parse({
+      'headers': {'a': 'b'},
+      'aliases': ['x'],
+      'tags': ['t'],
+    });
+    expect(full.headers, {'a': 'b'});
+    expect(full.tags, {'t'});
+    expect(full.toJson(), {
+      'headers': {'a': 'b'},
+      'aliases': ['x'],
+      'tags': ['t'],
+    });
   });
 
   test('sealed unions use super parameters and discriminator rules', () {

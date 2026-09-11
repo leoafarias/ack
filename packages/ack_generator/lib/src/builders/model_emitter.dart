@@ -921,8 +921,15 @@ return $helper(<String, dynamic>{
       AckNullableTypeRef(:final inner)
           when inner is AckScalarTypeRef || inner is AckExternalTypeRef =>
         expression,
+      // `value?.map(...)` satisfies prefer_null_aware_operators.
+      AckNullableTypeRef(:final inner)
+          when inner is AckListTypeRef ||
+              inner is AckSetTypeRef ||
+              inner is AckMapTypeRef =>
+        _toRuntime(inner, '$expression?'),
+      // Expressions are promotable locals, so the null check needs no `!`.
       AckNullableTypeRef(:final inner) =>
-        '$expression == null ? null : ${_toRuntime(inner, '$expression!')}',
+        '$expression == null ? null : ${_toRuntime(inner, expression)}',
       AckModelTypeRef(:final visibleName) =>
         '$visibleName.\$ack.toRuntime($expression)',
       AckListTypeRef(:final elementType) =>
@@ -940,7 +947,7 @@ return $helper(<String, dynamic>{
       AckNullableTypeRef(:final inner) when !_requiresImmutableCopy(inner) =>
         expression,
       AckNullableTypeRef(:final inner) =>
-        '$expression == null ? null : ${_immutableCopy(inner, '$expression!')}',
+        '$expression == null ? null : ${_immutableCopy(inner, expression)}',
       AckListTypeRef(:final elementType) =>
         'List<${_type(elementType)}>.unmodifiable($expression.map((item) => ${_immutableCopy(elementType, 'item')}))',
       AckSetTypeRef(:final elementType) =>
