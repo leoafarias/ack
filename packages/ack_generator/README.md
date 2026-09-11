@@ -102,7 +102,8 @@ Generation rejects shapes without a useful static, encodable model contract:
 - nullable `Ack.list` item schemas and automatically inferred `List<T?>` or
   `Set<T?>` fields; make the collection nullable instead, or use an explicit
   `@AckField(schema: ...)` codec for a different collection contract;
-- `Ack.any()`, `Ack.anyOf()`, and bare `Ack.instance<T>()`;
+- `Ack.any()` and `Ack.map()` roots (both are supported as fields),
+  `Ack.anyOf()`, and bare `Ack.instance<T>()`;
 - anonymous inline object fields and unresolved dynamic schema factories;
 - invalid names, generated-member collisions, and cross-library union branches.
 

@@ -142,24 +142,39 @@ and `toJson()` instead of treating a model as its old boundary representation.
 - string, integer, double, number, boolean, list, literal, and enum roots;
 - built-in and custom bidirectional codecs;
 - lists, sets, and string-keyed `Map<String, T>` runtime values;
+- `Ack.any()` fields as JSON-safe `Object` values and `Ack.map(...)` fields as
+  `Map<String, T>` values;
 - named nested models, aliases, defaults, and additional properties;
 - direct, prefixed, and re-exported model and runtime type references;
 - named `Ack.lazy` self-recursion and mutual recursion;
 - same-library discriminated unions.
 
-Generation rejects nullable roots, one-way transforms, `Ack.any()`,
-`Ack.anyOf()`, bare `Ack.instance<T>()`, anonymous inline object fields,
-non-string map keys, unresolved dynamic factories, name collisions, and
-cross-library discriminated branches.
+Generation rejects nullable roots, one-way transforms, `Ack.any()` and
+`Ack.map()` roots, `Ack.anyOf()`, bare `Ack.instance<T>()`, anonymous inline
+object fields, non-string map keys, unresolved dynamic factories, name
+collisions, and cross-library discriminated branches.
 
 Class-first generation supports object models, inferred scalar and enum
-fields, nested lists, sets through list codecs, custom `@AckField` schemas,
-`@Optional()`, `@Required()`, `@NotNull()`, constructor defaults, case styles,
-`AckUnknownPropertyPolicy`, and same-library sealed discriminated unions. It
-rejects `dynamic`, `Object?`,
-non-String map keys, recursive class-first graphs, class-first value roots,
-undiscriminated `anyOf` models, missing `_$ClassAck` mixins, and no-op
-`@AckField()`.
+fields, JSON-safe `Object` fields, nested lists, sets through list codecs,
+string-keyed maps, custom `@AckField` schemas, `@Optional()`, `@Required()`,
+`@NotNull()`, constructor defaults, case styles, `AckUnknownPropertyPolicy`,
+and same-library sealed discriminated unions. It rejects `dynamic`, nullable
+list or set elements, non-String map keys, recursive class-first graphs,
+class-first value roots, undiscriminated `anyOf` models, missing `_$ClassAck`
+mixins, and no-op `@AckField()`.
+
+Open JSON fields are inferred from their Dart types. `Object` means a
+JSON-safe value (finite numbers, strings, booleans, lists, and string-keyed
+maps), not an arbitrary Dart instance:
+
+| Dart field | Inferred schema |
+| --- | --- |
+| `Object` | `Ack.any()` |
+| `Object?` | `Ack.any().nullable()`, with the same presence rules as `String?` |
+| `List<Object>` | `Ack.list(Ack.any())`; `List<Object?>` is rejected |
+| `Map<String, T>` | `Ack.map(<schema for T>)` |
+| `Map<String, Object?>` | `Ack.map(Ack.any().nullable())` |
+| `dynamic` | rejected; use `Object?` |
 
 ## Discriminated generated models
 

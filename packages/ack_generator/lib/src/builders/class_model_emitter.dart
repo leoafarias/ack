@@ -343,6 +343,9 @@ Map<String, Object?> $function(${node.className} model) {
   }
 
   String _fromRuntime(AckInferRef type, String expression) => switch (type) {
+    // Any input is already assignable to Object?; a cast would be redundant.
+    AckNullableTypeRef(inner: AckScalarTypeRef(dartType: 'Object')) =>
+      expression,
     AckNullableTypeRef(:final inner)
         when inner is AckScalarTypeRef || inner is AckExternalTypeRef =>
       '$expression as ${_type(type)}',

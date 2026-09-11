@@ -134,6 +134,19 @@ final emptySchema = Ack.object({});
 @AckInfer()
 final scoresSchema = Ack.list(Ack.integer());
 
+final looseAny = Ack.any();
+
+@AckInfer()
+final envelopeSchema = Ack.object({
+  'kind': Ack.any(),
+  'payload': Ack.any().nullable().optional(),
+  'items': Ack.list(Ack.any()),
+  'values': Ack.map(Ack.any()),
+  'metadata': Ack.map(Ack.any().nullable()),
+  'labels': Ack.map(Ack.string()),
+  'loose': looseAny.optional(),
+});
+
 final class Counted {
   Counted(this.value);
   final String value;
@@ -307,6 +320,68 @@ void main() {
     expect(constructed.toJson().containsKey('nickname'), isFalse);
     expect(constructed.toJson()['maybe'], isNull);
     expect(constructed.toJson().containsKey('maybe'), isTrue);
+  });
+
+  test('Ack.any and Ack.map fields hold immutable JSON values', () {
+    final json = <String, Object?>{
+      'kind': 'event',
+      'payload': {
+        'nested': [null, 1],
+      },
+      'items': [
+        1,
+        {'a': true},
+      ],
+      'values': {'a': 1},
+      'metadata': {'trace': null},
+      'labels': {'env': 'prod'},
+    };
+
+    final envelope = Envelope.parse(json);
+    expect(envelope.payload, {
+      'nested': [null, 1],
+    });
+    expect(envelope.metadata, {'trace': null});
+    expect(envelope.loose, isNull);
+    expect(envelope.toJson(), json);
+    expect(Envelope.parse(json), envelope);
+    expect(Envelope.parse(json).hashCode, envelope.hashCode);
+    expect(Envelope.parse({...json, 'payload': null}).payload, isNull);
+
+    for (final invalid in <Map<String, Object?>>[
+      {'payload': DateTime(2026)},
+      {'kind': null},
+      {
+        'values': {'a': null},
+      },
+      {
+        'labels': {'env': 1},
+      },
+    ]) {
+      expect(
+        Envelope.safeParse({...json, ...invalid}).isFail,
+        isTrue,
+        reason: '$invalid',
+      );
+    }
+
+    expect(() => (envelope.payload! as Map)['x'] = 1, throwsUnsupportedError);
+    expect(() => envelope.metadata['x'] = 1, throwsUnsupportedError);
+    expect(() => (envelope.items.last as Map)['x'] = 1, throwsUnsupportedError);
+
+    final constructed = Envelope(
+      kind: {
+        'a': [1],
+      },
+      items: const [],
+      values: const {},
+      metadata: const {},
+      labels: const {},
+    );
+    expect(Envelope.parse(constructed.toJson()), constructed);
+    expect(constructed.copyWith(payload: 'x').payload, 'x');
+    expect(constructed.copyWith(payload: 'x').copyWith(payload: null).payload,
+        isNull);
   });
 
   test('union discriminators cannot be spoofed through extras', () {

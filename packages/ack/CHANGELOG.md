@@ -1,3 +1,19 @@
+## Unreleased
+
+### Added
+
+* Add `Ack.map(valueSchema)` and `MapSchema` for JSON objects with arbitrary
+  string keys whose values all match one schema. Values may be `null` only
+  when the value schema is nullable, so `Ack.map(Ack.any().nullable())` models
+  a `JsonMap`. JSON Schema export emits `additionalProperties: <value schema>`.
+
+### Changed
+
+* `Ack.any()` parsing now returns a detached, recursively unmodifiable
+  snapshot of the input instead of the caller's own object, matching the
+  unmodifiable results of `Ack.object()` and `Ack.list()`. Encoding still
+  returns the validated runtime value unchanged.
+
 ## 1.4.0
 
 ### Changed

@@ -118,6 +118,7 @@ final class _SchemaModelBuilder {
       BooleanSchema() => _boolean(schema),
       EnumSchema() => _enum(schema),
       ListSchema() => _array(schema),
+      MapSchema() => _map(schema),
       ObjectSchema() => _object(schema),
       AnyOfSchema() => _anyOf(schema),
       AnySchema() => _any(schema),
@@ -170,6 +171,16 @@ final class _SchemaModelBuilder {
       description: schema.description,
       nullable: schema.isNullable,
       items: _build(schema.itemSchema),
+    );
+  }
+
+  AckSchemaModel _map(MapSchema schema) {
+    return AckObjectSchemaModel(
+      description: schema.description,
+      nullable: schema.isNullable,
+      additionalProperties: AckAdditionalPropertiesSchema(
+        _build(schema.valueSchema),
+      ),
     );
   }
 

@@ -1,6 +1,10 @@
 part of 'schema.dart';
 
 /// Schema that accepts any non-null JSON-safe value.
+///
+/// Parsing returns a detached, recursively unmodifiable snapshot of the input,
+/// so parsed JSON can't change through the caller's reference. Encoding
+/// validates the runtime value and returns it unchanged.
 @immutable
 final class AnySchema extends AckSchema<Object, Object>
     with FluentSchema<Object, Object, AnySchema> {
@@ -11,6 +15,18 @@ final class AnySchema extends AckSchema<Object, Object>
     super.constraints,
     super.refinements,
   });
+
+  @override
+  @protected
+  SchemaResult<Object> parseWithContext(Object? value, SchemaContext context) {
+    final result = validateRuntimeWithContext(value, context);
+    if (result.isFail) return result;
+    final validated = result.getOrNull();
+    if (validated == null) return result;
+
+    // Same deep, unmodifiable copy that schema defaults use.
+    return SchemaResult.ok(cloneDefault(validated)!);
+  }
 
   @override
   @protected

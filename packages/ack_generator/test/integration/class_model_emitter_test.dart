@@ -61,6 +61,58 @@ final class Defaults with _\$DefaultsAck {
     );
   });
 
+  test('infers Ack.any and Ack.map for open JSON field types', () async {
+    await _build(
+      {
+        'envelope.dart':
+            '''
+$_imports
+part 'envelope.ack.dart';
+part 'envelope.ack.g.dart';
+
+@AckModel()
+final class Envelope with _\$EnvelopeAck {
+  const Envelope({
+    required this.kind,
+    this.payload,
+    required this.items,
+    required this.tags,
+    required this.values,
+    required this.metadata,
+    required this.labels,
+    required this.groups,
+  });
+
+  final Object kind;
+  @Optional()
+  final Object? payload;
+  final List<Object> items;
+  final Set<Object> tags;
+  final Map<String, Object> values;
+  final Map<String, Object?> metadata;
+  final Map<String, String?> labels;
+  final Map<String, List<Object>> groups;
+}
+''',
+      },
+      outputs: {
+        'test_pkg|lib/envelope.ack.dart': decodedMatches(
+          allOf([
+            contains("'kind': Ack.any()"),
+            contains("'payload': Ack.any().optional().nullable()"),
+            contains("'items': Ack.list(Ack.any())"),
+            contains("'tags': Ack.list(Ack.any()).codec<Set<Object>>"),
+            contains("'values': Ack.map(Ack.any())"),
+            contains("'metadata': Ack.map(Ack.any().nullable())"),
+            contains("'labels': Ack.map(Ack.string().nullable())"),
+            contains("'groups': Ack.map(Ack.list(Ack.any()))"),
+            isNot(contains('value as Object?')),
+          ]),
+        ),
+      },
+    );
+  });
+
   test('emits a codec schema, presence semantics, mixin, and bridges', () async {
     await _build(
       {

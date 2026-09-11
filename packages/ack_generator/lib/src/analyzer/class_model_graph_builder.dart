@@ -1210,6 +1210,8 @@ final class ClassModelGraphBuilder {
     if (_isCore(interfaceType, 'DateTime')) return '${_ack('Ack')}.datetime()';
     if (_isCore(interfaceType, 'Uri')) return '${_ack('Ack')}.uri()';
     if (_isCore(interfaceType, 'Duration')) return '${_ack('Ack')}.duration()';
+    // Object means a JSON-safe value, not an arbitrary Dart instance.
+    if (_isCore(interfaceType, 'Object')) return '${_ack('Ack')}.any()';
     if (interfaceType.element is EnumElement) {
       return '${_ack('Ack')}.enumValues(${_visibleTypeName(interfaceType)}.values)';
     }
@@ -1232,11 +1234,12 @@ final class ClassModelGraphBuilder {
           ')';
     }
     if (interfaceType.isDartCoreMap) {
-      throw InvalidGenerationSource(
-        '${field.enclosingElement.name}.${field.name} uses Map<String, V>; '
-        'Map fields require @AckField(schema: ...).',
-        element: field,
-      );
+      _validateMapKey(field, interfaceType);
+      // Unlike list items, JSON object values may be null.
+      final valueType = interfaceType.typeArguments[1];
+      final value = await _schemaForType(valueType, field);
+      final nullable = _isNullable(valueType) ? '.nullable()' : '';
+      return '${_ack('Ack')}.map($value$nullable)';
     }
     final target = interfaceType.element;
     if (target is ClassElement) {
@@ -1404,18 +1407,19 @@ final class ClassModelGraphBuilder {
   }
 
   void _rejectUnsupportedStaticType(FieldElement field, DartType type) {
-    if (type is DynamicType ||
-        type is TypeParameterType ||
-        (type is InterfaceType && _isCore(type, 'Object'))) {
+    if (type is DynamicType || type is TypeParameterType) {
       _unsupportedFieldType(field, type);
     }
   }
 
   Never _unsupportedFieldType(FieldElement field, DartType type) {
+    final jsonHint = type is DynamicType
+        ? ', or Object? for an open JSON value'
+        : '';
     throw InvalidGenerationSource(
       '${field.enclosingElement.name}.${field.name} uses unsupported '
       '${type.getDisplayString()}; use a concrete type with a static '
-      'class-first schema contract.',
+      'class-first schema contract$jsonHint.',
       element: field,
     );
   }

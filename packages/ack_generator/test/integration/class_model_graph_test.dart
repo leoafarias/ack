@@ -214,17 +214,45 @@ final class User with _\$UserAck {
     );
   });
 
-  test('requires AckField for Map<String, V>', () async {
+  test('rejects dynamic map values and points to Object?', () async {
+    await _expectFailure(
+      '''
+@AckModel()
+final class Stats with _\$StatsAck {
+  const Stats({required this.values});
+
+  final Map<String, dynamic> values;
+}
+''',
+      ['Stats.values', 'dynamic', 'Object?'],
+    );
+  });
+
+  test('rejects nullable Object list elements', () async {
+    await _expectFailure(
+      '''
+@AckModel()
+final class Envelope with _\$EnvelopeAck {
+  const Envelope({required this.items});
+
+  final List<Object?> items;
+}
+''',
+      ['Envelope.items', 'nullable collection elements', 'Ack.list'],
+    );
+  });
+
+  test('rejects nested non-String map keys', () async {
     await _expectFailure(
       '''
 @AckModel()
 final class Stats with _\$StatsAck {
   const Stats({required this.scores});
 
-  final Map<String, int> scores;
+  final List<Map<int, String>> scores;
 }
 ''',
-      ['Stats.scores', 'Map<String, V>', '@AckField'],
+      ['Stats.scores', 'Map<String, V>', 'Map<int, String>'],
     );
   });
 
@@ -242,21 +270,19 @@ final class Stats with _\$StatsAck {
     );
   });
 
-  for (final unsupported in ['dynamic', 'Object?']) {
-    test('rejects $unsupported fields without a static contract', () async {
-      await _expectFailure(
-        '''
+  test('rejects dynamic fields and points to Object?', () async {
+    await _expectFailure(
+      '''
 @AckModel()
 final class Payload with _\$PayloadAck {
   const Payload({required this.value});
 
-  final $unsupported value;
+  final dynamic value;
 }
 ''',
-        ['Payload.value', unsupported, 'concrete type'],
-      );
-    });
-  }
+      ['Payload.value', 'dynamic', 'concrete type', 'Object?'],
+    );
+  });
 
   test('rejects private annotated classes', () async {
     await _expectFailure(

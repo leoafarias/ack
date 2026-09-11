@@ -172,10 +172,15 @@ ${_ack('SchemaResult')}<Map<String, Object?>> safeToJson() =>
       '${_type(parameter.typeRef)}?';
 
   String _copyWithArgument(AckConstructorParameter parameter, String receiver) {
+    final type = _type(parameter.typeRef);
+    // Sentinel parameters are already typed Object?.
+    final value = type == 'Object?'
+        ? parameter.name
+        : '${parameter.name} as $type';
     final replacement = _usesCopyWithSentinel(parameter)
         ? 'identical(${parameter.name}, $_copyWithUnset) '
               '? $receiver.${parameter.fieldName} '
-              ': ${parameter.name} as ${_type(parameter.typeRef)}'
+              ': $value'
         : '${parameter.name} ?? $receiver.${parameter.fieldName}';
     return parameter.kind == AckConstructorParameterKind.named
         ? '${parameter.name}: $replacement'

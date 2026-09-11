@@ -1295,6 +1295,13 @@ static TargetSchema _convertDiscriminated(
 }
 ```
 
+### Handling Map Schema Models
+
+`Ack.map(valueSchema)` reaches converters as an `AckObjectSchemaModel` without
+`properties` whose `additionalProperties` is an `AckAdditionalPropertiesSchema`
+wrapping the value model. Targets without schema-valued additional properties
+can fall back to an open object, which drops value validation from the export.
+
 ### Handling Any Schema Models
 
 `Ack.any()` reaches converters as an `AckAnyOfSchemaModel` over the

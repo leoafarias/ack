@@ -1,5 +1,5 @@
 import 'package:ack/ack.dart'
-    show AckSchema, AnyOfSchema, AnySchema, InstanceSchema;
+    show AckSchema, AnyOfSchema, AnySchema, InstanceSchema, MapSchema;
 import 'package:ack_annotations/ack_annotations.dart'
     hide AckUnknownPropertyPolicy;
 import 'package:analyzer/dart/analysis/results.dart';
@@ -174,6 +174,10 @@ final class SchemaModelGraphBuilder {
   );
   static const _instanceSchemaChecker = TypeChecker.typeNamed(
     InstanceSchema,
+    inPackage: 'ack',
+  );
+  static const _mapSchemaChecker = TypeChecker.typeNamed(
+    MapSchema,
     inPackage: 'ack',
   );
 
@@ -358,6 +362,22 @@ final class SchemaModelGraphBuilder {
         'codec',
         'lazy',
       };
+      // Ack.any() and Ack.map() are valid fields but never model roots,
+      // whether written inline or reached through an unannotated variable.
+      final rootType = declaration.expression.staticType;
+      if (rootType != null &&
+          _anySchemaChecker.isAssignableFromType(rootType)) {
+        _rejectUnsupportedRoot('any', path, declaration.element);
+      }
+      if (rootType != null &&
+          _mapSchemaChecker.isAssignableFromType(rootType)) {
+        throw InvalidGenerationSource(
+          '$path uses an Ack.map() root. Generated models need an object or '
+          'value root.',
+          element: declaration.element,
+          todo: 'Use Ack.map(...) as a field of an Ack.object(...) model.',
+        );
+      }
       if (baseName != null && !supportedValueRoots.contains(baseName)) {
         _rejectUnsupportedRoot(baseName, path, declaration.element);
       }
@@ -680,9 +700,33 @@ final class SchemaModelGraphBuilder {
           element: context,
         );
       case 'any':
+        // A JSON-safe value field. Ack.any() roots are rejected in _resolve.
+        return const AckScalarTypeRef('Object');
       case 'anyOf':
       case 'instance':
         _rejectUnsupportedRoot(baseName, path, context);
+      case 'map':
+        final arguments = _argumentExpressions(chain.base!.argumentList);
+        if (arguments.isEmpty) {
+          throw InvalidGenerationSource(
+            '$path has an empty Ack.map().',
+            element: context,
+          );
+        }
+        final valueType = await _runtimeRefForSchema(
+          arguments.first,
+          path: '$path{}',
+          context: context,
+          throughLazy: throughLazy,
+          visited: visited,
+          depth: depth,
+        );
+        // Unlike list items, JSON object values may be null.
+        return AckMapTypeRef(
+          _chain(arguments.first).nullable && valueType is! AckNullableTypeRef
+              ? AckNullableTypeRef(valueType)
+              : valueType,
+        );
       case 'list':
         final arguments = _argumentExpressions(chain.base!.argumentList);
         if (arguments.isEmpty) {
@@ -1577,9 +1621,6 @@ final class SchemaModelGraphBuilder {
   ) {
     final type = expression.staticType;
     if (type == null) return;
-    if (_anySchemaChecker.isAssignableFromType(type)) {
-      _rejectUnsupportedRoot('any', path, element);
-    }
     if (_anyOfSchemaChecker.isAssignableFromType(type)) {
       _rejectUnsupportedRoot('anyOf', path, element);
     }

@@ -129,10 +129,14 @@ models, aliases, defaults, additional properties, named lazy recursion, and
 same-library discriminated unions. Stored collections are copied recursively
 into unmodifiable collections.
 
+Fields may use `Ack.any()` for JSON-safe `Object` values and `Ack.map(...)` for
+string-keyed `Map<String, T>` values. `Ack.any().nullable()` infers `Object?`,
+and `Ack.map(Ack.any().nullable())` infers `Map<String, Object?>`.
+
 One-way transforms cannot back a generated model because there is no encoder.
-Generation also rejects nullable roots, `Ack.any()`, `Ack.anyOf()`, bare
-`Ack.instance<T>()`, anonymous inline object fields, unresolved dynamic schema
-factories, and cross-library union branches.
+Generation also rejects nullable roots, `Ack.any()` and `Ack.map()` roots,
+`Ack.anyOf()`, bare `Ack.instance<T>()`, anonymous inline object fields,
+unresolved dynamic schema factories, and cross-library union branches.
 
 ### Schema-first unions
 
@@ -260,7 +264,23 @@ final class Example with _$ExampleAck {
 and `{"label": null}` fails. Encoding omits a null Dart value.
 
 The generator infers `String`, `bool`, numeric types, `DateTime`, `Uri`,
-`Duration`, enums, nested lists, and sets. Sets use a list codec.
+`Duration`, enums, nested lists, and sets. Sets use a list codec. Open JSON
+values use the Dart types you already write:
+
+| Dart field | Inferred schema |
+| --- | --- |
+| `Object` | `Ack.any()` |
+| `Object?` | `Ack.any().nullable()`, with the same presence rules as `String?` |
+| `List<Object>` | `Ack.list(Ack.any())` |
+| `Map<String, T>` | `Ack.map(<schema for T>)` |
+| `Map<String, Object?>` | `Ack.map(Ack.any().nullable())` |
+
+`Object` means a JSON-safe value (a finite number, string, boolean, list, or
+string-keyed map of those values), not an arbitrary Dart instance, so a
+`DateTime` inside an `Object` or `Map<String, Object?>` field fails validation.
+Map values may be `null` only when the value type is nullable. `List<Object?>`
+stays rejected because `Ack.list` has no nullable-item contract. Parsed
+`Object` values are recursively unmodifiable, like other stored collections.
 
 Constraint annotations follow the field type:
 
@@ -300,9 +320,11 @@ final class Theme with _$ThemeAck {
 }
 ```
 
-`Map<String, V>` fields also use `@AckField`; class-first generation does not
-invent an `Ack.map()` runtime API. Non-String map keys, `dynamic`, and
-`Object?` fields are rejected because they do not provide a static schema.
+`@AckField` also replaces an inferred `Object` or `Map<String, V>` schema when
+the field needs a tighter contract, for example a `MapSchema<int, int>`
+function returning `Ack.map(Ack.integer().min(0))`. Non-String map keys and
+`dynamic` are rejected because they do not provide a static schema; use
+`Object?` for an open JSON value.
 Automatic `List<T>` and `Set<T>` inference also requires non-nullable element
 types because `Ack.list` has no nullable-item contract. An explicit
 `@AckField(schema: ...)` codec remains the escape hatch when a field deliberately

@@ -50,6 +50,16 @@ final class Ack {
     AckSchema<B, R> itemSchema,
   ) => ListSchema<B, R>(itemSchema);
 
+  /// Creates a schema for a JSON object with arbitrary string keys whose
+  /// values all match [valueSchema].
+  ///
+  /// Use `Ack.map(Ack.any())` for a JSON object of non-null JSON-safe values
+  /// and `Ack.map(Ack.any().nullable())` for a `JsonMap` whose values may be
+  /// `null`. Use [object] when the object has declared properties.
+  static MapSchema<B, R> map<B extends Object, R extends Object>(
+    AckSchema<B, R> valueSchema,
+  ) => MapSchema<B, R>(valueSchema);
+
   /// Creates an enum schema for validating enum values.
   static EnumSchema<T> enumValues<T extends Enum>(List<T> values) {
     _requireNonEmpty(values, 'values');
@@ -91,7 +101,8 @@ final class Ack {
   ///
   /// Accepted values are finite numbers, strings, booleans, string-keyed maps,
   /// and lists recursively composed from those values. Mark the schema nullable
-  /// to accept `null`.
+  /// to accept `null`. Parsing returns a detached, recursively unmodifiable
+  /// snapshot of the input.
   static AnySchema any() => const AnySchema();
 
   /// Validates with [schema] while returning the original boundary value.

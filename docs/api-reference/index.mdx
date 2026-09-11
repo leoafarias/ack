@@ -35,6 +35,9 @@ Entry point for creating schemas. See [Schema Types](../core-concepts/schemas.md
 - `Ack.anyOf(List<AckSchema> schemas)`: Creates an `AnyOfSchema` for union types.
 - `Ack.any()`: Creates an `AnySchema` that accepts any non-null JSON-safe
   value. Chain `.nullable()` to allow `null`.
+- `Ack.map(AckSchema valueSchema)`: Creates a `MapSchema` for a JSON object
+  with arbitrary string keys whose values all match `valueSchema`. Use
+  `Ack.map(Ack.any().nullable())` for a `JsonMap`.
 - `Ack.instance<T extends Object>()`: Creates a schema that checks a value is a
   Dart instance of `T` (runtime type check; handy as a codec `output` schema).
 - `Ack.codec(...)` / `Ack.date()` / `Ack.datetime()` / `Ack.uri()` /
@@ -199,7 +202,6 @@ Schema for validating objects (maps). See [Object Validation](../core-concepts/s
 Creates a detached, recursively unmodifiable snapshot of nested maps, lists,
 and sets. It does not validate JSON shape or values. Use it in hand-written
 constructors that store dynamic JSON maps and need stable equality and hashes.
-
 ## `SchemaResult<T>`
 
 Object returned by `safeParse()`. See [Error Handling](../core-concepts/error-handling.mdx).
@@ -306,11 +308,12 @@ Annotate a top-level schema variable or getter. The schema stays in your source 
 **Supported schema types:**
 - `Ack.object({...})` → immutable object models
 - Primitives: `Ack.string()`, `Ack.integer()`, `Ack.double()`, `Ack.boolean()`
-- Collections: `Ack.list(...)`, typed sets and maps
+- Collections: `Ack.list(...)`, `Ack.map(...)` fields, typed sets and maps
+- JSON values: `Ack.any()` fields as `Object` / `Object?`
 - Enums: `Ack.literal()`, `Ack.enumString()`, `Ack.enumValues()`
 - Discriminated unions: `Ack.discriminated(...)`
 
-**Unsupported:** nullable roots, one-way transforms, `Ack.any()`, `Ack.anyOf()`, bare `Ack.instance<T>()`, and anonymous inline objects
+**Unsupported:** nullable roots, one-way transforms, `Ack.any()` and `Ack.map()` roots, `Ack.anyOf()`, bare `Ack.instance<T>()`, and anonymous inline objects
 
 For `Ack.discriminated(...)` constraints with `@AckInfer`, see
 [Model Code Generation](../core-concepts/typesafe-schemas.mdx#schema-first-unions).
@@ -452,6 +455,22 @@ Accepts any non-null JSON-safe value without further validation.
 
 - Created by `Ack.any()`.
 - Useful for dynamic payloads or pass-through metadata.
+- Parsing returns a detached, recursively unmodifiable snapshot of the input;
+  encoding returns the runtime value unchanged after validating it.
+
+### `MapSchema<ValueBoundary, ValueRuntime>`
+
+Schema for a JSON object with arbitrary string keys whose values all match
+`valueSchema`.
+
+- Created by `Ack.map(valueSchema)`.
+- Boundary and runtime types are `Map<String, ValueBoundary?>` and
+  `Map<String, ValueRuntime?>`: a value may be `null` only when `valueSchema`
+  is nullable, so the static value type is always nullable.
+- Parse runs `valueSchema` on every value and encode on every non-null value,
+  including codecs; errors report the value's key path.
+- Exported to JSON Schema as
+  `{"type": "object", "additionalProperties": <value schema>}`.
 
 ### `CodecSchema<Boundary, Runtime>`
 

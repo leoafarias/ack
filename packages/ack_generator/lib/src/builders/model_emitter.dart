@@ -575,10 +575,15 @@ ${_ack('AckModelAdapter')}(
     AckConstructorParameter parameter,
     AckFieldNode field,
   ) {
+    final type = _fieldType(field);
+    // Sentinel parameters are already typed Object?.
+    final value = type == 'Object?'
+        ? parameter.name
+        : '${parameter.name} as $type';
     final replacement = _fieldUsesCopyWithSentinel(field)
         ? 'identical(${parameter.name}, $_copyWithUnset) '
               '? this.${parameter.fieldName} '
-              ': ${parameter.name} as ${_fieldType(field)}'
+              ': $value'
         : '${parameter.name} ?? this.${parameter.fieldName}';
     return parameter.kind == AckConstructorParameterKind.named
         ? '${parameter.name}: $replacement'
@@ -833,7 +838,9 @@ return $helper(<String, dynamic>{
     if (!needsNullGuard) {
       body = _fromRuntime(runtimeRef, 'value');
     } else if (!_requiresRuntimeConversion(runtimeRef)) {
-      body = 'value as ${_type(runtimeRef)}?';
+      final type = '${_type(runtimeRef)}?';
+      // The bridge parameter is already Object?.
+      body = type == 'Object?' ? 'value' : 'value as $type';
     } else {
       body =
           'switch (value) {'
@@ -892,6 +899,9 @@ return $helper(<String, dynamic>{
 
   String _fromRuntime(AckInferRef type, String expression) {
     return switch (type) {
+      // Any input is already assignable to Object?; a cast would be redundant.
+      AckNullableTypeRef(inner: AckScalarTypeRef(dartType: 'Object')) =>
+        expression,
       AckNullableTypeRef(:final inner) =>
         '$expression == null ? null : ${_fromRuntime(inner, '$expression!')}',
       AckModelTypeRef(:final runtimeRef, :final visibleName) =>
@@ -908,6 +918,9 @@ return $helper(<String, dynamic>{
 
   String _toRuntime(AckInferRef type, String expression) {
     return switch (type) {
+      AckNullableTypeRef(:final inner)
+          when inner is AckScalarTypeRef || inner is AckExternalTypeRef =>
+        expression,
       AckNullableTypeRef(:final inner) =>
         '$expression == null ? null : ${_toRuntime(inner, '$expression!')}',
       AckModelTypeRef(:final visibleName) =>
@@ -924,6 +937,8 @@ return $helper(<String, dynamic>{
 
   String _immutableCopy(AckInferRef type, String expression) {
     return switch (type) {
+      AckNullableTypeRef(:final inner) when !_requiresImmutableCopy(inner) =>
+        expression,
       AckNullableTypeRef(:final inner) =>
         '$expression == null ? null : ${_immutableCopy(inner, '$expression!')}',
       AckListTypeRef(:final elementType) =>

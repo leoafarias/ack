@@ -224,6 +224,21 @@ final flexibleSchema = Ack.object({
 
 Use `Ack.any().nullable()` to also accept `null`.
 
+### Maps
+
+Use `Ack.map(...)` for a JSON object with arbitrary string keys whose values
+all share one schema:
+
+```dart
+final settingsSchema = Ack.object({
+  'scores': Ack.map(Ack.integer().min(0)), // string keys, int values
+  'metadata': Ack.map(Ack.any().nullable()), // a JsonMap
+});
+```
+
+Map values may be `null` only when the value schema is nullable. Use
+`Ack.object(...)` when the object has declared properties.
+
 ## Optional vs nullable
 
 **`.nullable()`** — Field must be present but can be `null`:
