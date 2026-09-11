@@ -1,3 +1,10 @@
+## 1.5.0
+
+### Changed
+
+* Align with the coordinated Ack 1.5 release; this package has no runtime or
+  public API changes from 1.4.0.
+
 ## 1.4.0
 
 ### Changed
