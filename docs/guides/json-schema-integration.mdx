@@ -227,6 +227,9 @@ The nested nullable-union shape is intentional for generic Draft-7 output and ma
 -   **`additionalProperties`:** `Ack.object(..., additionalProperties: false)`
     becomes `additionalProperties: false`; `additionalProperties: true` is
     emitted as the boolean `true`.
+-   **`Ack.map(valueSchema)`:** Exported as
+    `{"type": "object", "additionalProperties": <value schema>}`. Map keys are
+    always strings, so no `propertyNames` keyword is emitted.
 -   **`Ack.any()`:** Runtime validation accepts non-null JSON-safe values.
     JSON-like adapter exports represent those JSON-compatible values and attach
     an `ack_any_json_boundary` warning to the `AckSchemaModel`.

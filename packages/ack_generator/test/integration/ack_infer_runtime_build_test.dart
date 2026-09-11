@@ -53,6 +53,13 @@ dependency_overrides:
   ack_annotations:
     path: ${p.join(projectRoot.path, 'packages', 'ack_annotations')}
 ''');
+        File(p.join(temporary.path, 'analysis_options.yaml')).writeAsStringSync(
+          '''
+linter:
+  rules:
+    - prefer_null_aware_operators
+''',
+        );
         File(p.join(temporary.path, 'lib', 'models.dart')).writeAsStringSync(
           r'''
 import 'package:ack/ack.dart';
@@ -133,6 +140,27 @@ final emptySchema = Ack.object({});
 
 @AckInfer()
 final scoresSchema = Ack.list(Ack.integer());
+
+final looseAny = Ack.any();
+
+@AckInfer()
+final envelopeSchema = Ack.object({
+  'kind': Ack.any(),
+  'payload': Ack.any().nullable().optional(),
+  'items': Ack.list(Ack.any()),
+  'values': Ack.map(Ack.any()),
+  'metadata': Ack.map(Ack.any().nullable()),
+  'labels': Ack.map(Ack.string()),
+  'loose': looseAny.optional(),
+});
+
+final nullableLabel = Ack.string().nullable();
+
+@AckInfer()
+final labelsSchema = Ack.object({
+  'byKey': Ack.map(nullableLabel),
+  'groups': Ack.map(Ack.list(Ack.string()).nullable()),
+});
 
 final class Counted {
   Counted(this.value);
@@ -307,6 +335,85 @@ void main() {
     expect(constructed.toJson().containsKey('nickname'), isFalse);
     expect(constructed.toJson()['maybe'], isNull);
     expect(constructed.toJson().containsKey('maybe'), isTrue);
+  });
+
+  final envelopeJson = <String, Object?>{
+    'kind': 'event',
+    'payload': {
+      'nested': [null, 1],
+    },
+    'items': [
+      1,
+      {'a': true},
+    ],
+    'values': {'a': 1},
+    'metadata': {'trace': null},
+    'labels': {'env': 'prod'},
+  };
+
+  for (final invalid in <Map<String, Object?>>[
+    {'payload': DateTime(2026)},
+    {'kind': null},
+    {
+      'values': {'a': null},
+    },
+    {
+      'labels': {'env': 1},
+    },
+  ]) {
+    test('Envelope rejects invalid field values: $invalid', () {
+      expect(Envelope.safeParse({...envelopeJson, ...invalid}).isFail, isTrue);
+    });
+  }
+
+  test('Ack.any and Ack.map fields hold immutable JSON values', () {
+    final envelope = Envelope.parse(envelopeJson);
+    expect(envelope.payload, {
+      'nested': [null, 1],
+    });
+    expect(envelope.metadata, {'trace': null});
+    expect(envelope.loose, isNull);
+    expect(envelope.toJson(), envelopeJson);
+    expect(Envelope.parse(envelopeJson), envelope);
+    expect(Envelope.parse(envelopeJson).hashCode, envelope.hashCode);
+    expect(
+      Envelope.parse({...envelopeJson, 'payload': null}).payload,
+      isNull,
+    );
+
+    expect(() => (envelope.payload! as Map)['x'] = 1, throwsUnsupportedError);
+    expect(() => envelope.metadata['x'] = 1, throwsUnsupportedError);
+    expect(() => (envelope.items.last as Map)['x'] = 1, throwsUnsupportedError);
+
+    final constructed = Envelope(
+      kind: {
+        'a': [1],
+      },
+      items: const [],
+      values: const {},
+      metadata: const {},
+      labels: const {},
+    );
+    expect(Envelope.parse(constructed.toJson()), constructed);
+    expect(constructed.copyWith(payload: 'x').payload, 'x');
+    expect(constructed.copyWith(payload: 'x').copyWith(payload: null).payload,
+        isNull);
+  });
+
+  test('map values follow nullable variables and nullable collections', () {
+    final json = <String, Object?>{
+      'byKey': {'a': 'x', 'b': null},
+      'groups': {
+        'g': ['x'],
+        'none': null,
+      },
+    };
+
+    final labels = Labels.parse(json);
+
+    expect(labels.byKey, {'a': 'x', 'b': null});
+    expect(labels.groups['none'], isNull);
+    expect(labels.toJson(), json);
   });
 
   test('union discriminators cannot be spoofed through extras', () {

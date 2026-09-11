@@ -195,6 +195,13 @@ unknown data can't replace a declared property. Schema-first passthrough objects
 `toJson()` returns a fresh top-level collection; nested values are the
 schema's encode output.
 
+`Ack.any()` fields and inferred class-first `Object` fields hold JSON-safe
+values. `Ack.any()` parsing returns a detached, recursively unmodifiable
+snapshot, so parsed `Object` values are frozen like collections; values passed
+directly to a constructor are stored as given.
+`Ack.map(...)` fields and inferred class-first `Map<String, T>` fields use the
+same string-keyed map contract; unlike list items, map values may be nullable.
+
 Referenced schema variables are followed to their initializer so unsupported
 shapes are rejected regardless of whether they were written inline or assigned
 to a local.
@@ -205,7 +212,8 @@ Generation reports a located error for:
 
 - one-way `.transform()` calls;
 - nullable roots;
-- `Ack.any()`, `Ack.anyOf()`, and bare `Ack.instance<T>()`;
+- `Ack.any()` and `Ack.map()` roots (both are supported as fields),
+  `Ack.anyOf()`, and bare `Ack.instance<T>()`;
 - anonymous inline objects and unresolved dynamic schema factories;
 - runtime maps whose key type is not `String`;
 - invalid custom names and namespace/member collisions;

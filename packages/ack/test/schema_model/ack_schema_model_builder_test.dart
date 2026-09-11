@@ -108,6 +108,8 @@ void main() {
         }, additionalProperties: true),
       );
       expectDirectMatchesModel(Ack.any());
+      expectDirectMatchesModel(Ack.map(Ack.integer().min(0)).nullable());
+      expectDirectMatchesModel(Ack.map(Ack.any().nullable()));
       expectDirectMatchesModel(
         Ack.anyOf([Ack.string(), Ack.integer()]).nullable(),
       );

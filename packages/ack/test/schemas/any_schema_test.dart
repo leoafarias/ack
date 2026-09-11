@@ -44,6 +44,36 @@ void main() {
       expect(schema.safeEncode(value).getOrThrow(), equals(value));
     });
 
+    test('parse returns a detached, unmodifiable JSON snapshot', () {
+      final nested = <String, Object?>{
+        'items': [1],
+      };
+      final source = <dynamic, dynamic>{'nested': nested};
+
+      final parsed = Ack.any().parse(source)! as Map<String, Object?>;
+      nested['later'] = true;
+
+      expect(parsed, {
+        'nested': {
+          'items': [1],
+        },
+      });
+      expect(() => parsed['x'] = 1, throwsUnsupportedError);
+      final parsedNested = parsed['nested']! as Map<String, Object?>;
+      expect(() => parsedNested['x'] = 1, throwsUnsupportedError);
+      expect(
+        () => (parsedNested['items']! as List<Object?>).add(2),
+        throwsUnsupportedError,
+      );
+      expect(Ack.any().parse('text'), 'text');
+    });
+
+    test('encode returns the validated runtime value unchanged', () {
+      final value = <String, Object?>{'a': 1};
+
+      expect(Ack.any().encode(value), same(value));
+    });
+
     test('should reject null by default', () {
       final schema = Ack.any();
       final result = schema.safeParse(null);

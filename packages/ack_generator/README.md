@@ -102,7 +102,8 @@ Generation rejects shapes without a useful static, encodable model contract:
 - nullable `Ack.list` item schemas and automatically inferred `List<T?>` or
   `Set<T?>` fields; make the collection nullable instead, or use an explicit
   `@AckField(schema: ...)` codec for a different collection contract;
-- `Ack.any()`, `Ack.anyOf()`, and bare `Ack.instance<T>()`;
+- `Ack.any()` and `Ack.map()` roots (both are supported as fields),
+  `Ack.anyOf()`, and bare `Ack.instance<T>()`;
 - anonymous inline object fields and unresolved dynamic schema factories;
 - invalid names, generated-member collisions, and cross-library union branches.
 
@@ -150,6 +151,17 @@ requiring the key, and `@AckField(schema: ...)` for custom codecs. See the
 [Model Code Generation guide](https://concepta.dev/documentation/ack/advanced/typesafe-schemas)
 for both directions, field inference, sealed unions, passthrough properties,
 and build configuration.
+
+Open JSON fields are inferred from their Dart types. `Object` means a JSON-safe
+value, not an arbitrary Dart instance:
+
+| Dart field | Inferred schema |
+| --- | --- |
+| `Object` / `Object?` | `Ack.any()` / `Ack.any().nullable()` |
+| `List<Object>` | `Ack.list(Ack.any())`; `List<Object?>` is rejected |
+| `Map<String, T>` | `Ack.map(<schema for T>)` |
+| `Map<String, Object?>` | `Ack.map(Ack.any().nullable())` |
+| `dynamic` | rejected; use `Object?` |
 
 For a hand-written `Account`, class-first generation exposes an
 `AccountSchema` facade backed by a private `_accountSchema` codec. The facade

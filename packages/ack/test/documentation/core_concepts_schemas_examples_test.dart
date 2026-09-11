@@ -196,6 +196,28 @@ void main() {
       expect(result.isOk, isTrue);
     });
 
+    test('map schema validates every value under arbitrary keys', () {
+      final settingsSchema = Ack.object({
+        'scores': Ack.map(Ack.integer().min(0)),
+        'metadata': Ack.map(Ack.any().nullable()),
+      });
+
+      expect(
+        settingsSchema.safeParse({
+          'scores': {'alice': 3, 'bob': 0},
+          'metadata': {'trace': null, 'tags': <Object?>[]},
+        }).isOk,
+        isTrue,
+      );
+      expect(
+        settingsSchema.safeParse({
+          'scores': {'alice': -1},
+          'metadata': <String, Object?>{},
+        }).isFail,
+        isTrue,
+      );
+    });
+
     group('Optional vs nullable semantics', () {
       test('nullable requires presence but allows null', () {
         final schema = Ack.object({

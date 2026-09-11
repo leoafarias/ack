@@ -67,6 +67,13 @@ dependency_overrides:
   ack_annotations:
     path: ${p.join(projectRoot.path, 'packages', 'ack_annotations')}
 ''');
+        File(p.join(temporary.path, 'analysis_options.yaml')).writeAsStringSync(
+          '''
+linter:
+  rules:
+    - prefer_null_aware_operators
+''',
+        );
         File(p.join(temporary.path, 'build.yaml')).writeAsStringSync('''
 targets:
   \$default:
@@ -353,6 +360,50 @@ final class CapabilityBinding with _$CapabilityBindingAck {
   static final fromJson = CapabilityBindingSchema.fromJson;
 }
 
+AckSchema<Map<String, int?>, Map<String, int?>> scoresSchema() =>
+    Ack.map(Ack.integer().min(0));
+
+@AckModel()
+final class Envelope with _$EnvelopeAck {
+  const Envelope({
+    required this.kind,
+    this.payload,
+    this.strict,
+    required this.items,
+    required this.values,
+    required this.metadata,
+    required this.labels,
+    required this.scores,
+  });
+
+  final Object kind;
+  @Optional()
+  final Object? payload;
+  @Optional()
+  @NotNull()
+  final Object? strict;
+  final List<Object> items;
+  final Map<String, Object> values;
+  final Map<String, Object?> metadata;
+  final Map<String, String> labels;
+  @AckField(schema: scoresSchema)
+  final Map<String, int> scores;
+}
+
+@AckModel()
+final class Declined with _$DeclinedAck {
+  const Declined();
+}
+
+@AckModel()
+final class OptionalCollections with _$OptionalCollectionsAck {
+  const OptionalCollections({this.headers, this.aliases, this.tags});
+
+  final Map<String, String>? headers;
+  final List<String>? aliases;
+  final Set<String>? tags;
+}
+
 @AckModel(discriminatorKey: 'type')
 sealed class Pet with _$PetAck {
   const Pet({required this.id});
@@ -393,6 +444,29 @@ import 'package:ack_class_first_runtime/coexist.dart';
 import 'package:ack_class_first_runtime/models.dart';
 import 'package:ack/ack.dart';
 import 'package:test/test.dart';
+
+final envelopeJson = <String, Object?>{
+  'kind': 'event',
+  'items': [
+    1,
+    'two',
+    {
+      'three': [null, 3],
+    },
+  ],
+  'values': {
+    'a': 1,
+    'b': [true],
+  },
+  'metadata': {
+    'trace': null,
+    'nested': {
+      'x': [null, 1],
+    },
+  },
+  'labels': {'env': 'prod'},
+  'scores': {'a': 1},
+};
 
 void main() {
   test('presence, defaults, collections, and escape hatches round-trip', () {
@@ -683,6 +757,145 @@ void main() {
       'v',
     );
     expect(binding.copyWith().toJson(), {'name': 'bind', 'parameters': {}});
+  });
+
+  test('Object fields accept JSON values with String? presence rules', () {
+    final envelope = EnvelopeSchema.parse(envelopeJson);
+    expect(envelope.kind, 'event');
+    expect(envelope.payload, isNull);
+    expect(envelope.items, [
+      1,
+      'two',
+      {
+        'three': [null, 3],
+      },
+    ]);
+    expect(envelope.metadata['trace'], isNull);
+    expect(envelope.toJson(), envelopeJson);
+
+    expect(
+      EnvelopeSchema.parse({...envelopeJson, 'payload': null}).payload,
+      isNull,
+    );
+    final withPayload = EnvelopeSchema.parse({
+      ...envelopeJson,
+      'payload': {
+        'nested': [null, 1],
+      },
+    });
+    expect(withPayload.payload, {
+      'nested': [null, 1],
+    });
+    expect(withPayload.toJson()['payload'], {
+      'nested': [null, 1],
+    });
+
+    expect(EnvelopeSchema.parse({...envelopeJson, 'strict': 1}).strict, 1);
+    expect(
+      EnvelopeSchema.safeParse({...envelopeJson, 'strict': null}).isFail,
+      isTrue,
+    );
+    expect(
+      EnvelopeSchema.safeParse({...envelopeJson, 'kind': null}).isFail,
+      isTrue,
+    );
+    expect(
+      EnvelopeSchema.safeParse(
+        Map<String, Object?>.of(envelopeJson)..remove('kind'),
+      ).isFail,
+      isTrue,
+    );
+  });
+
+  for (final invalid in <Map<String, Object?>>[
+    {'payload': DateTime(2026)},
+    {
+      'items': [DateTime(2026)],
+    },
+    {
+      'values': {'a': null},
+    },
+    {
+      'metadata': {
+        'nested': {'at': DateTime(2026)},
+      },
+    },
+    {
+      'labels': {'env': 1},
+    },
+    {
+      'scores': {'a': -1},
+    },
+  ]) {
+    test('Envelope rejects invalid field values: $invalid', () {
+      expect(
+        EnvelopeSchema.safeParse({...envelopeJson, ...invalid}).isFail,
+        isTrue,
+      );
+    });
+  }
+
+  test('Object fields reject non-JSON encodes and maps export schemas', () {
+    final envelope = EnvelopeSchema.parse(envelopeJson);
+    expect(
+      EnvelopeSchema.safeEncode(
+        envelope.copyWith(payload: DateTime(2026)),
+      ).isFail,
+      isTrue,
+    );
+    expect(
+      (EnvelopeSchema.toJsonSchema()['properties']! as Map)['labels'],
+      {
+        'type': 'object',
+        'additionalProperties': {'type': 'string'},
+      },
+    );
+  });
+
+  test('parsed Object and map values are recursively unmodifiable', () {
+    final envelope = EnvelopeSchema.parse({
+      ...envelopeJson,
+      'payload': {
+        'nested': [1],
+      },
+    });
+    final payload = envelope.payload! as Map;
+    expect(() => payload['x'] = 1, throwsUnsupportedError);
+    expect(() => (payload['nested']! as List).add(2), throwsUnsupportedError);
+    expect(() => (envelope.items.last as Map)['x'] = 1, throwsUnsupportedError);
+    expect(() => envelope.metadata['x'] = 1, throwsUnsupportedError);
+    expect(
+      () => (envelope.metadata['nested']! as Map)['x'] = 1,
+      throwsUnsupportedError,
+    );
+    expect(() => envelope.scores['b'] = 2, throwsUnsupportedError);
+  });
+
+  test('fieldless models generate working value members', () {
+    expect(DeclinedSchema.parse({}), const Declined());
+    expect(const Declined().copyWith(), const Declined());
+    expect(const Declined().hashCode, const Declined().hashCode);
+    expect(const Declined().toString(), 'Declined()');
+    expect(const Declined().toJson(), isEmpty);
+  });
+
+  test('optional collections round-trip through null-aware bridges', () {
+    final empty = OptionalCollectionsSchema.parse({});
+    expect(empty.headers, isNull);
+    expect(empty.toJson(), isEmpty);
+
+    final full = OptionalCollectionsSchema.parse({
+      'headers': {'a': 'b'},
+      'aliases': ['x'],
+      'tags': ['t'],
+    });
+    expect(full.headers, {'a': 'b'});
+    expect(full.tags, {'t'});
+    expect(full.toJson(), {
+      'headers': {'a': 'b'},
+      'aliases': ['x'],
+      'tags': ['t'],
+    });
   });
 
   test('sealed unions use super parameters and discriminator rules', () {

@@ -308,8 +308,8 @@ final valueSchema = (Ack.string().trim()).codec<String>(
     },
   );
 
-  test('rejects a local Ack.any() field by following the variable', () async {
-    await _expectFailure(
+  test('infers Object and Map fields from Ack.any() and Ack.map()', () async {
+    await _expectOutput(
       '''
 $_head
 final payloadAny = Ack.any();
@@ -317,9 +317,89 @@ final payloadAny = Ack.any();
 @AckInfer()
 final userSchema = Ack.object({
   'payload': payloadAny,
+  'kind': Ack.any(),
+  'note': Ack.any().nullable(),
+  'items': Ack.list(Ack.any()),
+  'values': Ack.map(Ack.any()),
+  'metadata': Ack.map(Ack.any().nullable()),
+  'labels': Ack.map(Ack.string()),
 });
 ''',
-      ['userSchema.payload', 'payloadAny', 'Ack.any()'],
+      allOf([
+        contains('final Object payload;'),
+        contains('final Object kind;'),
+        contains('final Object? note;'),
+        contains('final List<Object> items;'),
+        contains('final Map<String, Object> values;'),
+        contains('final Map<String, Object?> metadata;'),
+        contains('final Map<String, String> labels;'),
+        isNot(contains('value as Object?')),
+      ]),
+    );
+  });
+
+  test('infers nullable map values through a nullable variable', () async {
+    await _expectOutput('''
+$_head
+final nullableAny = Ack.any().nullable();
+
+@AckInfer()
+final userSchema = Ack.object({'metadata': Ack.map(nullableAny)});
+''', contains('final Map<String, Object?> metadata;'));
+  });
+
+  test('rejects nullable Ack.any() list items', () async {
+    await _expectFailure(
+      '''
+$_head
+@AckInfer()
+final userSchema = Ack.object({
+  'items': Ack.list(Ack.any().nullable()),
+});
+''',
+      ['userSchema.items', 'nullable collection elements'],
+    );
+  });
+
+  test('rejects an Ack.any() root reached through a variable', () async {
+    await _expectFailure(
+      '''
+$_head
+final payloadAny = Ack.any();
+
+@AckInfer()
+final payloadSchema = payloadAny;
+''',
+      ['payloadSchema', 'Ack.any()'],
+    );
+  });
+
+  for (final source in [
+    'Ack.map(Ack.integer())',
+    'Ack.map(Ack.any().nullable()).describe("extras")',
+  ]) {
+    test('rejects Ack.map() root $source', () async {
+      await _expectFailure(
+        '''
+$_head
+@AckInfer()
+final scoresSchema = $source;
+''',
+        ['scoresSchema', 'Ack.map() root'],
+      );
+    });
+  }
+
+  test('rejects an Ack.map() root reached through a variable', () async {
+    await _expectFailure(
+      '''
+$_head
+final scoresMap = Ack.map(Ack.integer());
+
+@AckInfer()
+final scoresSchema = scoresMap;
+''',
+      ['scoresSchema', 'Ack.map() root'],
     );
   });
 

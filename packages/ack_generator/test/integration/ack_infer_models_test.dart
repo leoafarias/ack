@@ -830,17 +830,19 @@ final userSchema = Ack.object({'name': Ack.string()});
     expect(messages.single, contains(r'_$UserFromJson'));
   });
 
-  test('rejects a cross-library unannotated schema variable', () async {
-    final messages = <String>{};
-    await _build(
-      {
-        'other.dart': '''
+  test(
+    'rejects an unsupported cross-library unannotated schema variable',
+    () async {
+      final messages = <String>{};
+      await _build(
+        {
+          'other.dart': '''
 import 'package:ack/ack.dart';
 
-final payloadAny = Ack.any();
+final payloadUnion = Ack.anyOf([Ack.string(), Ack.integer()]);
 ''',
-        'user.dart':
-            '''
+          'user.dart':
+              '''
 $_imports
 import 'other.dart';
 part 'user.ack.dart';
@@ -848,18 +850,52 @@ part 'user.ack.g.dart';
 
 @AckInfer()
 final userSchema = Ack.object({
-  'payload': payloadAny,
+  'payload': payloadUnion,
 });
 ''',
-      },
-      outputs: const {},
-      onLog: (log) {
-        if (log.level.name == 'SEVERE') messages.add(log.message);
-      },
-    );
-    expect(messages.single, contains('userSchema.payload'));
-    expect(messages.single, contains('payloadAny'));
-  });
+        },
+        outputs: const {},
+        onLog: (log) {
+          if (log.level.name == 'SEVERE') messages.add(log.message);
+        },
+      );
+      expect(messages.single, contains('userSchema.payload'));
+      expect(messages.single, contains('payloadUnion'));
+      expect(messages.single, contains('Ack.anyOf()'));
+    },
+  );
+
+  test(
+    'follows a cross-library Ack.any() variable to an Object field',
+    () async {
+      await _build(
+        {
+          'other.dart': '''
+import 'package:ack/ack.dart';
+
+final payloadAny = Ack.any();
+''',
+          'user.dart':
+              '''
+$_imports
+import 'other.dart';
+part 'user.ack.dart';
+part 'user.ack.g.dart';
+
+@AckInfer()
+final userSchema = Ack.object({
+  'payload': payloadAny.nullable(),
+});
+''',
+        },
+        outputs: {
+          'test_pkg|lib/user.ack.dart': decodedMatches(
+            contains('final Object? payload;'),
+          ),
+        },
+      );
+    },
+  );
 
   test('rejects a cross-library @AckInfer alias root', () async {
     final messages = <String>{};

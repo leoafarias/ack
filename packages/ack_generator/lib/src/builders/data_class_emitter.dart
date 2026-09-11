@@ -75,7 +75,8 @@ mixin ${'_\$${className}Ack'} {
     final parameterList = parameters.isEmpty
         ? ''
         : '{${parameters.join(', ')}}';
-    if (castSelf) {
+    // A fieldless model reads nothing through `self`; skip the unused cast.
+    if (castSelf && arguments.isNotEmpty) {
       return '''
 $className copyWith($parameterList) {
   final self = this as $className;
@@ -96,7 +97,7 @@ $className copyWith($parameterList) => $className(${arguments.join(', ')});''';
       for (final field in fields)
         _hash('${castSelf ? 'self' : 'this'}.${field.dartName}'),
     ];
-    if (castSelf) {
+    if (castSelf && fields.isNotEmpty) {
       final fieldEquals = [
         for (final field in fields)
           _equals('self.${field.dartName}', 'other.${field.dartName}'),
@@ -139,7 +140,7 @@ int get hashCode => Object.hashAll([${hashes.join(', ')}]);''';
     required List<AckFieldNode> fields,
     bool castSelf = false,
   }) {
-    if (castSelf) {
+    if (castSelf && fields.isNotEmpty) {
       final parts = [
         for (final field in fields)
           '${field.dartName}: \${self.${field.dartName}}',
@@ -172,10 +173,15 @@ ${_ack('SchemaResult')}<Map<String, Object?>> safeToJson() =>
       '${_type(parameter.typeRef)}?';
 
   String _copyWithArgument(AckConstructorParameter parameter, String receiver) {
+    final type = _type(parameter.typeRef);
+    // Sentinel parameters are already typed Object?.
+    final value = type == 'Object?'
+        ? parameter.name
+        : '${parameter.name} as $type';
     final replacement = _usesCopyWithSentinel(parameter)
         ? 'identical(${parameter.name}, $_copyWithUnset) '
               '? $receiver.${parameter.fieldName} '
-              ': ${parameter.name} as ${_type(parameter.typeRef)}'
+              ': $value'
         : '${parameter.name} ?? $receiver.${parameter.fieldName}';
     return parameter.kind == AckConstructorParameterKind.named
         ? '${parameter.name}: $replacement'

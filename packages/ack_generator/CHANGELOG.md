@@ -1,3 +1,31 @@
+## Unreleased
+
+### Added
+
+* Infer open JSON class-first fields from their Dart types: `Object` →
+  `Ack.any()`, `Object?` → `Ack.any().nullable()` (with the same presence
+  annotations as `String?`), `List<Object>` → `Ack.list(Ack.any())`, and
+  `Map<String, T>` → `Ack.map(<schema for T>)`, including
+  `Map<String, Object?>`. `Map` fields no longer require `@AckField`, which
+  still overrides an inferred schema. `dynamic`, `List<Object?>`, and
+  non-`String` map keys stay rejected; the `dynamic` error now suggests
+  `Object?`.
+* Accept `Ack.any()` and `Ack.map(...)` schema-first fields, inferring
+  `Object`/`Object?` and `Map<String, T>`. `Ack.any()` and `Ack.map()` model
+  roots stay rejected, including when reached through a variable.
+
+### Fixed
+
+* Omit the redundant `as Object?` cast in generated `copyWith` bodies for
+  `Object?` fields.
+* Infer nullable `Ack.map` values when the value schema is a variable declared
+  with `.nullable()`, such as `Ack.map(nullableLabel)`.
+* Keep generated code clean under `--fatal-infos`: fieldless class-first
+  models no longer declare an unused `self` local, and nullable collection
+  bridges use null-aware access.
+* Generate compiling code for nullable class-first `Set<T>?` fields; the set
+  codec now uses the non-null set type and presence adds nullability.
+
 ## 1.4.0
 
 ### Added
