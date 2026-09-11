@@ -110,8 +110,10 @@ equality. The facade exposes `schema`, `wireSchema`, `parse`, `safeParse`,
 lower-camel alias is emitted. Constructor parameters determine presence and
 defaults. Field types and constraint annotations determine the schema. Sealed
 classes use `@AckModel(discriminatorKey: ...)`; same-library concrete branches
-are included automatically. Use `@AckField` to override `schema` and/or
-`AckFieldPresence`. Unknown properties use
+are included automatically. Use `@Optional()` or `@Required()` to override
+inferred key presence, `@NotNull()` to reject an explicit JSON `null` without
+requiring the key, and `@AckField(schema: ...)` for custom field codecs.
+Deprecated `AckFieldPresence` remains available during migration. Unknown properties use
 `unknownProperties: AckUnknownPropertyPolicy.<policy>` (`reject` by default).
 Raw `Ack.object(..., additionalProperties: true)` validation preserves extras;
 the class-first policy is a later projection. `discard` is for tolerant,
@@ -152,8 +154,9 @@ cross-library discriminated branches.
 
 Class-first generation supports object models, inferred scalar and enum
 fields, nested lists, sets through list codecs, custom `@AckField` schemas,
-constructor defaults, case styles, `AckUnknownPropertyPolicy`, and
-same-library sealed discriminated unions. It rejects `dynamic`, `Object?`,
+`@Optional()`, `@Required()`, `@NotNull()`, constructor defaults, case styles,
+`AckUnknownPropertyPolicy`, and same-library sealed discriminated unions. It
+rejects `dynamic`, `Object?`,
 non-String map keys, recursive class-first graphs, class-first value roots,
 undiscriminated `anyOf` models, missing `_$ClassAck` mixins, and no-op
 `@AckField()`.

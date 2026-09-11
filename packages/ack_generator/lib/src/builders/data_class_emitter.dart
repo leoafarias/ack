@@ -36,7 +36,6 @@ final class AckDataClassEmitter {
       if (includeValueMembers) ...[
         copyWithMethod(
           className: className,
-          fields: stored,
           constructorParameters: constructorParameters,
           castSelf: true,
         ),
@@ -45,14 +44,8 @@ final class AckDataClassEmitter {
       ],
       jsonMembers(className: className, facadeName: facadeName),
     ];
-    final storedByField = {for (final field in stored) field.dartName: field};
     final needsCopyWithSentinel =
-        includeValueMembers &&
-        constructorParameters.any((parameter) {
-          final field = storedByField[parameter.fieldName];
-
-          return field != null && _usesCopyWithSentinel(field);
-        });
+        includeValueMembers && constructorParameters.any(_usesCopyWithSentinel);
     final sentinelType = ackCopyWithUnsetTypeName(className);
 
     return '''
@@ -64,28 +57,20 @@ mixin ${'_\$${className}Ack'} {
 
   String copyWithMethod({
     required String className,
-    required List<AckFieldNode> fields,
     required List<AckConstructorParameter> constructorParameters,
     bool castSelf = false,
   }) {
-    final byField = {for (final field in fields) field.dartName: field};
     final receiver = castSelf ? 'self' : 'this';
     final parameters = [
       for (final parameter in constructorParameters)
-        if (_usesCopyWithSentinel(
-          byField[parameter.fieldName] ?? _synthetic(parameter),
-        ))
+        if (_usesCopyWithSentinel(parameter))
           'Object? ${parameter.name} = $_copyWithUnset'
         else
-          '${_copyWithType(byField[parameter.fieldName] ?? _synthetic(parameter))} ${parameter.name}',
+          '${_copyWithType(parameter)} ${parameter.name}',
     ];
     final arguments = [
       for (final parameter in constructorParameters)
-        _copyWithArgument(
-          parameter,
-          byField[parameter.fieldName] ?? _synthetic(parameter),
-          receiver,
-        ),
+        _copyWithArgument(parameter, receiver),
     ];
     final parameterList = parameters.isEmpty
         ? ''
@@ -183,42 +168,25 @@ ${_ack('SchemaResult')}<Map<String, Object?>> safeToJson() =>
     $facadeName.safeEncode(this as $className);''';
   }
 
-  String fieldDartType(AckFieldNode field) {
-    final base = _type(field.runtimeRef);
-    if (field.isRequired && !field.nullable) return base;
-    return base.endsWith('?') ? base : '$base?';
-  }
-
-  String _copyWithType(AckFieldNode field) {
-    final type = fieldDartType(field);
-    return type.endsWith('?') ? type : '$type?';
-  }
+  String _copyWithType(AckConstructorParameter parameter) =>
+      '${_type(parameter.typeRef)}?';
 
   String _copyWithArgument(
     AckConstructorParameter parameter,
-    AckFieldNode field,
     String receiver,
   ) {
-    final replacement = _usesCopyWithSentinel(field)
+    final replacement = _usesCopyWithSentinel(parameter)
         ? 'identical(${parameter.name}, $_copyWithUnset) '
               '? $receiver.${parameter.fieldName} '
-              ': ${parameter.name} as ${fieldDartType(field)}'
+              ': ${parameter.name} as ${_type(parameter.typeRef)}'
         : '${parameter.name} ?? $receiver.${parameter.fieldName}';
     return parameter.kind == AckConstructorParameterKind.named
         ? '${parameter.name}: $replacement'
         : replacement;
   }
 
-  bool _usesCopyWithSentinel(AckFieldNode field) =>
-      fieldDartType(field).endsWith('?');
-
-  AckFieldNode _synthetic(AckConstructorParameter parameter) => AckFieldNode(
-    dartName: parameter.fieldName,
-    jsonKey: parameter.fieldName,
-    presence: AckSchemaFieldPresence.required,
-    nullable: parameter.typeRef is AckNullableTypeRef,
-    runtimeRef: parameter.typeRef,
-  );
+  bool _usesCopyWithSentinel(AckConstructorParameter parameter) =>
+      parameter.typeRef is AckNullableTypeRef;
 
   String _equals(String left, String right) =>
       '${_ack('deepEquals')}($left, $right)';

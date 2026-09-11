@@ -94,5 +94,8 @@ final. Instantiable models apply the generated `_$ClassAck` mixin. The public
 Unknown properties use `unknownProperties: AckUnknownPropertyPolicy.<policy>`.
 Use `discard` only for tolerant, read-only consumers; models that round-trip
 unknown keys use `capture` and may select their map field with `captureField`.
-`@AckField` can override `schema` and/or `AckFieldPresence`. See the
+`@AckField` can override `schema`. Use `@Optional()` and `@Required()` for
+key presence, and `@NotNull()` when an omitted key is allowed but an explicit
+JSON `null` is not. Deprecated `AckFieldPresence` remains available during
+migration. See the
 [Model Code Generation guide](https://concepta.dev/documentation/ack/advanced/typesafe-schemas).

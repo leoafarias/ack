@@ -5,8 +5,10 @@
 /// Deprecated `@AckType()` remains available for Ack 1.1 compatibility.
 ///
 /// Class-first models apply the generated `_$ClassAck` mixin and may use
-/// [AckUnknownPropertyPolicy] and [AckFieldPresence] to describe wire
-/// extras and field presence.
+/// [AckUnknownPropertyPolicy], `@Optional()`, `@Required()`, `@NotNull()`,
+/// and `@AckField(schema: ...)` to describe wire extras, field presence,
+/// and custom field codecs. Deprecated [AckFieldPresence] remains available
+/// during migration.
 library;
 
 export 'package:json_annotation/json_annotation.dart' show JsonKey;

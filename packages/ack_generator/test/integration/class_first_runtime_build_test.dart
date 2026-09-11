@@ -219,7 +219,7 @@ final class Loose with _$LooseAck {
 final class Normalized with _$NormalizedAck {
   const Normalized(String? value) : value = value ?? '';
 
-  @AckField(presence: AckFieldPresence.optional)
+  @Optional()
   final String value;
 }
 
@@ -259,6 +259,98 @@ final class ImmutableCollections with _$ImmutableCollectionsAck {
   final Set<String> labels;
   @AckField(schema: groupsSchema)
   final Map<String, List<String>> groups;
+}
+
+@AckModel()
+final class Example with _$ExampleAck {
+  const Example({this.label, this.title});
+
+  @Optional()
+  @NotNull()
+  final String? label;
+
+  @Optional()
+  @NotNull()
+  @NotEmpty()
+  final String? title;
+
+  static final fromJson = ExampleSchema.fromJson;
+}
+
+@AckModel()
+final class ExampleHolder with _$ExampleHolderAck {
+  const ExampleHolder({required this.example});
+
+  final Example example;
+}
+
+@AckModel()
+final class OptionalNullable with _$OptionalNullableAck {
+  const OptionalNullable({this.note});
+
+  @Optional()
+  final String? note;
+}
+
+@AckModel()
+final class InferredNotNull with _$InferredNotNullAck {
+  const InferredNotNull({this.label});
+
+  @NotNull()
+  final String? label;
+}
+
+AckSchema<String, String> nullableNameSchema() => Ack.string().nullable();
+
+@AckModel()
+final class OverrideNotNull with _$OverrideNotNullAck {
+  const OverrideNotNull({this.name});
+
+  @NotNull()
+  @AckField(schema: nullableNameSchema)
+  final String? name;
+}
+
+@AckModel()
+final class RequiredNotNull with _$RequiredNotNullAck {
+  const RequiredNotNull({this.value});
+
+  @Required()
+  @NotNull()
+  final String? value;
+}
+
+final class ParameterEntry {
+  const ParameterEntry(this.value);
+  final String value;
+}
+
+AckSchema<Map<String, Object?>, Map<String, ParameterEntry>>
+parameterMapSchema() =>
+    Ack.object({}, additionalProperties: true).codec<Map<String, ParameterEntry>>(
+      decode: (value) => {
+        for (final entry in value.entries)
+          entry.key: ParameterEntry(entry.value! as String),
+      },
+      encode: (value) => {
+        for (final entry in value.entries) entry.key: entry.value.value,
+      },
+    );
+
+@AckModel()
+final class CapabilityBinding with _$CapabilityBindingAck {
+  CapabilityBinding({
+    required this.name,
+    Map<String, ParameterEntry> parameters = const {},
+  }) : parameters = Map.unmodifiable(parameters);
+
+  final String name;
+
+  @Optional()
+  @AckField(schema: parameterMapSchema)
+  final Map<String, ParameterEntry> parameters;
+
+  static final fromJson = CapabilityBindingSchema.fromJson;
 }
 
 @AckModel(discriminatorKey: 'type')
@@ -476,6 +568,123 @@ void main() {
     );
   });
 
+  test('optional not-null fields omit keys and reject explicit null', () {
+    expect(ExampleSchema.parse({}).label, isNull);
+    expect(ExampleSchema.parse({'label': 'hello'}).label, 'hello');
+    expect(ExampleSchema.safeParse({'label': null}).isFail, isTrue);
+    expect(
+      () => ExampleSchema.parse({'label': null}),
+      throwsA(isA<AckException>()),
+    );
+    expect(Example.fromJson({}).label, isNull);
+    expect(Example.fromJson({'label': 'hello'}).label, 'hello');
+    expect(Example().toJson(), {});
+    expect(Example(label: 'hello').toJson(), {'label': 'hello'});
+    expect(ExampleSchema.encode(Example()), {});
+    expect(ExampleSchema.safeEncode(Example()).isOk, isTrue);
+    expect(
+      ExampleSchema.encode(Example(label: 'hello')),
+      {'label': 'hello'},
+    );
+    expect(Example(label: 'hello').copyWith(label: null).toJson(), {});
+
+    final jsonSchema = ExampleSchema.toJsonSchema();
+    expect(jsonSchema['required'] ?? const <Object?>[], isNot(contains('label')));
+    expect(
+      (jsonSchema['properties'] as Map)['label'],
+      isNot(containsPair('type', ['string', 'null'])),
+    );
+    expect(
+      ((jsonSchema['properties'] as Map)['label'] as Map)['type'],
+      'string',
+    );
+    expect(
+      ExampleSchema.toSchemaModel().toJsonSchema(),
+      ExampleSchema.toJsonSchema(),
+    );
+
+    expect(ExampleHolderSchema.parse({'example': {}}).example.label, isNull);
+    expect(
+      ExampleHolderSchema.safeParse({
+        'example': {'label': null},
+      }).isFail,
+      isTrue,
+    );
+    expect(ExampleHolderSchema.parse({'example': {}}).toJson(), {
+      'example': {},
+    });
+    expect(
+      ExampleHolderSchema.toSchemaModel().toJsonSchema(),
+      ExampleHolderSchema.toJsonSchema(),
+    );
+  });
+
+  test('optional nullable fields still accept explicit JSON null', () {
+    expect(OptionalNullableSchema.parse({}).note, isNull);
+    expect(OptionalNullableSchema.parse({'note': null}).note, isNull);
+    expect(OptionalNullableSchema.parse({'note': 'n'}).note, 'n');
+  });
+
+  test('NotNull alone on an inferred optional String? rejects JSON null', () {
+    expect(InferredNotNullSchema.parse({}).label, isNull);
+    expect(InferredNotNullSchema.parse({'label': 'hello'}).label, 'hello');
+    expect(InferredNotNullSchema.safeParse({'label': null}).isFail, isTrue);
+    expect(InferredNotNull().toJson(), {});
+  });
+
+  test('NotNull wins over a nullable AckField schema override', () {
+    expect(OverrideNotNullSchema.parse({}).name, isNull);
+    expect(OverrideNotNullSchema.parse({'name': 'ada'}).name, 'ada');
+    expect(OverrideNotNullSchema.safeParse({'name': null}).isFail, isTrue);
+    expect(OverrideNotNull().toJson(), {});
+  });
+
+  test('Required plus NotNull rejects JSON null and does not emit it', () {
+    expect(RequiredNotNullSchema.safeParse({}).isFail, isTrue);
+    expect(RequiredNotNullSchema.parse({'value': 'ok'}).value, 'ok');
+    expect(RequiredNotNullSchema.safeParse({'value': null}).isFail, isTrue);
+    expect(RequiredNotNullSchema.safeEncode(RequiredNotNull()).isFail, isTrue);
+    expect(
+      RequiredNotNullSchema.encode(const RequiredNotNull(value: 'ok')),
+      {'value': 'ok'},
+    );
+  });
+
+  test('NotEmpty still rejects an empty supplied optional not-null value', () {
+    expect(ExampleSchema.safeParse({'title': ''}).isFail, isTrue);
+    expect(ExampleSchema.parse({'title': 'ok'}).title, 'ok');
+    expect(ExampleSchema.parse({}).title, isNull);
+    expect(ExampleSchema.safeParse({'title': null}).isFail, isTrue);
+  });
+
+  test('optional non-nullable map codecs default and copy without null', () {
+    expect(CapabilityBindingSchema.parse({'name': 'bind'}).parameters, isEmpty);
+    expect(
+      CapabilityBindingSchema.parse({
+        'name': 'bind',
+        'parameters': {'a': 'v'},
+      }).parameters['a']!.value,
+      'v',
+    );
+    expect(
+      CapabilityBindingSchema.safeParse({
+        'name': 'bind',
+        'parameters': null,
+      }).isFail,
+      isTrue,
+    );
+
+    final binding = CapabilityBinding(name: 'bind');
+    expect(binding.copyWith().parameters, isEmpty);
+    expect(
+      binding.copyWith(
+        parameters: {'a': const ParameterEntry('v')},
+      ).parameters['a']!.value,
+      'v',
+    );
+    expect(binding.copyWith().toJson(), {'name': 'bind', 'parameters': {}});
+  });
+
   test('sealed unions use super parameters and discriminator rules', () {
     final cat = PetSchema.parse({'type': 'cat', 'id': 'c1', 'lives': 9});
     expect(cat, isA<Cat>());
@@ -560,6 +769,14 @@ void main() {
         expect(
           generated['lib/models.ack.dart'],
           isNot(contains('final profileSchema =')),
+        );
+        expect(
+          generated['lib/models.ack.dart'],
+          contains('parameters: parameters ?? self.parameters'),
+        );
+        expect(
+          generated['lib/models.ack.dart'],
+          isNot(contains('parameters as Map<String, ParameterEntry>?')),
         );
 
         _expectSuccess(

@@ -7,6 +7,7 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:source_gen/source_gen.dart';
 
@@ -221,6 +222,18 @@ final class ClassModelGraphBuilder {
   );
   static const _uniqueItemsChecker = TypeChecker.typeNamed(
     annotations.UniqueItems,
+    inPackage: 'ack_annotations',
+  );
+  static const _optionalChecker = TypeChecker.typeNamed(
+    annotations.Optional,
+    inPackage: 'ack_annotations',
+  );
+  static const _requiredChecker = TypeChecker.typeNamed(
+    annotations.Required,
+    inPackage: 'ack_annotations',
+  );
+  static const _notNullChecker = TypeChecker.typeNamed(
+    annotations.NotNull,
     inPackage: 'ack_annotations',
   );
 
@@ -639,9 +652,11 @@ final class ClassModelGraphBuilder {
       }
       ownerByJsonKey[jsonKey] = field;
 
-      final nullable =
+      final dartNullable =
           futureType?.runtimeRef is AckNullableTypeRef ||
           _isNullable(field.type);
+      final rejectNull = _notNullChecker.hasAnnotationOfExact(field);
+      final acceptsNull = dartNullable && !rejectNull;
       final presence = _effectivePresence(
         field,
         parameter: parameter,
@@ -653,16 +668,20 @@ final class ClassModelGraphBuilder {
       schema = _applyPresence(
         schema,
         presence: presence,
-        nullable: nullable,
+        acceptsNull: acceptsNull,
         defaultCode: parameter?.defaultValueCode,
         defaultIsNull: parameter?.computeConstantValue()?.isNull ?? false,
       );
+      if (rejectNull) {
+        schema = '$schema.nullable(value: false)';
+      }
       nodes.add(
         AckFieldNode(
           dartName: name,
           jsonKey: jsonKey,
           presence: presence,
-          nullable: nullable,
+          nullable: dartNullable,
+          acceptsNull: acceptsNull,
           runtimeRef: futureType?.runtimeRef ?? _typeRef(field.type, field),
           schemaExpression: schema,
           defaultExpression: parameter?.defaultValueCode,
@@ -1530,42 +1549,85 @@ final class ClassModelGraphBuilder {
     required bool isDiscriminator,
   }) {
     final inferred = _fieldPresence(parameter);
-    final annotation = _ackFieldChecker.firstAnnotationOfExact(field);
-    if (annotation == null) return inferred;
-    final reader = ConstantReader(annotation);
-    final schemaMissing = reader.read('schema').isNull;
-    final presenceIndex = reader
-        .read('presence')
-        .objectValue
-        .getField('index')!
-        .toIntValue()!;
-    final presence = annotations.AckFieldPresence.values[presenceIndex];
-    if (schemaMissing && presence == annotations.AckFieldPresence.inferred) {
+    final hasOptional = _optionalChecker.hasAnnotationOfExact(field);
+    final hasRequired = _requiredChecker.hasAnnotationOfExact(field);
+    if (hasOptional && hasRequired) {
       throw InvalidGenerationSource(
-        '${field.enclosingElement.name}.${field.name} @AckField() is a no-op; '
-        'set schema or presence.',
+        '${field.enclosingElement.name}.${field.name} cannot combine '
+        '@Optional() and @Required().',
         element: field,
       );
     }
-    return switch (presence) {
-      annotations.AckFieldPresence.inferred => inferred,
-      annotations.AckFieldPresence.required => AckSchemaFieldPresence.required,
-      annotations.AckFieldPresence.optional => () {
-        final canBeOptional =
-            isDiscriminator ||
-            (parameter != null &&
-                (!parameter.isRequired || _isNullable(parameter.type)));
-        if (!canBeOptional) {
-          throw InvalidGenerationSource(
-            '${field.enclosingElement.name}.${field.name} cannot be '
-            '@AckField(presence: optional) because the constructor cannot '
-            'accept a missing value.',
-            element: field,
-          );
-        }
-        return AckSchemaFieldPresence.optional;
-      }(),
-    };
+
+    final annotation = _ackFieldChecker.firstAnnotationOfExact(field);
+    AckSchemaFieldPresence? legacyOverride;
+    if (annotation != null) {
+      final reader = ConstantReader(annotation);
+      final schemaMissing = reader.read('schema').isNull;
+      // AckFieldPresence index: 0 inferred, 1 required, 2 optional.
+      final presenceIndex = reader
+          .read('presence')
+          .objectValue
+          .getField('index')!
+          .toIntValue()!;
+      if (schemaMissing && presenceIndex == 0) {
+        throw InvalidGenerationSource(
+          '${field.enclosingElement.name}.${field.name} @AckField() is a '
+          'no-op; set schema or presence.',
+          element: field,
+        );
+      }
+      legacyOverride = switch (presenceIndex) {
+        0 => null,
+        1 => AckSchemaFieldPresence.required,
+        2 => AckSchemaFieldPresence.optional,
+        _ => throw StateError('Unknown AckFieldPresence index $presenceIndex.'),
+      };
+    }
+
+    final AckSchemaFieldPresence? annotationOverride;
+    if (hasOptional) {
+      annotationOverride = AckSchemaFieldPresence.optional;
+    } else if (hasRequired) {
+      annotationOverride = AckSchemaFieldPresence.required;
+    } else {
+      annotationOverride = null;
+    }
+
+    if (legacyOverride != null &&
+        annotationOverride != null &&
+        legacyOverride != annotationOverride) {
+      throw InvalidGenerationSource(
+        '${field.enclosingElement.name}.${field.name} has conflicting '
+        'presence declarations.',
+        element: field,
+      );
+    }
+
+    final override = annotationOverride ?? legacyOverride;
+    if (override == AckSchemaFieldPresence.optional) {
+      final canBeOptional =
+          isDiscriminator ||
+          (parameter != null &&
+              (!parameter.isRequired || _isNullable(parameter.type)));
+      if (!canBeOptional) {
+        throw InvalidGenerationSource(
+          '${field.enclosingElement.name}.${field.name} cannot be optional '
+          'because the constructor cannot accept a missing value.',
+          element: field,
+        );
+      }
+    }
+
+    if (legacyOverride != null) {
+      log.warning(
+        '${field.enclosingElement.name}.${field.name} uses '
+        '@AckField(presence: ...); use @Optional() or @Required() instead. '
+        'AckField.presence will be removed in 2.0.0.',
+      );
+    }
+
+    return override ?? inferred;
   }
 
   bool _isExactAdditionalPropertiesType(DartType type) {
@@ -1906,20 +1968,22 @@ final class ClassModelGraphBuilder {
   String _applyPresence(
     String schema, {
     required AckSchemaFieldPresence presence,
-    required bool nullable,
+    required bool acceptsNull,
     required String? defaultCode,
     required bool defaultIsNull,
   }) {
     return switch (presence) {
-      AckSchemaFieldPresence.defaulted when nullable && defaultIsNull =>
+      AckSchemaFieldPresence.defaulted when acceptsNull && defaultIsNull =>
         '$schema.optional().nullable()',
-      AckSchemaFieldPresence.defaulted when nullable =>
+      AckSchemaFieldPresence.defaulted when defaultIsNull =>
+        '$schema.optional()',
+      AckSchemaFieldPresence.defaulted when acceptsNull =>
         '$schema.nullable().withDefault($defaultCode)',
       AckSchemaFieldPresence.defaulted => '$schema.withDefault($defaultCode)',
-      AckSchemaFieldPresence.optional when nullable =>
+      AckSchemaFieldPresence.optional when acceptsNull =>
         '$schema.optional().nullable()',
       AckSchemaFieldPresence.optional => '$schema.optional()',
-      AckSchemaFieldPresence.required when nullable => '$schema.nullable()',
+      AckSchemaFieldPresence.required when acceptsNull => '$schema.nullable()',
       AckSchemaFieldPresence.required => schema,
     };
   }

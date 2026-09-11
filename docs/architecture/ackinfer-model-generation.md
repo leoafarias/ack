@@ -81,7 +81,9 @@ consumers. `capture` stores them in `captureField` (defaults to
 `additionalProperties`, may be `args`) and is required for model round trips.
 Declared fields and discriminators win on encode.
 
-`@AckField` may override `schema` and/or `AckFieldPresence`. A no-op
+`@AckField` may override `schema`. Prefer `@Optional()` and `@Required()` for
+key presence; `@NotNull()` rejects an explicit JSON `null` without requiring the
+key. Deprecated `AckField.presence` remains accepted during migration. A no-op
 `@AckField()` is rejected. `optional` is allowed only when the constructor can
 accept a missing value, with a discriminator exception for union branches.
 
@@ -146,7 +148,8 @@ Analysis produces one graph consumed directly by the emitter. Nodes carry:
 - named model references.
 
 The internal graph presence enum is `AckSchemaFieldPresence` so it does not
-collide with the public `AckFieldPresence` annotation.
+collide with the public `@Optional()` / `@Required()` annotations or the
+deprecated `AckFieldPresence` API.
 
 All annotated declarations are registered before resolution. Resolution uses
 `unseen`, `visiting`, and `resolved` states: named `Ack.lazy` edges may point to

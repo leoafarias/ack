@@ -1,3 +1,20 @@
+## Unreleased
+
+### Added
+
+* Add `@Optional()`, `@Required()`, and `@NotNull()` class-first field
+  annotations. Key presence stays separate from JSON null acceptance.
+
+### Fixed
+
+* Derive class-first `copyWith` nullability from the constructor parameter type
+  so optional non-nullable codec fields compile and do not receive `null`.
+
+### Deprecated
+
+* Accept `@AckField(presence: ...)` during migration with a deprecation warning;
+  reject conflicts with `@Optional()` / `@Required()`.
+
 ## 1.3.0
 
 ### Changed

@@ -249,7 +249,7 @@ ${node.className} $function(Map<String, Object?> value) {
     final jsonHelper = jsonToHelperName(node.className);
     final requiredNulls = [
       for (final field in node.fields)
-        if (field.isRequired && field.nullable) field,
+        if (field.isRequired && field.acceptsNull) field,
     ];
     final discriminatorKey = node.discriminatorKey;
     final discriminatorValue = node.discriminatorValue;
