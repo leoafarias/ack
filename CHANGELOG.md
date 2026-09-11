@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 1.5.0
+
+* Add `Ack.map(valueSchema)` and `MapSchema` for string-keyed JSON objects
+  whose values share one schema; JSON Schema export emits
+  `additionalProperties: <value schema>`.
+* Infer class-first `Object`, `Object?`, `List<Object>`, and `Map<String, T>`
+  fields, and accept `Ack.any()` and `Ack.map()` schema-first fields.
+* `Ack.any()` parsing now returns a detached, recursively unmodifiable
+  snapshot. `ack_generator` requires `ack: ^1.5.0`.
+* Align all six publishable packages at 1.5.0; compare public APIs against 1.4.0.
+
 ## 1.4.0
 
 * Add `@Optional()`, `@Required()`, and `@NotNull()` class-first field

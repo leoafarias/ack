@@ -1,4 +1,4 @@
-## Unreleased
+## 1.5.0
 
 ### Added
 
@@ -13,6 +13,10 @@
 * Accept `Ack.any()` and `Ack.map(...)` schema-first fields, inferring
   `Object`/`Object?` and `Map<String, T>`. `Ack.any()` and `Ack.map()` model
   roots stay rejected, including when reached through a variable.
+
+### Changed
+
+* Require `ack: ^1.5.0`, because generated code now uses `Ack.map`.
 
 ### Fixed
 
